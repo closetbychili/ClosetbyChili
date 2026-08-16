@@ -1,0 +1,22 @@
+# ================================================
+# Closet by Chilli — Development Python Dependencies
+# ================================================
+
+-r base.txt
+
+# Testing
+pytest>=8.3,<9.0
+pytest-django>=4.9,<5.0
+pytest-cov>=6.0,<7.0
+
+# Linting & Formatting
+ruff>=0.9,<1.0
+black>=25.1,<26.0
+
+# Type Checking
+mypy>=1.14,<2.0
+django-stubs>=5.1,<6.0
+djangorestframework-stubs>=3.15,<4.0
+
+# Development Utilities
+ipython>=8.31,<9.0
