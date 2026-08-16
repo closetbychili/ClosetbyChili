@@ -110,11 +110,13 @@ class Product(models.Model):
         blank=True,
         related_name="products",
     )
-    collections = models.ManyToManyField(
-        Collection,
-        through="ProductCollection",
-        related_name="products",
-        blank=True,
+    collections: models.ManyToManyField[Collection, "ProductCollection"] = (
+        models.ManyToManyField(
+            Collection,
+            through="ProductCollection",
+            related_name="products",
+            blank=True,
+        )
     )
     status = models.CharField(
         max_length=20,

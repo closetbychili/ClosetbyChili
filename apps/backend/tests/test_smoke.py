@@ -39,4 +39,4 @@ class DjangoSmokeTest(SimpleTestCase):
         """Celery is configured for eager execution in tests."""
         from django.conf import settings
 
-        assert settings.CELERY_TASK_ALWAYS_EAGER is True
+        assert getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False) is True
