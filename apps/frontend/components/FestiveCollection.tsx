@@ -1,82 +1,56 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import ProductCard from "./ProductCard";
-import { FESTIVE_PRODUCTS } from "@/lib/homepage-data";
+import Image from "next/image";
 
 export default function FestiveCollection() {
-  const [bannerError, setBannerError] = useState(true); // default placeholder since image doesn't exist yet
-
   return (
-    <section id="festive" className="bg-ink text-cream overflow-hidden">
-      {/* ── Main Banner Area ──────────────────────────────── */}
-      <div className="relative min-h-[550px] lg:min-h-[620px] flex items-center">
-        {/* Background */}
-        {bannerError ? (
-          // Branded placeholder
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-ink via-[#1c0707] to-ink" />
-            {/* Gold decorative lines */}
-            <div
-              className="absolute inset-0 opacity-[0.03]"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(135deg, transparent, transparent 50px, rgba(212,175,55,0.5) 50px, rgba(212,175,55,0.5) 51px)",
-              }}
-            />
-            {/* Chili accent glow */}
-            <div className="absolute right-0 top-1/4 h-[400px] w-[400px] rounded-full bg-chili/8 blur-[120px]" />
-            <div className="absolute left-1/4 bottom-0 h-[300px] w-[300px] rounded-full bg-gold/5 blur-[100px]" />
-          </div>
-        ) : (
-          <>
-            <img
-              src="/assets/festive/festive-banner.jpg"
-              alt="Festive Collection — Closet by Chili"
-              className="absolute inset-0 h-full w-full object-cover opacity-60"
-              onError={() => setBannerError(true)}
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-          </>
-        )}
+    <section id="festive" className="relative w-full h-[600px] sm:h-[700px] lg:h-[800px] bg-ink overflow-hidden flex items-center justify-center">
+      {/* ── Background: Luxury Festive Photography / Texture ── */}
+      <div className="absolute inset-0">
+        <Image
+          src="/assets/hero/hero-5.jpg"
+          alt="Celebrate in Your Own Style — Festive Collection"
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+        />
 
-        {/* Content */}
-        <div className="relative mx-auto max-w-[1400px] px-6 py-20 lg:px-10 lg:py-28 w-full">
-          <div className="max-w-xl">
-            <p className="flex items-center gap-3 text-[10px] uppercase tracking-[0.4em] text-gold">
-              <span className="inline-block h-px w-8 bg-gold/40" />
-              The Festive Edit
-            </p>
+        {/* Rich multi-layer vignette and atmospheric shading */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-black/70" />
 
-            <h2 className="mt-6 font-display text-4xl leading-tight sm:text-5xl lg:text-6xl">
-              Every celebration
-              <br />
-              deserves a drape{" "}
-              <span className="italic text-chili-light">of its own.</span>
-            </h2>
-
-            <p className="mt-7 max-w-md text-sm leading-7 text-cream/55 sm:text-base">
-              Rich reds, gilded details and silhouettes made for every
-              celebration.
-            </p>
-
-            <Link
-              href="/collections/festive"
-              className="mt-9 inline-block border border-gold/40 px-8 py-4 text-[10px] font-semibold uppercase tracking-[0.25em] text-gold transition-all hover:bg-gold hover:text-ink"
-            >
-              Shop Festive Collection
-            </Link>
-          </div>
-        </div>
+        {/* Ambient warm gold accent glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gold/10 blur-[140px] pointer-events-none" />
       </div>
 
-      {/* ── Festive Products (optional 3 below banner) ────── */}
-      <div className="mx-auto max-w-[1400px] px-6 pb-20 lg:px-10 lg:pb-28">
-        <div className="grid gap-x-5 gap-y-10 grid-cols-2 lg:grid-cols-3">
-          {FESTIVE_PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+      {/* ── Editorial Campaign Content ──────────────────────── */}
+      <div className="relative z-10 mx-auto max-w-[1440px] px-6 sm:px-12 text-center flex flex-col items-center">
+        {/* Eyebrow */}
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <span className="h-px w-8 bg-gold/60" />
+          <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.4em] text-gold">
+            The Festive Edit 2024
+          </p>
+          <span className="h-px w-8 bg-gold/60" />
+        </div>
+
+        {/* Main Heading */}
+        <h2 className="font-display text-3xl sm:text-5xl lg:text-7xl font-normal text-white leading-[1.1] tracking-tight max-w-4xl drop-shadow-md">
+          Celebrate in Your Own Style.
+        </h2>
+
+        {/* Subtitle description */}
+        <p className="mt-6 text-sm sm:text-base lg:text-lg text-white/80 max-w-xl leading-relaxed font-light">
+          Opulent brocades, hand-woven zari borders, and silhouettes designed to make every special occasion unforgettable.
+        </p>
+
+        {/* CTA */}
+        <div className="mt-8 sm:mt-10">
+          <Link
+            href="#festive"
+            className="inline-block bg-[#fff8f7] text-ink hover:bg-gold hover:text-ink px-10 py-4 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-0.5"
+          >
+            Explore Festive
+          </Link>
         </div>
       </div>
     </section>

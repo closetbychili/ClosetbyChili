@@ -1,36 +1,54 @@
-/**
- * =============================================================
- * DEMO DATA — Closet by Chili Homepage
- * =============================================================
- *
- * All product names, prices, and images are PLACEHOLDERS.
- * In Sprint 2, these arrays will be replaced with API calls
- * to the Django/Supabase catalog backend.
- *
- * The visual components consuming this data should NOT
- * need to be rewritten when real data is connected.
- * =============================================================
- */
+export interface HeroSlide {
+  id: string;
+  tag: string;
+  subtitle?: string;
+  heading: string;
+  description?: string;
+  ctaText: string;
+  ctaHref: string;
+  image: string;
+}
 
-// ── Types ─────────────────────────────────────────────────────
-
-export interface DemoProduct {
+export interface ProductItem {
   id: string;
   name: string;
-  category: string;
+  detail: string;
   price: number;
   originalPrice?: number;
   badge?: string;
-  image: string; // local asset path
+  image?: string;
   href: string;
 }
 
-export interface DemoCategory {
+export interface CategoryItem {
   id: string;
   name: string;
-  slug: string;
-  image: string; // local asset path
+  subtitle?: string;
+  image?: string;
   href: string;
+}
+
+export interface SetItem {
+  id: string;
+  name: string;
+  subtitle?: string;
+  image?: string;
+  href: string;
+}
+
+export interface CollectionItem {
+  id: string;
+  name: string;
+  image?: string;
+  href: string;
+}
+
+export interface ReviewItem {
+  id: string;
+  text: string;
+  author: string;
+  location?: string;
+  rating: number;
 }
 
 export interface NavLink {
@@ -39,7 +57,6 @@ export interface NavLink {
 }
 
 // ── Navigation ────────────────────────────────────────────────
-
 export const NAV_LINKS: NavLink[] = [
   { label: "New Arrivals", href: "#new-arrivals" },
   { label: "Shop", href: "#shop-by-category" },
@@ -49,212 +66,288 @@ export const NAV_LINKS: NavLink[] = [
 ];
 
 export const SHOP_BY_TYPE: NavLink[] = [
-  { label: "Kurtis", href: "/collections/kurtis" },
-  { label: "Kurta Sets", href: "/collections/kurta-sets" },
-  { label: "Dresses", href: "/collections/dresses" },
-  { label: "Anarkali Sets", href: "/collections/anarkali-sets" },
-  { label: "Dupattas", href: "/collections/dupattas" },
-  { label: "Bottom Wear (Pants / Palazzo)", href: "/collections/bottom-wear" },
+  { label: "Kurtis", href: "#shop-by-category" },
+  { label: "Kurta Sets", href: "#shop-by-category" },
+  { label: "Dresses", href: "#shop-by-category" },
+  { label: "Anarkali Sets", href: "#shop-by-category" },
+  { label: "Dupattas", href: "#shop-by-category" },
+  { label: "Bottom Wear", href: "#shop-by-category" },
 ];
 
-export const SHOP_BY_SET: NavLink[] = [
-  { label: "2-Piece Sets", href: "/collections/2-piece-sets" },
-  { label: "3-Piece Sets", href: "/collections/3-piece-sets" },
-  { label: "Co-ord Sets", href: "/collections/co-ord-sets" },
+export const SHOP_BY_SET_NAV: NavLink[] = [
+  { label: "2-Piece Sets", href: "#shop-by-set" },
+  { label: "3-Piece Sets", href: "#shop-by-set" },
+  { label: "Co-ord Sets", href: "#shop-by-set" },
+  { label: "Anarkali Sets", href: "#shop-by-category" },
 ];
 
-// ── Homepage Categories (4 editorial cards) ───────────────────
-
-export const HOMEPAGE_CATEGORIES: DemoCategory[] = [
+// ── Hero Carousel Slides (5 slides) ───────────────────────────
+export const HERO_SLIDES: HeroSlide[] = [
   {
-    id: "hc-1",
-    name: "Kurtis",
-    slug: "kurtis",
-    image: "/assets/categories/kurtis.jpg",
-    href: "/collections/kurtis",
+    id: "hero-1",
+    tag: "NEW ARRIVALS",
+    heading: "Fresh silhouettes.\nTimeless confidence.",
+    ctaText: "SHOP NEW",
+    ctaHref: "#new-arrivals",
+    image: "/assets/hero/hero-1.jpg",
   },
   {
-    id: "hc-2",
-    name: "2-Piece Sets",
-    slug: "two-piece-sets",
-    image: "/assets/categories/two-piece-sets.jpg",
-    href: "/collections/2-piece-sets",
+    id: "hero-2",
+    tag: "KURTIS",
+    subtitle: "The Everyday Edit",
+    heading: "Effortless kurtis, made to move with you.",
+    ctaText: "SHOP KURTIS",
+    ctaHref: "#shop-by-category",
+    image: "/assets/hero/hero-2.jpg",
   },
   {
-    id: "hc-3",
-    name: "3-Piece Sets",
-    slug: "three-piece-sets",
-    image: "/assets/categories/three-piece-sets.jpg",
-    href: "/collections/3-piece-sets",
+    id: "hero-3",
+    tag: "KURTA SETS",
+    subtitle: "Complete Looks",
+    heading: "Thoughtfully coordinated for effortless style.",
+    ctaText: "SHOP SETS",
+    ctaHref: "#shop-by-set",
+    image: "/assets/hero/hero-3.jpg",
   },
   {
-    id: "hc-4",
-    name: "Ethnic Dresses",
-    slug: "ethnic-dresses",
-    image: "/assets/categories/ethnic-dresses.jpg",
-    href: "/collections/dresses",
+    id: "hero-4",
+    tag: "DRESSES & ANARKALI",
+    subtitle: "Flow & Form",
+    heading: "Statement pieces for those who love to twirl.",
+    ctaText: "SHOP ANARKALI",
+    ctaHref: "#shop-by-category",
+    image: "/assets/hero/hero-4.jpg",
+  },
+  {
+    id: "hero-5",
+    tag: "FESTIVE",
+    subtitle: "Celebrate in Style",
+    heading: "Intricate details for your special occasions.",
+    ctaText: "SHOP FESTIVE",
+    ctaHref: "#festive",
+    image: "/assets/hero/hero-5.jpg",
   },
 ];
 
-// ── New Arrivals (6 DEMO products) ────────────────────────────
-
-export const NEW_ARRIVALS: DemoProduct[] = [
+// ── Section 1: New Arrivals (4 products) ──────────────────────
+export const NEW_ARRIVALS: ProductItem[] = [
   {
     id: "na-1",
-    name: "Ruby Bloom Kurta Set",
-    category: "Kurta Sets",
-    price: 2899,
-    originalPrice: 3499,
-    badge: "NEW",
-    image: "/assets/products/new-arrivals/ruby-bloom-kurta-set.jpg",
+    name: "Crimson Silk Anarkali",
+    detail: "Hand-embroidered",
+    price: 4500,
+    badge: "New",
     href: "#",
   },
   {
     id: "na-2",
-    name: "Noir Anarkali Set",
-    category: "Anarkali Sets",
-    price: 3499,
-    badge: "NEW",
-    image: "/assets/products/new-arrivals/noir-anarkali-set.jpg",
+    name: "Ivory Grace Kurta Set",
+    detail: "Pure Cotton",
+    price: 3200,
+    badge: "New",
     href: "#",
   },
   {
     id: "na-3",
-    name: "Gilded Ivory Co-ord",
-    category: "Co-ord Sets",
-    price: 2599,
-    originalPrice: 2999,
-    badge: "NEW",
-    image: "/assets/products/new-arrivals/gilded-ivory-co-ord.jpg",
+    name: "Midnight Indigo Anarkali",
+    detail: "Block Print",
+    price: 5100,
+    badge: "New",
     href: "#",
   },
   {
     id: "na-4",
-    name: "Crimson Drape Kurti",
-    category: "Kurtis",
-    price: 1499,
-    badge: "NEW",
-    image: "/assets/products/new-arrivals/crimson-drape-kurti.jpg",
-    href: "#",
-  },
-  {
-    id: "na-5",
-    name: "Midnight 3-Piece Set",
-    category: "3-Piece Sets",
-    price: 3299,
-    originalPrice: 3899,
-    image: "/assets/products/new-arrivals/midnight-3-piece-set.jpg",
-    href: "#",
-  },
-  {
-    id: "na-6",
-    name: "Amber Weave Dress",
-    category: "Dresses",
-    price: 2199,
-    badge: "NEW",
-    image: "/assets/products/new-arrivals/amber-weave-dress.jpg",
+    name: "Emerald Jewel Set",
+    detail: "Silk Blend",
+    price: 4800,
+    badge: "New",
     href: "#",
   },
 ];
 
-// ── Bestsellers (6 DEMO products) ─────────────────────────────
+// ── Section 2: Shop by Category (6 categories) ────────────────
+export const CATEGORIES: CategoryItem[] = [
+  {
+    id: "cat-1",
+    name: "Kurtis",
+    subtitle: "Everyday cuts & relaxed silhouettes",
+    href: "#",
+  },
+  {
+    id: "cat-2",
+    name: "Kurta Sets",
+    subtitle: "Coordinated elegance for every day",
+    href: "#",
+  },
+  {
+    id: "cat-3",
+    name: "Dresses",
+    subtitle: "Modern draping with ethnic charm",
+    href: "#",
+  },
+  {
+    id: "cat-4",
+    name: "Anarkali Sets",
+    subtitle: "Statement royal flare & twirl",
+    href: "#",
+  },
+  {
+    id: "cat-5",
+    name: "Bottom Wear",
+    subtitle: "Tailored pants, palazzos & trousers",
+    href: "#",
+  },
+  {
+    id: "cat-6",
+    name: "Dupattas",
+    subtitle: "Handloom silks, organza & zari trims",
+    href: "#",
+  },
+];
 
-export const BESTSELLERS: DemoProduct[] = [
+// ── Section 3: Shop by Set (3 sets) ───────────────────────────
+export const SETS: SetItem[] = [
+  {
+    id: "set-1",
+    name: "2-Piece Sets",
+    subtitle: "Kurta & Trousers",
+    href: "#",
+  },
+  {
+    id: "set-2",
+    name: "3-Piece Sets",
+    subtitle: "Kurta, Bottom & Dupatta",
+    href: "#",
+  },
+  {
+    id: "set-3",
+    name: "Co-ord Sets",
+    subtitle: "Contemporary Indo-Western",
+    href: "#",
+  },
+];
+
+// ── Section 4: Bestsellers (4 products) ───────────────────────
+export const BESTSELLERS: ProductItem[] = [
   {
     id: "bs-1",
-    name: "Scarlet Muse Anarkali",
-    category: "Anarkali Sets",
-    price: 3699,
-    originalPrice: 4299,
-    badge: "BESTSELLER",
-    image: "/assets/products/bestsellers/scarlet-muse-anarkali.jpg",
+    name: "Classic Ivory Kurta",
+    detail: "Chanderi Silk Blend",
+    price: 2800,
+    badge: "Bestseller",
     href: "#",
   },
   {
     id: "bs-2",
-    name: "Onyx Elegance Kurta Set",
-    category: "Kurta Sets",
-    price: 2799,
-    badge: "BESTSELLER",
-    image: "/assets/products/bestsellers/onyx-elegance-kurta-set.jpg",
+    name: "Rose Print Anarkali",
+    detail: "Mulmul Cotton Flared",
+    price: 4200,
+    badge: "Bestseller",
     href: "#",
   },
   {
     id: "bs-3",
-    name: "Gold Thread 2-Piece Set",
-    category: "2-Piece Sets",
-    price: 2499,
-    originalPrice: 2999,
-    image: "/assets/products/bestsellers/gold-thread-2-piece-set.jpg",
+    name: "Mustard Yellow Set",
+    detail: "Zari Yoke & Cigarette Pants",
+    price: 3500,
+    badge: "Bestseller",
     href: "#",
   },
   {
     id: "bs-4",
-    name: "Chili Red Draped Dress",
-    category: "Dresses",
-    price: 2299,
-    badge: "BESTSELLER",
-    image: "/assets/products/bestsellers/chili-red-draped-dress.jpg",
-    href: "#",
-  },
-  {
-    id: "bs-5",
-    name: "Ivory Bloom Kurti",
-    category: "Kurtis",
-    price: 1599,
-    image: "/assets/products/bestsellers/ivory-bloom-kurti.jpg",
-    href: "#",
-  },
-  {
-    id: "bs-6",
-    name: "Wine 3-Piece Set",
-    category: "3-Piece Sets",
-    price: 3499,
-    originalPrice: 3999,
-    image: "/assets/products/bestsellers/wine-3-piece-set.jpg",
+    name: "Emerald Silk Dress",
+    detail: "Pleated Maxi Silhouette",
+    price: 5500,
+    badge: "Bestseller",
     href: "#",
   },
 ];
 
-// ── Festive Collection (3 DEMO products) ──────────────────────
-
-export const FESTIVE_PRODUCTS: DemoProduct[] = [
+// ── Section 8: Explore Collections (5 collections) ────────────
+export const COLLECTIONS: CollectionItem[] = [
   {
-    id: "fp-1",
-    name: "Regal Zari Anarkali",
-    category: "Anarkali Sets",
-    price: 4299,
-    originalPrice: 4999,
-    badge: "FESTIVE",
-    image: "/assets/products/festive/regal-zari-anarkali.jpg",
+    id: "col-1",
+    name: "Everyday Elegance",
     href: "#",
   },
   {
-    id: "fp-2",
-    name: "Golden Hour 3-Piece Set",
-    category: "3-Piece Sets",
-    price: 3999,
-    badge: "FESTIVE",
-    image: "/assets/products/festive/golden-hour-3-piece-set.jpg",
+    id: "col-2",
+    name: "Festive Edit",
     href: "#",
   },
   {
-    id: "fp-3",
-    name: "Vermillion Silk Kurti",
-    category: "Kurtis",
-    price: 2499,
-    badge: "FESTIVE",
-    image: "/assets/products/festive/vermillion-silk-kurti.jpg",
+    id: "col-3",
+    name: "Statement Kurtis",
+    href: "#",
+  },
+  {
+    id: "col-4",
+    name: "Modern Anarkalis",
+    href: "#",
+  },
+  {
+    id: "col-5",
+    name: "Timeless Neutrals",
     href: "#",
   },
 ];
 
-// ── Customer / Footer Links ──────────────────────────────────
+// ── Section 9: Customer Reviews (3 reviews) ───────────────────
+export const REVIEWS: ReviewItem[] = [
+  {
+    id: "rev-1",
+    text: "The quality is exceptional. The Crimson Anarkali fits perfectly and the fabric feels incredibly luxurious.",
+    author: "Priya S.",
+    location: "Mumbai",
+    rating: 5,
+  },
+  {
+    id: "rev-2",
+    text: "I always find exactly what I need for festive occasions. The designs are modern but deeply rooted in tradition.",
+    author: "Ananya M.",
+    location: "Delhi",
+    rating: 5,
+  },
+  {
+    id: "rev-3",
+    text: "Beautiful everyday kurtis. They wash well, feel great, and I always get compliments when I wear them.",
+    author: "Riya K.",
+    location: "Bengaluru",
+    rating: 5,
+  },
+];
 
-export const CUSTOMER_LINKS: NavLink[] = [
-  { label: "Contact", href: "#" },
-  { label: "Shipping", href: "#" },
-  { label: "Returns", href: "#" },
-  { label: "Privacy", href: "#" },
-  { label: "Terms", href: "#" },
+// ── Footer Column Data ────────────────────────────────────────
+export const FOOTER_SHOP = [
+  { label: "New Arrivals", href: "#new-arrivals" },
+  { label: "Bestsellers", href: "#bestsellers" },
+  { label: "Kurtis", href: "#shop-by-category" },
+  { label: "Dresses", href: "#shop-by-category" },
+  { label: "Festive", href: "#festive" },
+];
+
+export const FOOTER_SHOP_BY_SET = [
+  { label: "2-Piece Sets", href: "#shop-by-set" },
+  { label: "3-Piece Sets", href: "#shop-by-set" },
+  { label: "Co-ord Sets", href: "#shop-by-set" },
+  { label: "Anarkali Sets", href: "#shop-by-category" },
+];
+
+export const FOOTER_CUSTOMER_CARE = [
+  { label: "Contact Us", href: "#" },
+  { label: "Shipping & Returns", href: "#" },
+  { label: "Track Order", href: "#" },
+  { label: "Size Guide", href: "#" },
+  { label: "FAQ", href: "#" },
+];
+
+export const FOOTER_ABOUT = [
+  { label: "Our Story", href: "#about" },
+  { label: "Store Locator", href: "#" },
+  { label: "Careers", href: "#" },
+];
+
+export const FOOTER_LEGAL = [
+  { label: "Privacy Policy", href: "#" },
+  { label: "Terms of Service", href: "#" },
 ];

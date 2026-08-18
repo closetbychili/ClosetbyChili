@@ -2,14 +2,18 @@
 
 @theme {
   --color-ink: #111111;
-  --color-chili: #b31317;
-  --color-chili-deep: #7a0d10;
-  --color-chili-light: #d93a3e;
+  --color-charcoal: #1c1917;
+  --color-chili: #8b000a;
+  --color-chili-deep: #680007;
+  --color-chili-light: #b31317;
+  --color-chili-soft: #fbf0f0;
 
   --color-gold: #d4af37;
   --color-gold-light: #e8cd6e;
-  --color-ivory: #e6dcc8;
-  --color-cream: #f7f3ee;
+  --color-ivory: #fff8f7;
+  --color-cream: #fbf7f4;
+  --color-blush: #faeceb;
+  --color-blush-soft: #fcf4f3;
 
   --font-display: var(--font-cinzel), serif;
   --font-body: var(--font-montserrat), sans-serif;
@@ -41,19 +45,11 @@
 
 @keyframes slideIn {
   from {
+    opacity: 0;
     transform: translateX(-100%);
   }
   to {
     transform: translateX(0);
-  }
-}
-
-@keyframes slideOut {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
   }
 }
 
@@ -78,45 +74,37 @@
   animation: slideIn 0.35s ease-out both;
 }
 
-.animate-slide-out {
-  animation: slideOut 0.3s ease-in both;
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out both;
+}
+
+/* ── Custom Scrollbar Utilities ────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ── Base ─────────────────────────────────────────────────── */
 
 html {
-  background: #f7f3ee;
+  background: #fff8f7;
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  background: #f7f3ee;
+  background: #fff8f7;
   color: #111111;
   font-family: var(--font-montserrat), sans-serif;
+  overflow-x: hidden;
 }
 
 ::selection {
-  background: #b31317;
-  color: #f7f3ee;
-}
-
-/* ── Lenis (already installed, preserve compatibility) ──── */
-
-html.lenis {
-  height: auto;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
+  background: #8b000a;
+  color: #fff8f7;
 }
 
 /* ── Reduced Motion ──────────────────────────────────────── */

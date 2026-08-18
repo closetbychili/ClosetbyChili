@@ -1,120 +1,154 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  SHOP_BY_TYPE,
-  SHOP_BY_SET,
-  CUSTOMER_LINKS,
+  FOOTER_SHOP,
+  FOOTER_SHOP_BY_SET,
+  FOOTER_CUSTOMER_CARE,
+  FOOTER_ABOUT,
+  FOOTER_LEGAL,
 } from "@/lib/homepage-data";
 
 export default function Footer() {
   return (
-    <footer className="bg-ink text-cream/60">
-      {/* ── Main Footer ──────────────────────────────────── */}
-      <div className="mx-auto max-w-[1400px] px-6 pt-16 pb-12 lg:px-10 lg:pt-20 lg:pb-14">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
-          {/* ── Brand Column ─────────────────────────────── */}
-          <div className="lg:col-span-2">
-            <Image
-              src="/assets/brand/logo.png"
-              alt="Closet by Chili"
-              width={130}
-              height={52}
-              className="h-11 w-auto brightness-0 invert"
-            />
-            <p className="mt-5 max-w-xs text-xs leading-6 text-cream/40">
-              Contemporary ethnic wear designed for women who wear confidence as
-              beautifully as they wear tradition.
-            </p>
-            <p className="mt-5 text-[9px] uppercase tracking-[0.3em] text-gold/60">
-              Bold · Feminine · Timeless
-            </p>
-          </div>
-
-          {/* ── Shop by Type ─────────────────────────────── */}
+    <footer className="bg-[#8b000a] text-white">
+      {/* ── Main Footer Columns ───────────────────────────── */}
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 pt-16 sm:pt-20 pb-12 sm:pb-16 border-b border-white/15">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 sm:gap-10 lg:gap-8">
+          {/* Column 1: SHOP */}
           <div>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream/80 mb-5">
-              Shop by Type
-            </h3>
+            <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-gold-light mb-4 sm:mb-5 border-b border-white/15 pb-2">
+              Shop
+            </p>
             <ul className="space-y-2.5">
-              {SHOP_BY_TYPE.map((item) => (
-                <li key={item.label}>
+              {FOOTER_SHOP.map((link) => (
+                <li key={link.label}>
                   <Link
-                    href={item.href}
-                    className="text-xs text-cream/40 hover:text-cream transition-colors"
+                    href={link.href}
+                    className="text-xs sm:text-[13px] text-white/80 hover:text-gold-light transition-colors block py-0.5"
                   >
-                    {item.label}
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* ── Shop by Set ──────────────────────────────── */}
+          {/* Column 2: SHOP BY SET */}
           <div>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream/80 mb-5">
+            <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-gold-light mb-4 sm:mb-5 border-b border-white/15 pb-2">
               Shop by Set
-            </h3>
+            </p>
             <ul className="space-y-2.5">
-              {SHOP_BY_SET.map((item) => (
-                <li key={item.label}>
+              {FOOTER_SHOP_BY_SET.map((link) => (
+                <li key={link.label}>
                   <Link
-                    href={item.href}
-                    className="text-xs text-cream/40 hover:text-cream transition-colors"
+                    href={link.href}
+                    className="text-xs sm:text-[13px] text-white/80 hover:text-gold-light transition-colors block py-0.5"
                   >
-                    {item.label}
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* ── Customer ─────────────────────────────────── */}
+          {/* Column 3: CUSTOMER CARE */}
           <div>
-            <h3 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream/80 mb-5">
+            <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-gold-light mb-4 sm:mb-5 border-b border-white/15 pb-2">
               Customer Care
-            </h3>
+            </p>
             <ul className="space-y-2.5">
-              {CUSTOMER_LINKS.map((item) => (
-                <li key={item.label}>
+              {FOOTER_CUSTOMER_CARE.map((link) => (
+                <li key={link.label}>
                   <Link
-                    href={item.href}
-                    className="text-xs text-cream/40 hover:text-cream transition-colors"
+                    href={link.href}
+                    className="text-xs sm:text-[13px] text-white/80 hover:text-gold-light transition-colors block py-0.5"
                   >
-                    {item.label}
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
+          </div>
 
-            {/* Newsletter */}
-            <div className="mt-8">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream/80 mb-3">
-                Stay in the know
-              </p>
-              <p className="text-[10px] text-cream/30 mb-3">
-                Sign up for new arrivals, edits and private offers.
-              </p>
-              <div className="flex border-b border-cream/15 pb-2.5">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="min-w-0 flex-1 bg-transparent text-xs text-cream outline-none placeholder:text-cream/25"
-                  aria-label="Email for newsletter"
-                />
-                <button className="text-[9px] font-semibold uppercase tracking-[0.18em] text-cream/60 hover:text-cream transition-colors">
-                  Join
-                </button>
-              </div>
-            </div>
+          {/* Column 4: ABOUT */}
+          <div>
+            <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-gold-light mb-4 sm:mb-5 border-b border-white/15 pb-2">
+              About
+            </p>
+            <ul className="space-y-2.5">
+              {FOOTER_ABOUT.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-xs sm:text-[13px] text-white/80 hover:text-gold-light transition-colors block py-0.5"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 5: LEGAL */}
+          <div className="col-span-2 sm:col-span-1">
+            <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] text-gold-light mb-4 sm:mb-5 border-b border-white/15 pb-2">
+              Legal
+            </p>
+            <ul className="space-y-2.5">
+              {FOOTER_LEGAL.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-xs sm:text-[13px] text-white/80 hover:text-gold-light transition-colors block py-0.5"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
 
-      {/* ── Bottom Bar ───────────────────────────────────── */}
-      <div className="border-t border-cream/8">
-        <div className="mx-auto max-w-[1400px] px-6 py-6 lg:px-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-[9px] uppercase tracking-[0.15em] text-cream/25">
-          <p>© {new Date().getFullYear()} Closet by Chili. All rights reserved.</p>
-          <p>Bold. Feminine. Timeless.</p>
+      {/* ── Bottom Footer Area: Actual Logo, Socials, Copyright ── */}
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 py-8 sm:py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Actual Closet by Chili Logo Asset on Light Plaque */}
+        <div className="flex items-center gap-4">
+          <div className="relative w-[180px] sm:w-[220px] h-[52px] sm:h-[58px] bg-[#fff8f7] px-4 py-1.5 rounded-xs shadow-sm flex items-center justify-center">
+            <Image
+              src="/assets/brand/logo.png"
+              alt="Closet by Chili"
+              fill
+              className="object-contain p-1"
+            />
+          </div>
+        </div>
+
+        {/* Social Links */}
+        <div className="flex items-center gap-8 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/80">
+          <a
+            href="https://instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gold-light transition-colors"
+          >
+            Instagram
+          </a>
+          <span className="w-1.5 h-1.5 rounded-full bg-gold/50" />
+          <a
+            href="https://facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gold-light transition-colors"
+          >
+            Facebook
+          </a>
+        </div>
+
+        {/* Copyright */}
+        <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-white/70 text-center md:text-right font-medium">
+          © 2024 CLOSET BY CHILI. HANDCRAFTED IN INDIA.
         </div>
       </div>
     </footer>
