@@ -4,7 +4,7 @@ import { REVIEWS } from "@/lib/homepage-data";
 
 export default function CustomerReviews() {
   return (
-    <section className="py-20 sm:py-24 lg:py-28 px-5 sm:px-8 lg:px-12 bg-[#faeceb]/40 border-y border-ink/5">
+    <section className="py-16 sm:py-20 lg:py-24 px-5 sm:px-8 lg:px-12 bg-[#faeceb]/40 border-y border-ink/5">
       <div className="mx-auto max-w-[1440px]">
         {/* Section Heading */}
         <SectionHeading
@@ -15,11 +15,11 @@ export default function CustomerReviews() {
         />
 
         {/* 3 Review Cards Grid */}
-        <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+        <div className="mt-10 sm:mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {REVIEWS.map((review) => (
             <div
               key={review.id}
-              className="bg-[#fff8f7] border border-ink/8 p-8 sm:p-10 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-gold/50 transition-colors duration-300"
+              className="bg-[#fff8f7] border border-ink/8 p-6 sm:p-8 flex flex-col justify-between shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-gold/50 transition-colors duration-300"
             >
               <div>
                 {/* 5 Gold Stars */}
@@ -41,7 +41,7 @@ export default function CustomerReviews() {
               </div>
 
               {/* Author Info */}
-              <div className="mt-8 pt-6 border-t border-ink/8 flex items-center justify-between">
+              <div className="mt-6 pt-5 border-t border-ink/8 flex items-center justify-between">
                 <div>
                   <h3 className="font-display text-sm font-semibold text-ink tracking-wide">
                     {review.author}

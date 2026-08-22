@@ -78,11 +78,8 @@ export default function CategoryCard({
           </p>
         )}
 
-        <div className="mt-3 flex items-center gap-2 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.25em] text-white/80 group-hover:text-white transition-colors">
+        <div className="mt-3 text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.25em] text-white/80 group-hover:text-white transition-colors">
           <span>Explore</span>
-          <span className="transform transition-transform duration-300 group-hover:translate-x-1">
-            →
-          </span>
         </div>
       </div>
     </Link>

@@ -72,8 +72,8 @@ export default function Header() {
         className={`fixed top-0 left-0 right-0 z-50 w-full transition-[background-color,backdrop-filter,box-shadow,border-color] duration-300 ease-in-out ${headerContainerClasses}`}
       >
         {/* Main Header Bar: Logo on LEFT, Navigation in CENTER, Icons on RIGHT */}
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-12 h-[72px] sm:h-[80px] lg:h-[88px] flex items-center justify-between">
-          {/* ── LEFT ZONE: LOGO ON THE LEFT ── */}
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-12 h-[72px] sm:h-[80px] lg:h-[88px] flex items-center justify-between relative">
+          {/* ── LEFT ZONE: hamburger + desktop logo ── */}
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
             {/* Mobile Hamburger Button */}
             <button
@@ -84,41 +84,66 @@ export default function Header() {
               <Menu size={24} strokeWidth={1.5} />
             </button>
 
-            {/* Closet by Chili Logo */}
+            {/* Logo — Desktop only, stays in left zone */}
             <Link
               href="/"
               aria-label="Closet by Chili Home"
-              className="flex items-center group focus:outline-none"
+              className="hidden lg:flex items-center group focus:outline-none"
             >
-              <div className="relative w-[136px] h-[74px] flex items-center">
-                {/* White logo — transparent hero state */}
+              <div className="relative w-[136px] h-[74px]">
                 <Image
                   src="/assets/brand/logo_white.png"
                   alt="Closet by Chili"
                   fill
                   sizes="155px"
-                  className={`object-contain object-left transition-opacity duration-300 ${scrolled
-                    ? "opacity-0 pointer-events-none"
-                    : "opacity-100"
-                    }`}
+                  className={`object-contain object-center transition-opacity duration-300 ${
+                    scrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+                  }`}
                   priority
                 />
-
-                {/* Full-color logo — scrolled state */}
                 <Image
                   src="/assets/brand/logo.png"
                   alt="Closet by Chili"
                   fill
                   sizes="155px"
-                  className={`object-contain object-left transition-opacity duration-300 ${scrolled
-                    ? "opacity-100"
-                    : "opacity-0 pointer-events-none"
-                    }`}
+                  className={`object-contain object-center transition-opacity duration-300 ${
+                    scrolled ? "opacity-100" : "opacity-0 pointer-events-none"
+                  }`}
                   priority
                 />
               </div>
             </Link>
           </div>
+
+          {/* Logo — Mobile only, absolutely centered in the viewport */}
+          <Link
+            href="/"
+            aria-label="Closet by Chili Home"
+            className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center group focus:outline-none z-10"
+          >
+            <div className="relative w-[110px] h-[60px]">
+              <Image
+                src="/assets/brand/logo_white.png"
+                alt="Closet by Chili"
+                fill
+                sizes="120px"
+                className={`object-contain object-center transition-opacity duration-300 ${
+                  scrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+                }`}
+                priority
+              />
+              <Image
+                src="/assets/brand/logo.png"
+                alt="Closet by Chili"
+                fill
+                sizes="120px"
+                className={`object-contain object-center transition-opacity duration-300 ${
+                  scrolled ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+                priority
+              />
+            </div>
+          </Link>
 
           {/* ── CENTER ZONE: DESKTOP NAVIGATION ── */}
           <nav className="hidden lg:flex items-center justify-center gap-6 xl:gap-8 mx-auto px-4">
@@ -257,14 +282,14 @@ export default function Header() {
           {/* Drawer Panel */}
           <nav className="absolute inset-y-0 left-0 w-[320px] max-w-[85vw] bg-[#fff8f7] animate-slide-in flex flex-col shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-ink/8">
-              <div className="relative w-[145px]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-ink/8">
+              <div className="relative w-[105px] h-[56px]">
                 <Image
                   src="/assets/brand/logo.png"
                   alt="Closet by Chili"
-                  width={145}
-                  height={99}
-                  className="w-full h-auto object-contain object-left"
+                  fill
+                  sizes="105px"
+                  className="object-contain object-left"
                 />
               </div>
               <button

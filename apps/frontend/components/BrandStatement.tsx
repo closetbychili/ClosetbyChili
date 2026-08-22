@@ -1,6 +1,6 @@
 export default function BrandStatement() {
   return (
-    <section className="py-24 sm:py-32 lg:py-40 px-6 sm:px-12 bg-[#faeceb]/25 border-y border-ink/5">
+    <section className="py-16 sm:py-20 lg:py-24 px-6 sm:px-12 bg-[#faeceb]/25 border-y border-ink/5">
       <div className="mx-auto max-w-4xl text-center flex flex-col items-center">
         {/* Subtle decorative motif */}
         <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8">

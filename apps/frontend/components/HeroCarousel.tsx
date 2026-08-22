@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -9,6 +9,10 @@ import { HERO_SLIDES } from "@/lib/homepage-data";
 export default function HeroCarousel() {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const minSwipeDistance = 45;
 
   const nextSlide = useCallback(() => {
     setCurrent((prev) => (prev + 1) % HERO_SLIDES.length);
@@ -17,6 +21,25 @@ export default function HeroCarousel() {
   const prevSlide = useCallback(() => {
     setCurrent((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
   }, []);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const distance = touchStartX.current - touchEndX.current;
+    if (distance > minSwipeDistance) {
+      nextSlide();
+    } else if (distance < -minSwipeDistance) {
+      prevSlide();
+    }
+  };
 
   useEffect(() => {
     if (isPaused) return;
@@ -29,9 +52,12 @@ export default function HeroCarousel() {
   return (
     <section
       aria-label="Editorial Hero Carousel"
-      className="relative w-full min-h-screen h-screen bg-ink overflow-hidden"
+      className="relative w-full min-h-screen h-screen bg-ink overflow-hidden touch-pan-y"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       {/* ── Slide Images & Background Overlays ────────────────── */}
       {HERO_SLIDES.map((slide, index) => {

@@ -8,7 +8,7 @@ import { SETS } from "@/lib/homepage-data";
 
 export default function ShopBySet() {
   return (
-    <section id="shop-by-set" className="py-20 sm:py-24 lg:py-28 px-5 sm:px-8 lg:px-12 bg-[#fff8f7]">
+    <section id="shop-by-set" className="py-16 sm:py-20 lg:py-24 px-5 sm:px-8 lg:px-12 bg-[#fff8f7]">
       <div className="mx-auto max-w-[1440px]">
         {/* Section Heading */}
         <SectionHeading
@@ -19,7 +19,7 @@ export default function ShopBySet() {
         />
 
         {/* 3 Large Editorial Set Cards (4:5 Aspect Ratio) */}
-        <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+        <div className="mt-10 sm:mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {SETS.map((item, index) => (
             <SetCard key={item.id} item={item} index={index} />
           ))}
@@ -79,7 +79,7 @@ function SetCard({ item, index }: { item: (typeof SETS)[0]; index: number }) {
       </div>
 
       {/* Title Centered Below Image */}
-      <div className="mt-5 sm:mt-6 flex flex-col items-center">
+      <div className="mt-4 flex flex-col items-center">
         <h3 className="font-display text-xl sm:text-2xl text-ink group-hover:text-chili transition-colors">
           {item.name}
         </h3>
@@ -89,7 +89,7 @@ function SetCard({ item, index }: { item: (typeof SETS)[0]; index: number }) {
           </p>
         )}
         <span className="mt-2 text-[10px] uppercase tracking-[0.25em] font-semibold text-chili group-hover:underline">
-          Shop Collection →
+          Shop Collection
         </span>
       </div>
     </Link>

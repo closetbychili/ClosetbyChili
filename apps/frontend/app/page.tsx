@@ -7,7 +7,6 @@ import Bestsellers from "@/components/Bestsellers";
 import FestiveCollection from "@/components/FestiveCollection";
 import AboutSection from "@/components/AboutSection";
 import BrandStatement from "@/components/BrandStatement";
-import ExploreCollections from "@/components/ExploreCollections";
 import CustomerReviews from "@/components/CustomerReviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
@@ -43,10 +42,7 @@ export default function Home() {
         {/* ── Section 7: Brand Statement (Editorial Luxury Campaign Quote) ── */}
         <BrandStatement />
 
-        {/* ── Section 8: Explore Collections (Horizontal Scroll) ── */}
-        <ExploreCollections />
-
-        {/* ── Section 9: Customer Reviews (Loved by You) ─────────── */}
+        {/* ── Section 8: Customer Reviews (Loved by You) ─────────── */}
         <CustomerReviews />
 
         {/* ── Section 10: Newsletter (Join the Chili List) ───────── */}

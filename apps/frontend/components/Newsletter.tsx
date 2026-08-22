@@ -16,7 +16,7 @@ export default function Newsletter() {
   };
 
   return (
-    <section className="py-20 sm:py-24 lg:py-28 px-5 sm:px-8 lg:px-12 bg-[#faeceb] border-t border-ink/5">
+    <section className="py-16 sm:py-20 lg:py-24 px-5 sm:px-8 lg:px-12 bg-[#faeceb] border-t border-ink/5">
       <div className="mx-auto max-w-2xl text-center">
         {/* Section Heading */}
         <SectionHeading
