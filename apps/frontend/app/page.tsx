@@ -11,7 +11,7 @@ import CustomerReviews from "@/components/CustomerReviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 
-import { getCategories, getProducts } from "@/lib/api";
+import { getCategories, getProducts, ApiClientError } from "@/lib/api";
 import { mapCategoryToUi, mapProductToUi } from "@/lib/adapters/catalog-adapter";
 import type { CategoryItem, ProductItem } from "@/lib/homepage-data";
 
@@ -55,8 +55,14 @@ export default async function Home() {
 
     categoriesList = selectedCategories.slice(0, 6).map(mapCategoryToUi);
   } catch (error) {
-    // Log server-side; components gracefully fall back or render empty states
-    console.error("Failed to load catalog data for homepage:", error);
+    if (error instanceof ApiClientError && error.code === "NETWORK_ERROR") {
+      // Backend not running on localhost:8000 during standalone frontend development
+      console.warn(
+        "[Closet by Chilli] Backend API is offline on localhost:8000. Homepage is using fallback catalog data."
+      );
+    } else {
+      console.error("Failed to load catalog data for homepage:", error);
+    }
   }
 
   return (

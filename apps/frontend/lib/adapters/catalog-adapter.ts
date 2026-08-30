@@ -24,6 +24,57 @@ export const PRODUCT_IMAGE_MAP: Record<string, string> = {
 };
 
 /**
+ * Gallery image assets for Product Detail Page.
+ */
+export const PRODUCT_GALLERY_MAP: Record<string, string[]> = {
+  'sunflower-block-print-kurti': [
+    '/assets/products/kurti-1.jpg',
+    '/assets/products/kurti-2.jpg',
+    '/assets/hero/hero-2.jpg',
+  ],
+  'chikankari-embroidered-kurti': [
+    '/assets/products/kurti-2.jpg',
+    '/assets/products/kurti-3.jpg',
+    '/assets/hero/hero-3.jpg',
+  ],
+  'royal-silk-anarkali-set': [
+    '/assets/products/kurti-3.jpg',
+    '/assets/products/kurti-1.jpg',
+    '/assets/hero/hero-4.jpg',
+  ],
+  'floral-cotton-2-piece-kurta-set': [
+    '/assets/products/kurti-1.jpg',
+    '/assets/hero/hero-3.jpg',
+  ],
+  'ethnic-embroidered-3-piece-suit': [
+    '/assets/products/kurti-2.jpg',
+    '/assets/hero/hero-5.jpg',
+  ],
+  'maxi-ethnic-dress': [
+    '/assets/products/kurti-3.jpg',
+    '/assets/hero/hero-4.jpg',
+  ],
+  'bandhani-print-dupatta': [
+    '/assets/products/kurti-1.jpg',
+    '/assets/hero/hero-5.jpg',
+  ],
+  'rayon-palazzo-pants': [
+    '/assets/products/kurti-2.jpg',
+    '/assets/hero/hero-2.jpg',
+  ],
+};
+
+/**
+ * Resolves gallery images for a given product slug.
+ */
+export function getProductGallery(slug: string): string[] {
+  return (
+    PRODUCT_GALLERY_MAP[slug] ||
+    (PRODUCT_IMAGE_MAP[slug] ? [PRODUCT_IMAGE_MAP[slug]] : [])
+  );
+}
+
+/**
  * Editorial subtitles for catalog taxonomy categories.
  */
 export const CATEGORY_SUBTITLE_MAP: Record<string, string> = {

@@ -6,7 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductFilters from "@/components/ProductFilters";
 import ProductPagination from "@/components/ProductPagination";
 
-import { getCategories, getCollections, getProducts } from "@/lib/api";
+import { getCategories, getCollections, getProducts, ApiClientError } from "@/lib/api";
 import { mapProductToUi } from "@/lib/adapters/catalog-adapter";
 import type { CategorySummary, CollectionSummary } from "@/lib/api/types";
 import type { ProductItem } from "@/lib/homepage-data";
@@ -94,7 +94,13 @@ export default async function ProductsPage({
         slug: c.slug,
       }));
   } catch (error) {
-    console.error("Error loading products catalog:", error);
+    if (error instanceof ApiClientError && error.code === "NETWORK_ERROR") {
+      console.warn(
+        "[Closet by Chilli] Backend API is offline on localhost:8000. Catalog page displaying error boundary."
+      );
+    } else {
+      console.error("Error loading products catalog:", error);
+    }
     apiError = true;
   }
 

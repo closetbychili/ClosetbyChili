@@ -19,6 +19,19 @@ from pathlib import Path
 # BASE_DIR points to apps/backend/
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Load .env file from project root or apps/backend if present
+for _env_path in [BASE_DIR / ".env", BASE_DIR.parent.parent / ".env"]:
+    if _env_path.is_file():
+        try:
+            with open(_env_path, encoding="utf-8") as _f:
+                for _line in _f:
+                    _line = _line.strip()
+                    if _line and not _line.startswith("#") and "=" in _line:
+                        _k, _v = _line.split("=", 1)
+                        os.environ.setdefault(_k.strip(), _v.strip().strip("'\""))
+        except Exception:
+            pass
+
 # ============================================================
 # Security
 # ============================================================

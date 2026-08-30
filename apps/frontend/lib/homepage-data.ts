@@ -164,7 +164,7 @@ export const NEW_ARRIVALS: ProductItem[] = [
     detail: "Silk Blend",
     price: 4800,
     badge: "New",
-    image: "/assets/products/kurti-4.jpg",
+    image: "/assets/products/kurti-1.jpg",
     href: "#",
   },
 ];
