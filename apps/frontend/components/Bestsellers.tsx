@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import ProductCard from "./ProductCard";
+import type { ProductItem } from "@/lib/homepage-data";
 import { BESTSELLERS } from "@/lib/homepage-data";
 
-export default function Bestsellers() {
+export default function Bestsellers({
+  products,
+}: {
+  products?: ProductItem[];
+}) {
+  const items = products !== undefined ? products : BESTSELLERS;
+
   return (
     <section
       id="bestsellers"
@@ -32,16 +39,24 @@ export default function Bestsellers() {
         </div>
 
         {/* ── Swipeable Carousel: 2 Cards on Mobile, 4 Cards on Desktop ───────── */}
-        <div className="mt-8 sm:mt-10 flex gap-3 sm:gap-6 lg:gap-8 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory">
-          {BESTSELLERS.map((product) => (
-            <div
-              key={product.id}
-              className="w-[calc(50%-6px)] sm:w-[calc(50%-12px)] lg:w-[calc(25%-24px)] flex-shrink-0 snap-start"
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+        {items.length > 0 ? (
+          <div className="mt-8 sm:mt-10 flex gap-3 sm:gap-6 lg:gap-8 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory">
+            {items.map((product) => (
+              <div
+                key={product.id}
+                className="w-[calc(50%-6px)] sm:w-[calc(50%-12px)] lg:w-[calc(25%-24px)] flex-shrink-0 snap-start"
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 text-center py-12 border border-ink/10 rounded-sm bg-[#faf3ef]/60">
+            <p className="text-sm font-display text-ink/70">
+              Bestseller catalog is being refreshed.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

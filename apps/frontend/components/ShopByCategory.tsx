@@ -1,8 +1,15 @@
 import SectionHeading from "./SectionHeading";
 import CategoryCard from "./CategoryCard";
+import type { CategoryItem } from "@/lib/homepage-data";
 import { CATEGORIES } from "@/lib/homepage-data";
 
-export default function ShopByCategory() {
+export default function ShopByCategory({
+  categories,
+}: {
+  categories?: CategoryItem[];
+}) {
+  const items = categories !== undefined ? categories : CATEGORIES;
+
   return (
     <section
       id="shop-by-category"
@@ -18,15 +25,23 @@ export default function ShopByCategory() {
         />
 
         {/* 6 Category Cards: 3 columns x 2 rows on desktop, 2 columns on mobile */}
-        <div className="mt-10 sm:mt-12 grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {CATEGORIES.map((category, index) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              index={index}
-            />
-          ))}
-        </div>
+        {items.length > 0 ? (
+          <div className="mt-10 sm:mt-12 grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            {items.map((category, index) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                index={index}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-12 text-center py-12 border border-ink/10 rounded-sm bg-[#faf3ef]/60">
+            <p className="text-sm font-display text-ink/70">
+              Categories are currently being updated.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

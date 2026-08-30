@@ -11,7 +11,54 @@ import CustomerReviews from "@/components/CustomerReviews";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
 
-export default function Home() {
+import { getCategories, getProducts } from "@/lib/api";
+import { mapCategoryToUi, mapProductToUi } from "@/lib/adapters/catalog-adapter";
+import type { CategoryItem, ProductItem } from "@/lib/homepage-data";
+
+export default async function Home() {
+  let newArrivalsProducts: ProductItem[] | undefined = undefined;
+  let bestsellersProducts: ProductItem[] | undefined = undefined;
+  let categoriesList: CategoryItem[] | undefined = undefined;
+
+  try {
+    const [newArrivalsRes, bestsellersRes, categoriesRes] = await Promise.all([
+      getProducts(
+        { collection: "new-arrivals", page_size: 4 },
+        { next: { revalidate: 60 } }
+      ),
+      getProducts(
+        { collection: "bestsellers", page_size: 8 },
+        { next: { revalidate: 60 } }
+      ),
+      getCategories(
+        { page_size: 20 },
+        { next: { revalidate: 60 } }
+      ),
+    ]);
+
+    newArrivalsProducts = newArrivalsRes.results.map((p) =>
+      mapProductToUi(p, "New")
+    );
+
+    bestsellersProducts = bestsellersRes.results.map((p) =>
+      mapProductToUi(p, "Bestseller")
+    );
+
+    // Filter to active root categories (parent is null)
+    const rootCategories = categoriesRes.results.filter(
+      (c) => c.parent === null && c.is_active
+    );
+    const selectedCategories =
+      rootCategories.length > 0
+        ? rootCategories
+        : categoriesRes.results.filter((c) => c.is_active);
+
+    categoriesList = selectedCategories.slice(0, 6).map(mapCategoryToUi);
+  } catch (error) {
+    // Log server-side; components gracefully fall back or render empty states
+    console.error("Failed to load catalog data for homepage:", error);
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fff8f7] text-[#111111] font-body selection:bg-[#8b000a] selection:text-[#fff8f7]">
       {/* ── Sticky Header with 3 Balanced Zones & Real Logo ── */}
@@ -22,16 +69,16 @@ export default function Home() {
         <HeroCarousel />
 
         {/* ── Section 1: New Arrivals (4 Cards in 1 Row) ────────── */}
-        <NewArrivals />
+        <NewArrivals products={newArrivalsProducts} />
 
         {/* ── Section 2: Shop by Category (6 Editorial 3:4 Cards) ── */}
-        <ShopByCategory />
+        <ShopByCategory categories={categoriesList} />
 
         {/* ── Section 3: Shop by Set (3 Large 4:5 Editorial Cards) ── */}
         <ShopBySet />
 
         {/* ── Section 4: Bestsellers (Warm Blush Background + Carousel) ── */}
-        <Bestsellers />
+        <Bestsellers products={bestsellersProducts} />
 
         {/* ── Section 5: Festive Collection (Full-Width Editorial Banner) ── */}
         <FestiveCollection />
