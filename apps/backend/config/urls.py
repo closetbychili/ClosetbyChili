@@ -6,22 +6,12 @@ Domain-specific URL modules will be added as apps are created.
 """
 
 from django.contrib import admin
-from django.http import JsonResponse
-from django.urls import path
-
-
-def api_root(request):
-    """Health check / API root endpoint."""
-    return JsonResponse(
-        {
-            "service": "Closet by Chilli API",
-            "version": "0.1.0",
-            "status": "ok",
-        }
-    )
-
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/v1/", api_root, name="api-root"),
+    path("api/v1/", include("config.api_v1_urls")),
 ]
+
+handler404 = "apps.common.views.custom_404_handler"
+handler500 = "apps.common.views.custom_500_handler"
