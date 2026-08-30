@@ -174,22 +174,22 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 class ProductVariantSummarySerializer(serializers.ModelSerializer):
     """
-    Nested variant representation for Product Detail responses.
+    Nested variant representation for public Product Detail API responses.
 
-    Omits redundant foreign key back-reference to the parent Product.
+    WHOLESALE PRICING DECISION:
+    `wholesale_price` is intentionally excluded from this public serializer.
+    The field exists on the model and is included in the admin-only
+    `ProductVariantSerializer`, but must not be exposed over unauthenticated
+    public catalog responses. Wholesale price visibility will be enforced
+    server-side via a dedicated wholesale-authenticated serializer path
+    when Supabase Auth / wholesale roles are implemented (future sprint).
+    See: docs/23-search-catalog-architecture.md §9, docs/06-domain-model.md.
     """
 
     retail_price = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
         coerce_to_string=True,
-    )
-    wholesale_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        coerce_to_string=True,
-        allow_null=True,
-        required=False,
     )
 
     class Meta:
@@ -200,7 +200,6 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
             "size",
             "color",
             "retail_price",
-            "wholesale_price",
             "is_active",
         ]
         read_only_fields = fields

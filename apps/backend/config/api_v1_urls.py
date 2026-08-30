@@ -6,7 +6,7 @@ Mounts the v1 API root and provides extension points for domain APIs.
 
 from typing import Any
 
-from django.urls import path
+from django.urls import include, path
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -27,6 +27,11 @@ def api_v1_root(request: Any) -> Response:
             "status": "healthy",
             "endpoints": {
                 "health": "/api/v1/",
+                "catalog": {
+                    "categories": "/api/v1/catalog/categories/",
+                    "collections": "/api/v1/catalog/collections/",
+                    "products": "/api/v1/catalog/products/",
+                },
             },
         }
     )
@@ -34,4 +39,5 @@ def api_v1_root(request: Any) -> Response:
 
 urlpatterns = [
     path("", api_v1_root, name="api-v1-root"),
+    path("catalog/", include("apps.catalog.urls")),
 ]
