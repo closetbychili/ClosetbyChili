@@ -138,7 +138,7 @@ export const NEW_ARRIVALS: ProductItem[] = [
     price: 4500,
     badge: "New",
     image: "/assets/products/kurti-1.jpg",
-    href: "#",
+    href: "/products/sunflower-block-print-kurti",
   },
   {
     id: "na-2",
@@ -147,7 +147,7 @@ export const NEW_ARRIVALS: ProductItem[] = [
     price: 3200,
     badge: "New",
     image: "/assets/products/kurti-2.jpg",
-    href: "#",
+    href: "/products/chikankari-embroidered-kurti",
   },
   {
     id: "na-3",
@@ -156,7 +156,7 @@ export const NEW_ARRIVALS: ProductItem[] = [
     price: 5100,
     badge: "New",
     image: "/assets/products/kurti-3.jpg",
-    href: "#",
+    href: "/products/royal-silk-anarkali-set",
   },
   {
     id: "na-4",
@@ -165,7 +165,7 @@ export const NEW_ARRIVALS: ProductItem[] = [
     price: 4800,
     badge: "New",
     image: "/assets/products/kurti-1.jpg",
-    href: "#",
+    href: "/products/floral-cotton-2-piece-kurta-set",
   },
 ];
 
@@ -175,37 +175,37 @@ export const CATEGORIES: CategoryItem[] = [
     id: "cat-1",
     name: "Kurtis",
     subtitle: "Everyday cuts & relaxed silhouettes",
-    href: "#",
+    href: "/products?category=kurtis",
   },
   {
     id: "cat-2",
     name: "Kurta Sets",
     subtitle: "Coordinated elegance for every day",
-    href: "#",
+    href: "/products?category=kurta-sets",
   },
   {
     id: "cat-3",
     name: "Dresses",
     subtitle: "Modern draping with ethnic charm",
-    href: "#",
+    href: "/products?category=dresses",
   },
   {
     id: "cat-4",
     name: "Anarkali Sets",
     subtitle: "Statement royal flare & twirl",
-    href: "#",
+    href: "/products?category=anarkali-sets",
   },
   {
     id: "cat-5",
     name: "Bottom Wear",
     subtitle: "Tailored pants, palazzos & trousers",
-    href: "#",
+    href: "/products?category=bottom-wear",
   },
   {
     id: "cat-6",
     name: "Dupattas",
     subtitle: "Handloom silks, organza & zari trims",
-    href: "#",
+    href: "/products?category=dupattas",
   },
 ];
 
@@ -239,7 +239,7 @@ export const BESTSELLERS: ProductItem[] = [
     detail: "Chanderi Silk Blend",
     price: 2800,
     badge: "Bestseller",
-    href: "#",
+    href: "/products/chikankari-embroidered-kurti",
   },
   {
     id: "bs-2",
@@ -247,7 +247,7 @@ export const BESTSELLERS: ProductItem[] = [
     detail: "Mulmul Cotton Flared",
     price: 4200,
     badge: "Bestseller",
-    href: "#",
+    href: "/products/royal-silk-anarkali-set",
   },
   {
     id: "bs-3",
@@ -255,7 +255,7 @@ export const BESTSELLERS: ProductItem[] = [
     detail: "Zari Yoke & Cigarette Pants",
     price: 3500,
     badge: "Bestseller",
-    href: "#",
+    href: "/products/ethnic-embroidered-3-piece-suit",
   },
   {
     id: "bs-4",
@@ -263,7 +263,7 @@ export const BESTSELLERS: ProductItem[] = [
     detail: "Pleated Maxi Silhouette",
     price: 5500,
     badge: "Bestseller",
-    href: "#",
+    href: "/products/maxi-ethnic-dress",
   },
 ];
 

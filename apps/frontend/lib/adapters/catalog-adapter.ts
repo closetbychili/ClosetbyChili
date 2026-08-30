@@ -142,6 +142,6 @@ export function mapCategoryToUi(category: Category): CategoryItem {
       category.description ||
       undefined,
     image: CATEGORY_IMAGE_MAP[category.slug] || undefined,
-    href: `/categories/${category.slug}`,
+    href: `/products?category=${category.slug}`,
   };
 }

@@ -82,7 +82,7 @@ describe('Catalog Data Adapters', () => {
       expect(uiItem.name).toBe('Kurtis');
       expect(uiItem.subtitle).toBe('Everyday cuts & relaxed silhouettes');
       expect(uiItem.image).toBe('/assets/hero/hero-2.jpg');
-      expect(uiItem.href).toBe('/categories/kurtis');
+      expect(uiItem.href).toBe('/products?category=kurtis');
     });
   });
 });

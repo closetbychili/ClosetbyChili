@@ -17,7 +17,7 @@ export default function ProductCard({
   const [imgError, setImgError] = useState(!product.image);
 
   return (
-    <article className="group relative flex flex-col w-full">
+    <Link href={product.href} className="group relative flex flex-col w-full focus:outline-none">
       {/* ── Image Container ───────────────────────────────── */}
       <div className={`relative ${aspectRatio} w-full overflow-hidden bg-[#f4ebe6]`}>
         {/* Actual Image if provided and loaded */}
@@ -91,9 +91,7 @@ export default function ProductCard({
         </p>
 
         <h3 className="mt-1 font-display text-sm sm:text-base text-ink group-hover:text-chili transition-colors leading-snug">
-          <Link href={product.href} className="focus:outline-none">
-            {product.name}
-          </Link>
+          {product.name}
         </h3>
 
         <div className="mt-2 flex items-baseline gap-2">
@@ -107,6 +105,6 @@ export default function ProductCard({
           )}
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
