@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { ShoppingBag, Check, ShieldCheck, Truck, RefreshCw } from "lucide-react";
 import type { ProductVariantSummary } from "@/lib/api/types";
+import { useCart } from "@/components/CartContext";
 
 interface ProductVariantSelectorProps {
   productName: string;
@@ -22,6 +23,8 @@ export default function ProductVariantSelector({
   variants,
   onAddToCart,
 }: ProductVariantSelectorProps) {
+  const { addToCart } = useCart();
+
   // Extract unique active colors and sizes
   const activeVariants = useMemo(
     () => variants.filter((v) => v.is_active),
@@ -55,6 +58,7 @@ export default function ProductVariantSelector({
   );
   const [quantity, setQuantity] = useState<number>(1);
   const [addedFeedback, setAddedFeedback] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string>("");
 
   // Resolve matching active variant based on current color & size selections
@@ -82,27 +86,38 @@ export default function ProductVariantSelector({
     );
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!currentVariant) {
       setValidationError("Please select an available size and color configuration.");
       return;
     }
 
     setValidationError("");
+    setIsSubmitting(true);
 
-    if (onAddToCart) {
-      onAddToCart({
-        productName,
-        productSlug,
-        variant: currentVariant,
-        quantity,
-      });
+    try {
+      if (onAddToCart) {
+        onAddToCart({
+          productName,
+          productSlug,
+          variant: currentVariant,
+          quantity,
+        });
+      }
+
+      setAddedFeedback(true);
+      setTimeout(() => {
+        setAddedFeedback(false);
+      }, 3500);
+
+      await addToCart(currentVariant.id, quantity);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to add item to bag. Please try again.";
+      setValidationError(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setAddedFeedback(true);
-    setTimeout(() => {
-      setAddedFeedback(false);
-    }, 3500);
   };
 
   const currentPrice = currentVariant
@@ -257,15 +272,15 @@ export default function ProductVariantSelector({
         <button
           type="button"
           onClick={handleAddToCart}
-          disabled={!currentVariant}
+          disabled={!currentVariant || isSubmitting}
           className={`flex-1 h-12 flex items-center justify-center gap-2.5 px-8 text-xs font-semibold uppercase tracking-[0.25em] transition-all duration-300 ${
-            currentVariant
+            currentVariant && !isSubmitting
               ? "bg-[#8b000a] text-[#fff8f7] hover:bg-[#6c0008] shadow-md hover:shadow-lg transform active:scale-[0.99]"
               : "bg-ink/30 text-white/70 cursor-not-allowed"
           }`}
         >
           <ShoppingBag size={16} />
-          {addedFeedback ? "Added to Bag!" : "Add to Bag"}
+          {isSubmitting ? "Adding..." : addedFeedback ? "Added to Bag!" : "Add to Bag"}
         </button>
       </div>
 

@@ -32,6 +32,7 @@ def api_v1_root(request: Any) -> Response:
                     "collections": "/api/v1/catalog/collections/",
                     "products": "/api/v1/catalog/products/",
                 },
+                "cart": "/api/v1/cart/",
             },
         }
     )
@@ -40,4 +41,5 @@ def api_v1_root(request: Any) -> Response:
 urlpatterns = [
     path("", api_v1_root, name="api-v1-root"),
     path("catalog/", include("apps.catalog.urls")),
+    path("cart/", include("apps.cart.urls")),
 ]

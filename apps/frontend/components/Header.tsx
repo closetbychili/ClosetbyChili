@@ -16,13 +16,14 @@ import {
   SHOP_BY_TYPE,
   SHOP_BY_SET_NAV,
 } from "@/lib/homepage-data";
+import { useCart } from "@/components/CartContext";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [wishlistCount] = useState(0);
-  const [cartCount] = useState(0);
+  const { itemCount, openDrawer } = useCart();
   const shopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -53,18 +54,13 @@ export default function Header() {
     shopTimeoutRef.current = setTimeout(() => setShopOpen(false), 200);
   };
 
-  // State-dependent styles
+  // Always solid — ivory background, dark text, dark logo
   const headerContainerClasses = scrolled
-    ? "bg-[#fff8f7]/96 backdrop-blur-[12px] border-b border-[#111111]/8 shadow-[0_2px_14px_rgba(0,0,0,0.05)]"
-    : "bg-black/[0.08] backdrop-blur-[8px] border-b border-white/10 shadow-none";
+    ? "bg-[#fff8f7] border-b border-[#111111]/10 shadow-[0_2px_18px_rgba(0,0,0,0.07)]"
+    : "bg-[#fff8f7] border-b border-[#111111]/8 shadow-[0_1px_6px_rgba(0,0,0,0.04)]";
 
-  const navLinkClasses = scrolled
-    ? "text-[#111111]/85 hover:text-[#8b000a]"
-    : "text-white/95 hover:text-gold drop-shadow-sm";
-
-  const iconClasses = scrolled
-    ? "text-[#111111]/80 hover:text-[#8b000a]"
-    : "text-white/95 hover:text-gold drop-shadow-sm";
+  const navLinkClasses = "text-[#111111]/85 hover:text-[#8b000a]";
+  const iconClasses = "text-[#111111]/80 hover:text-[#8b000a]";
 
   return (
     <>
@@ -92,23 +88,11 @@ export default function Header() {
             >
               <div className="relative w-[136px] h-[74px]">
                 <Image
-                  src="/assets/brand/logo_white.png"
-                  alt="Closet by Chili"
-                  fill
-                  sizes="155px"
-                  className={`object-contain object-center transition-opacity duration-300 ${
-                    scrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-                  }`}
-                  priority
-                />
-                <Image
                   src="/assets/brand/logo.png"
                   alt="Closet by Chili"
                   fill
                   sizes="155px"
-                  className={`object-contain object-center transition-opacity duration-300 ${
-                    scrolled ? "opacity-100" : "opacity-0 pointer-events-none"
-                  }`}
+                  className="object-contain object-center"
                   priority
                 />
               </div>
@@ -123,23 +107,11 @@ export default function Header() {
           >
             <div className="relative w-[110px] h-[60px]">
               <Image
-                src="/assets/brand/logo_white.png"
-                alt="Closet by Chili"
-                fill
-                sizes="120px"
-                className={`object-contain object-center transition-opacity duration-300 ${
-                  scrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-                }`}
-                priority
-              />
-              <Image
                 src="/assets/brand/logo.png"
                 alt="Closet by Chili"
                 fill
                 sizes="120px"
-                className={`object-contain object-center transition-opacity duration-300 ${
-                  scrolled ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
+                className="object-contain object-center"
                 priority
               />
             </div>
@@ -257,12 +229,13 @@ export default function Header() {
             {/* Shopping Bag */}
             <button
               aria-label="Shopping bag"
+              onClick={openDrawer}
               className={`relative p-1.5 transition-colors duration-300 ${iconClasses}`}
             >
               <ShoppingBag size={19} strokeWidth={1.5} />
-              {cartCount > 0 && (
+              {itemCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-[#8b000a] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {cartCount}
+                  {itemCount}
                 </span>
               )}
             </button>

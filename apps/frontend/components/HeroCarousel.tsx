@@ -76,7 +76,7 @@ export default function HeroCarousel() {
                 alt={slide.heading}
                 fill
                 priority={index === 0}
-                className={`object-cover object-center transform transition-transform duration-[8000ms] ease-out ${
+                className={`object-cover object-top transform transition-transform duration-[8000ms] ease-out ${
                   isActive ? "scale-105" : "scale-100"
                 }`}
                 sizes="100vw"

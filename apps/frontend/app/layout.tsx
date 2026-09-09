@@ -14,6 +14,9 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+import { CartProvider } from "@/components/CartContext";
+import CartDrawer from "@/components/CartDrawer";
+
 export const metadata: Metadata = {
   title: "Closet by Chili | Bold. Feminine. Timeless.",
   description:
@@ -28,7 +31,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${cinzel.variable} ${montserrat.variable}`}>
-        {children}
+        <CartProvider>
+          {children}
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );

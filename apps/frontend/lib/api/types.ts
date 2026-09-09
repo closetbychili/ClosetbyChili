@@ -153,3 +153,54 @@ export interface RequestOptions extends RequestInit {
     tags?: string[];
   };
 }
+
+// =============================================================================
+// Cart Domain Types
+// =============================================================================
+
+export interface CartProductSummary {
+  id: string;
+  name: string;
+  slug: string;
+  category_name?: string;
+  category_slug?: string;
+}
+
+export interface CartVariantSummary {
+  id: string;
+  sku: string;
+  size: string;
+  color: string;
+  retail_price: string;
+  product: CartProductSummary;
+}
+
+export interface CartItem {
+  id: string;
+  variant: CartVariantSummary;
+  quantity: number;
+  unit_price: string;
+  line_total: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Cart {
+  id: string | null;
+  session_key: string | null;
+  items: CartItem[];
+  item_count: number;
+  subtotal: string;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AddToCartPayload {
+  variant_id: string;
+  quantity?: number;
+}
+
+export interface UpdateCartItemPayload {
+  quantity: number;
+}

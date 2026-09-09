@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "apps.common",
     "apps.catalog",
     "apps.inventory",
+    "apps.cart",
 ]
 
 MIDDLEWARE = [
@@ -183,6 +184,8 @@ REST_FRAMEWORK = {
 }
 
 
+from corsheaders.defaults import default_headers
+
 # ============================================================
 # CORS
 # ============================================================
@@ -191,6 +194,16 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-cart-session",
+]
+
+CORS_EXPOSE_HEADERS = [
+    "x-cart-session",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # ============================================================
 # Celery
