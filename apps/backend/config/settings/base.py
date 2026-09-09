@@ -69,7 +69,6 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "corsheaders",
-    "whitenoise.runserver_nostatic",  # serve compressed static in dev runserver too
     # Project apps
     "apps.common",
     "apps.catalog",
@@ -79,8 +78,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # WhiteNoise must come directly after SecurityMiddleware
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -169,11 +166,10 @@ USE_I18N = True
 USE_TZ = True
 
 # ============================================================
-# Static Files — WhiteNoise with Brotli/gzip compression
+# Static Files
 # ============================================================
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ============================================================
 # Media Files

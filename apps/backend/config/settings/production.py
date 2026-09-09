@@ -59,3 +59,13 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # CORS — strict in production
 # ============================================================
 CORS_ALLOW_ALL_ORIGINS = False
+
+# ============================================================
+# WhiteNoise — Production Static Files
+# ============================================================
+MIDDLEWARE = [
+    MIDDLEWARE[0],  # django.middleware.security.SecurityMiddleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    *MIDDLEWARE[1:],
+]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

@@ -169,7 +169,7 @@ describe('Cart UI and Integrations', () => {
 
     render(
       <CartProvider>
-        <Header variant="solid" />
+        <Header />
         <CartDrawer />
       </CartProvider>
     );

@@ -18,7 +18,11 @@ import {
 } from "@/lib/homepage-data";
 import { useCart } from "@/components/CartContext";
 
-export default function Header() {
+export interface HeaderProps {
+  variant?: "solid" | "transparent";
+}
+
+export default function Header({ variant: _variant }: HeaderProps = {}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
