@@ -1,0 +1,55 @@
+# ============================================================
+# Closet by Chilli — Render Deployment Blueprint
+# ============================================================
+# Docs: https://render.com/docs/blueprint-spec
+#
+# NOTE: We do NOT create a Render PostgreSQL here because we
+# connect to the existing Supabase PostgreSQL via DATABASE_URL.
+# ============================================================
+
+services:
+  - type: web
+    name: closetbychili-api
+    runtime: python
+    region: singapore          # closest to IN; change to oregon/frankfurt if needed
+    plan: free                 # upgrade to starter for always-on
+
+    # -- Root & Build -----------------------------------------
+    rootDir: apps/backend
+    buildCommand: >
+      pip install -r requirements/production.txt &&
+      python manage.py collectstatic --noinput
+    startCommand: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:$PORT
+      --workers 2
+      --threads 2
+      --timeout 120
+      --log-level info
+
+    # -- Health Check -----------------------------------------
+    healthCheckPath: /api/v1/health/
+
+    # -- Environment Variables --------------------------------
+    # Set secret values in the Render dashboard; non-secret defaults shown here.
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+      - key: DJANGO_ALLOWED_HOSTS
+        value: closetbychili-api.onrender.com
+
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://closetbychili-api.onrender.com
+
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://your-frontend.vercel.app
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: SECURE_SSL_REDIRECT
+        value: "False"

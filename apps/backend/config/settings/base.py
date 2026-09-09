@@ -13,6 +13,14 @@ Security defaults:
 import os
 from pathlib import Path
 
+# Optional: dj-database-url is only installed in production.
+# Guard the import so development (which does not install production.txt) still works.
+try:
+    import dj_database_url as _dj_db_url
+    _HAS_DJ_DATABASE_URL = True
+except ImportError:
+    _HAS_DJ_DATABASE_URL = False
+
 # ============================================================
 # Paths
 # ============================================================
@@ -61,6 +69,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "corsheaders",
+    "whitenoise.runserver_nostatic",  # serve compressed static in dev runserver too
     # Project apps
     "apps.common",
     "apps.catalog",
@@ -70,6 +79,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise must come directly after SecurityMiddleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -101,20 +112,35 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # ============================================================
 # Database — PostgreSQL via Supabase
+# Prefer DATABASE_URL (Render/production) over individual DB_* vars.
 # ============================================================
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "closet_by_chilli"),
-        "USER": os.environ.get("DB_USER", "postgres"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "5432"),
-        "OPTIONS": {
-            "connect_timeout": 10,
-        },
+_database_url = os.environ.get("DATABASE_URL", "")
+
+if _database_url and _HAS_DJ_DATABASE_URL:
+    # Production path: parse the single DATABASE_URL string.
+    # conn_max_age=600 enables persistent connections (recommended on Render).
+    DATABASES = {
+        "default": _dj_db_url.parse(
+            _database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Local development / CI path: use individual environment variables.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "closet_by_chilli"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+            "OPTIONS": {
+                "connect_timeout": 10,
+            },
+        }
+    }
 
 # ============================================================
 # Password Validation
@@ -143,10 +169,11 @@ USE_I18N = True
 USE_TZ = True
 
 # ============================================================
-# Static Files
+# Static Files — WhiteNoise with Brotli/gzip compression
 # ============================================================
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ============================================================
 # Media Files

@@ -36,6 +36,12 @@ if not _hosts:
 ALLOWED_HOSTS = [h.strip() for h in _hosts.split(",") if h.strip()]
 
 # ============================================================
+# CSRF Trusted Origins — required for POST over HTTPS (Django 4+)
+# ============================================================
+_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(",") if o.strip()]
+
+# ============================================================
 # HTTPS / Security Headers
 # ============================================================
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True").lower() in (

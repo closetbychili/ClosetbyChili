@@ -3,3 +3,9 @@
 # ================================================
 
 -r base.txt
+
+# Static file serving (no external CDN needed on Render)
+whitenoise>=6.8,<7.0
+
+# Parse DATABASE_URL from Render's environment
+dj-database-url>=2.3,<3.0
