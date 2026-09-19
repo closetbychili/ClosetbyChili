@@ -285,7 +285,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_variants(self, obj: Product) -> list[dict]:
         """Return serialized list of active variants."""
         active_variants = obj.variants.filter(is_active=True)
-        return ProductVariantSummarySerializer(active_variants, many=True).data
+        return list(ProductVariantSummarySerializer(active_variants, many=True).data)
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
