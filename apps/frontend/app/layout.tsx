@@ -15,6 +15,7 @@ const montserrat = Montserrat({
 });
 
 import { CartProvider } from "@/components/CartContext";
+import { AuthProvider } from "@/components/AuthProvider";
 import CartDrawer from "@/components/CartDrawer";
 
 export const metadata: Metadata = {
@@ -31,10 +32,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${cinzel.variable} ${montserrat.variable}`}>
-        <CartProvider>
-          {children}
-          <CartDrawer />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+            <CartDrawer />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

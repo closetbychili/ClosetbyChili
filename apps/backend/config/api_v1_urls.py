@@ -42,4 +42,5 @@ urlpatterns = [
     path("", api_v1_root, name="api-v1-root"),
     path("catalog/", include("apps.catalog.urls")),
     path("cart/", include("apps.cart.urls")),
+    path("me/", include("apps.accounts.urls")),
 ]

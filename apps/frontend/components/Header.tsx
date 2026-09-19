@@ -223,12 +223,13 @@ export default function Header({ variant: _variant }: HeaderProps = {}) {
             </button>
 
             {/* Account */}
-            <button
+            <Link
+              href="/account"
               aria-label="Customer account"
               className={`p-1.5 transition-colors duration-300 hidden lg:block ${iconClasses}`}
             >
               <User size={19} strokeWidth={1.5} />
-            </button>
+            </Link>
 
             {/* Shopping Bag */}
             <button

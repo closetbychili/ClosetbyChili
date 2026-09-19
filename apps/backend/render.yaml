@@ -1,5 +1,5 @@
 # ============================================================
-# Closet by Chilli — Render Deployment Blueprint
+# Closet by Chilli â€” Render Deployment Blueprint
 # ============================================================
 # Docs: https://render.com/docs/blueprint-spec
 #
@@ -28,7 +28,7 @@ services:
       --log-level info
 
     # -- Health Check -----------------------------------------
-    healthCheckPath: /api/v1/health/
+    healthCheckPath: /api/v1/
 
     # -- Environment Variables --------------------------------
     # Set secret values in the Render dashboard; non-secret defaults shown here.
@@ -53,3 +53,15 @@ services:
 
       - key: SECURE_SSL_REDIRECT
         value: "False"
+
+      - key: SUPABASE_URL
+        value: https://YOUR_PROJECT.supabase.co
+
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+
+      - key: SUPABASE_JWT_ISSUER
+        value: https://YOUR_PROJECT.supabase.co/auth/v1
+
+      - key: SUPABASE_JWT_SECRET
+        sync: false

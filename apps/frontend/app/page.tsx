@@ -66,7 +66,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fff8f7] text-[#111111] font-body selection:bg-[#8b000a] selection:text-[#fff8f7]">
+    <div className="min-h-screen flex flex-col bg-ivory text-ink font-body selection:bg-chili selection:text-ivory">
       {/* ── Sticky Header with 3 Balanced Zones & Real Logo ── */}
       <Header />
 
