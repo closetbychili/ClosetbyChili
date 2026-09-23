@@ -20,6 +20,7 @@ from apps.catalog.models import (
     Collection,
     Product,
     ProductCollection,
+    ProductImage,
     ProductVariant,
 )
 from apps.catalog.serializers import (
@@ -28,6 +29,7 @@ from apps.catalog.serializers import (
     CollectionSerializer,
     CollectionSummarySerializer,
     ProductDetailSerializer,
+    ProductImageSerializer,
     ProductListSerializer,
     ProductVariantSerializer,
     ProductVariantSummarySerializer,
@@ -183,6 +185,30 @@ class ProductVariantSerializerTest(TestCase):
         self.assertEqual(data["retail_price"], "1299.00")
 
 
+class ProductImageSerializerTest(TestCase):
+    """Test ProductImageSerializer serialization."""
+
+    def test_product_image_serialization(self):
+        product = Product.objects.create(
+            name="Silk Saree", slug="silk-saree"
+        )
+        img = ProductImage.objects.create(
+            product=product,
+            image_url="/assets/products/kurti-1.jpg",
+            alt_text="Front view",
+            ordering=0,
+            is_primary=True,
+        )
+        serializer = ProductImageSerializer(img)
+        data = serializer.data
+
+        self.assertEqual(data["image_url"], "/assets/products/kurti-1.jpg")
+        self.assertEqual(data["alt_text"], "Front view")
+        self.assertEqual(data["ordering"], 0)
+        self.assertTrue(data["is_primary"])
+        self.assertEqual(str(img.id), data["id"])
+
+
 class ProductListSerializerTest(TestCase):
     """Test ProductListSerializer output and calculated fields."""
 
@@ -247,6 +273,42 @@ class ProductListSerializerTest(TestCase):
         self.assertEqual(data["collections"], [])
         self.assertIsNone(data["min_price"])
         self.assertEqual(data["variant_count"], 0)
+        self.assertIsNone(data["primary_image"])
+
+    def test_product_primary_image_serialization(self):
+        """Verify primary_image resolves the is_primary=True image."""
+        ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-1.jpg",
+            ordering=0,
+            is_primary=True,
+        )
+        ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-2.jpg",
+            ordering=1,
+            is_primary=False,
+        )
+        serializer = ProductListSerializer(self.product)
+        data = serializer.data
+
+        self.assertIsNotNone(data["primary_image"])
+        self.assertEqual(data["primary_image"]["image_url"], "/assets/products/kurti-1.jpg")
+        self.assertTrue(data["primary_image"]["is_primary"])
+
+    def test_product_primary_image_fallback_to_first_ordering(self):
+        """Verify fallback to first ordering if no image has is_primary=True."""
+        ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-2.jpg",
+            ordering=5,
+            is_primary=False,
+        )
+        serializer = ProductListSerializer(self.product)
+        data = serializer.data
+
+        self.assertIsNotNone(data["primary_image"])
+        self.assertEqual(data["primary_image"]["image_url"], "/assets/products/kurti-2.jpg")
 
 
 class ProductDetailSerializerTest(TestCase):
@@ -279,6 +341,31 @@ class ProductDetailSerializerTest(TestCase):
 
         self.assertEqual(len(data["variants"]), 1)
         self.assertEqual(data["variants"][0]["sku"], "EMB-KRT-M")
+
+    def test_product_detail_images_nesting(self):
+        """Verify ProductDetailSerializer returns ordered images array."""
+        product = Product.objects.create(
+            name="Silk Kurti", slug="silk-kurti"
+        )
+        ProductImage.objects.create(
+            product=product,
+            image_url="/assets/products/kurti-1.jpg",
+            ordering=0,
+            is_primary=True,
+        )
+        ProductImage.objects.create(
+            product=product,
+            image_url="/assets/products/kurti-2.jpg",
+            ordering=1,
+            is_primary=False,
+        )
+
+        serializer = ProductDetailSerializer(product)
+        data = serializer.data
+
+        self.assertEqual(len(data["images"]), 2)
+        self.assertEqual(data["images"][0]["image_url"], "/assets/products/kurti-1.jpg")
+        self.assertEqual(data["images"][1]["image_url"], "/assets/products/kurti-2.jpg")
 
 
 class ProductWriteSerializerTest(TestCase):

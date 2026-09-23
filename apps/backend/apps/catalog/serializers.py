@@ -22,6 +22,7 @@ from apps.catalog.models import (
     Category,
     Collection,
     Product,
+    ProductImage,
     ProductVariant,
 )
 
@@ -206,6 +207,26 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
 
 
 # ==============================================================================
+# Product Image Serializer
+# ==============================================================================
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    """
+    Read-only representation of a ProductImage asset.
+
+    Used as:
+    - A single `primary_image` object in ProductListSerializer (card thumbnail).
+    - A full `images` array in ProductDetailSerializer (PDP gallery).
+    """
+
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image_url", "alt_text", "ordering", "is_primary"]
+        read_only_fields = fields
+
+
+# ==============================================================================
 # Product Serializers
 # ==============================================================================
 
@@ -221,6 +242,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     collections = CollectionSummarySerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     variant_count = serializers.SerializerMethodField()
+    primary_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -235,6 +257,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "collections",
             "min_price",
             "variant_count",
+            "primary_image",
             "created_at",
             "updated_at",
         ]
@@ -253,6 +276,20 @@ class ProductListSerializer(serializers.ModelSerializer):
         """Count total active sellable variants."""
         return len([v for v in obj.variants.all() if v.is_active])
 
+    def get_primary_image(self, obj: Product) -> dict | None:
+        """
+        Return the primary image for product listing cards.
+
+        Uses the prefetched `images` queryset — no extra DB query.
+        Falls back to the first image by ordering if none is flagged primary.
+        Returns None when the product has no images.
+        """
+        images = list(obj.images.all())
+        if not images:
+            return None
+        primary = next((img for img in images if img.is_primary), images[0])
+        return ProductImageSerializer(primary).data
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """
@@ -264,6 +301,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySummarySerializer(read_only=True)
     collections = CollectionSummarySerializer(many=True, read_only=True)
     variants = serializers.SerializerMethodField()
+    images = ProductImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -277,6 +315,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "category",
             "collections",
             "variants",
+            "images",
             "created_at",
             "updated_at",
         ]

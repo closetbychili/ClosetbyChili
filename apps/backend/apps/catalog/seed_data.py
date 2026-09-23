@@ -8,6 +8,11 @@ Data structure is authoritative and reflects:
 - docs/06-domain-model.md (product taxonomy, variants, inventory)
 - docs/23-search-catalog-architecture.md (catalog categories, collections)
 
+Sprint 0.3: Added `images` key to each product entry.
+Each entry maps to an existing public asset path under /assets/.
+Paths are relative (no domain) so they are environment-agnostic.
+The seed command uses (product, ordering) as the update_or_create key.
+
 DEVELOPMENT USE ONLY. Never run against production.
 """
 
@@ -102,6 +107,10 @@ COLLECTIONS = [
 #   collections: [slug, ...],   (ordering = index+1)
 #   variants: [{sku, size, color, retail_price, wholesale_price, is_active,
 #               inventory_qty}]
+#   images: [{image_url, alt_text, ordering, is_primary}]
+#       - image_url: relative path served by Next.js (no domain prefix).
+#       - ordering:  unique per product; used as update_or_create key.
+#       - is_primary: True for exactly one image — shown on listing cards.
 # }
 PRODUCTS = [
     # ---- Kurtis ----
@@ -162,6 +171,26 @@ PRODUCTS = [
                 "inventory_qty": 0,
             },
         ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Sunflower Block Print Kurti — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Sunflower Block Print Kurti — detail",
+                "ordering": 2,
+                "is_primary": False,
+            },
+            {
+                "image_url": "/assets/products/kurti-3.jpg",
+                "alt_text": "Sunflower Block Print Kurti — side view",
+                "ordering": 3,
+                "is_primary": False,
+            },
+        ],
     },
     {
         "name": "Chikankari Embroidered Kurti",
@@ -209,6 +238,26 @@ PRODUCTS = [
                 "wholesale_price": Decimal("1380.00"),
                 "is_active": True,
                 "inventory_qty": 12,
+            },
+        ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Chikankari Embroidered Kurti — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-3.jpg",
+                "alt_text": "Chikankari Embroidered Kurti — detail",
+                "ordering": 2,
+                "is_primary": False,
+            },
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Chikankari Embroidered Kurti — side view",
+                "ordering": 3,
+                "is_primary": False,
             },
         ],
     },
@@ -270,6 +319,26 @@ PRODUCTS = [
                 "inventory_qty": 9,
             },
         ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-3.jpg",
+                "alt_text": "Royal Silk Anarkali Set — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Royal Silk Anarkali Set — detail",
+                "ordering": 2,
+                "is_primary": False,
+            },
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Royal Silk Anarkali Set — side view",
+                "ordering": 3,
+                "is_primary": False,
+            },
+        ],
     },
     # ---- Kurta Sets ----
     {
@@ -329,6 +398,20 @@ PRODUCTS = [
                 "inventory_qty": 22,
             },
         ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Floral Cotton 2-Piece Kurta Set — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Floral Cotton 2-Piece Kurta Set — detail",
+                "ordering": 2,
+                "is_primary": False,
+            },
+        ],
     },
     {
         "name": "Ethnic Embroidered 3-Piece Suit",
@@ -367,6 +450,20 @@ PRODUCTS = [
                 "wholesale_price": Decimal("2100.00"),
                 "is_active": True,
                 "inventory_qty": 5,
+            },
+        ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Ethnic Embroidered 3-Piece Suit — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-3.jpg",
+                "alt_text": "Ethnic Embroidered 3-Piece Suit — detail",
+                "ordering": 2,
+                "is_primary": False,
             },
         ],
     },
@@ -419,6 +516,20 @@ PRODUCTS = [
                 "inventory_qty": 18,
             },
         ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-3.jpg",
+                "alt_text": "Maxi Ethnic Dress — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Maxi Ethnic Dress — detail",
+                "ordering": 2,
+                "is_primary": False,
+            },
+        ],
     },
     # ---- Dupattas ----
     {
@@ -458,6 +569,20 @@ PRODUCTS = [
                 "wholesale_price": Decimal("480.00"),
                 "is_active": True,
                 "inventory_qty": 22,
+            },
+        ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Bandhani Print Dupatta — draped view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Bandhani Print Dupatta — detail",
+                "ordering": 2,
+                "is_primary": False,
             },
         ],
     },
@@ -510,6 +635,20 @@ PRODUCTS = [
                 "inventory_qty": 28,
             },
         ],
+        "images": [
+            {
+                "image_url": "/assets/products/kurti-2.jpg",
+                "alt_text": "Rayon Palazzo Pants — front view",
+                "ordering": 1,
+                "is_primary": True,
+            },
+            {
+                "image_url": "/assets/products/kurti-1.jpg",
+                "alt_text": "Rayon Palazzo Pants — detail",
+                "ordering": 2,
+                "is_primary": False,
+            },
+        ],
     },
     # ---- Draft product (for visibility testing) ----
     {
@@ -530,5 +669,8 @@ PRODUCTS = [
                 "inventory_qty": 0,
             },
         ],
+        # No images for draft product — intentionally absent.
+        "images": [],
     },
 ]
+

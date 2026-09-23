@@ -5,7 +5,7 @@
  * Centralizes UI-specific presentations, image mappings, and category subtitles.
  */
 
-import type { Category, ProductListItem } from '@/lib/api/types';
+import type { Category, ProductDetail, ProductListItem } from '@/lib/api/types';
 import type { CategoryItem, ProductItem } from '@/lib/homepage-data';
 
 /**
@@ -65,7 +65,20 @@ export const PRODUCT_GALLERY_MAP: Record<string, string[]> = {
 };
 
 /**
- * Resolves gallery images for a given product slug.
+ * Resolves gallery images for a ProductDetail object (Sprint 0.3 database-driven).
+ * Falls back to legacy PRODUCT_GALLERY_MAP / PRODUCT_IMAGE_MAP if no database images exist.
+ */
+export function getProductImages(product: ProductDetail): string[] {
+  if (product.images && product.images.length > 0) {
+    return [...product.images]
+      .sort((a, b) => a.ordering - b.ordering)
+      .map((img) => img.image_url);
+  }
+  return getProductGallery(product.slug);
+}
+
+/**
+ * Resolves gallery images for a given product slug (legacy fallback).
  */
 export function getProductGallery(slug: string): string[] {
   return (
@@ -119,13 +132,18 @@ export function mapProductToUi(
   const resolvedBadge =
     badge || (isNew ? 'New' : isBestseller ? 'Bestseller' : undefined);
 
+  const resolvedImage =
+    product.primary_image?.image_url ||
+    PRODUCT_IMAGE_MAP[product.slug] ||
+    undefined;
+
   return {
     id: product.id,
     name: product.name,
     detail: product.category ? product.category.name : 'Ethnic Wear',
     price: parsedPrice,
     badge: resolvedBadge,
-    image: PRODUCT_IMAGE_MAP[product.slug] || undefined,
+    image: resolvedImage,
     href: `/products/${product.slug}`,
   };
 }

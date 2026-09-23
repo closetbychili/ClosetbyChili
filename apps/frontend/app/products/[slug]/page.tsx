@@ -9,7 +9,7 @@ import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductVariantSelector from "@/components/ProductVariantSelector";
 
 import { getProduct, getProducts, ApiClientError } from "@/lib/api";
-import { getProductGallery, mapProductToUi } from "@/lib/adapters/catalog-adapter";
+import { getProductImages, mapProductToUi } from "@/lib/adapters/catalog-adapter";
 import type { ProductDetail, ProductListItem } from "@/lib/api/types";
 import type { ProductItem } from "@/lib/homepage-data";
 
@@ -78,7 +78,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const galleryImages = getProductGallery(product.slug);
+  const galleryImages = getProductImages(product);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fff8f7] text-[#111111] font-body selection:bg-[#8b000a] selection:text-[#fff8f7]">

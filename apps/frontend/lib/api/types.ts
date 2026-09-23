@@ -104,6 +104,14 @@ export interface ProductVariantSummary {
 
 export type ProductStatus = 'draft' | 'active' | 'archived';
 
+export interface ProductImage {
+  id: string;
+  image_url: string;
+  alt_text: string;
+  ordering: number;
+  is_primary: boolean;
+}
+
 export interface ProductListItem {
   id: string;
   name: string;
@@ -115,6 +123,7 @@ export interface ProductListItem {
   collections: CollectionSummary[];
   min_price: string | null;
   variant_count: number;
+  primary_image?: ProductImage | null;
   created_at: string;
   updated_at: string;
 }
@@ -129,6 +138,7 @@ export interface ProductDetail {
   category: CategorySummary | null;
   collections: CollectionSummary[];
   variants: ProductVariantSummary[];
+  images?: ProductImage[];
   created_at: string;
   updated_at: string;
 }
