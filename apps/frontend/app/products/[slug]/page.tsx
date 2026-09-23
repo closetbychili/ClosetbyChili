@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -8,9 +9,13 @@ import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductVariantSelector from "@/components/ProductVariantSelector";
 
 import { getProduct, getProducts, ApiClientError } from "@/lib/api";
-import { getProductGallery, mapProductToUi } from "@/lib/adapters/catalog-adapter";
+import { getProductImages, mapProductToUi } from "@/lib/adapters/catalog-adapter";
 import type { ProductDetail, ProductListItem } from "@/lib/api/types";
 import type { ProductItem } from "@/lib/homepage-data";
+
+const getCachedProduct = cache(async (slug: string) => {
+  return getProduct(slug);
+});
 
 interface ProductPageProps {
   params: Promise<{
@@ -24,7 +29,7 @@ export async function generateMetadata({
   const { slug } = await params;
 
   try {
-    const product = await getProduct(slug);
+    const product = await getCachedProduct(slug);
     const categoryName = product.category?.name || "Ethnic Wear";
 
     return {
@@ -48,7 +53,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   let relatedProducts: ProductItem[] = [];
 
   try {
-    product = await getProduct(slug);
+    product = await getCachedProduct(slug);
 
     // Fetch related products from same category or bestsellers
     if (product.category?.slug) {
@@ -73,7 +78,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const galleryImages = getProductGallery(product.slug);
+  const galleryImages = getProductImages(product);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fff8f7] text-[#111111] font-body selection:bg-[#8b000a] selection:text-[#fff8f7]">

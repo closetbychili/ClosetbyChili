@@ -9,18 +9,56 @@ import { HERO_SLIDES } from "@/lib/homepage-data";
 export default function HeroCarousel() {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [loadedIndices, setLoadedIndices] = useState<number[]>([0]);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
   const minSwipeDistance = 45;
 
-  const nextSlide = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % HERO_SLIDES.length);
+  const markLoaded = useCallback((...indices: number[]) => {
+    setLoadedIndices((prev) => {
+      const updated = [...prev];
+      let changed = false;
+      for (const idx of indices) {
+        if (!updated.includes(idx)) {
+          updated.push(idx);
+          changed = true;
+        }
+      }
+      return changed ? updated : prev;
+    });
   }, []);
 
+  const goToSlide = useCallback((index: number) => {
+    const nextIdx = (index + 1) % HERO_SLIDES.length;
+    markLoaded(index, nextIdx);
+    setCurrent(index);
+  }, [markLoaded]);
+
+  const nextSlide = useCallback(() => {
+    setCurrent((prev) => {
+      const next = (prev + 1) % HERO_SLIDES.length;
+      const afterNext = (next + 1) % HERO_SLIDES.length;
+      markLoaded(next, afterNext);
+      return next;
+    });
+  }, [markLoaded]);
+
   const prevSlide = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
-  }, []);
+    setCurrent((prev) => {
+      const prevIdx = (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length;
+      markLoaded(prevIdx);
+      return prevIdx;
+    });
+  }, [markLoaded]);
+
+  // Preload next slide shortly after initial mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      markLoaded(1);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [markLoaded]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
@@ -62,6 +100,7 @@ export default function HeroCarousel() {
       {/* ── Slide Images & Background Overlays ────────────────── */}
       {HERO_SLIDES.map((slide, index) => {
         const isActive = index === current;
+        const shouldLoadImage = loadedIndices.includes(index);
         return (
           <div
             key={slide.id}
@@ -71,16 +110,19 @@ export default function HeroCarousel() {
           >
             {/* Slide Image */}
             <div className="relative w-full h-full">
-              <Image
-                src={slide.image}
-                alt={slide.heading}
-                fill
-                priority={index === 0}
-                className={`object-cover object-top transform transition-transform duration-[8000ms] ease-out ${
-                  isActive ? "scale-105" : "scale-100"
-                }`}
-                sizes="100vw"
-              />
+              {shouldLoadImage && (
+                <Image
+                  src={slide.image}
+                  alt={slide.heading}
+                  fill
+                  priority={index === 0}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  className={`object-cover object-top transform transition-transform duration-[8000ms] ease-out ${
+                    isActive ? "scale-105" : "scale-100"
+                  }`}
+                  sizes="100vw"
+                />
+              )}
 
               {/* Top contrast gradient specifically for transparent header navigation readability */}
               <div
@@ -167,7 +209,7 @@ export default function HeroCarousel() {
               <button
                 key={slide.id}
                 aria-label={`Go to slide ${index + 1}`}
-                onClick={() => setCurrent(index)}
+                onClick={() => goToSlide(index)}
                 className={`transition-all duration-300 rounded-full h-1 sm:h-1.5 ${
                   active ? "w-8 sm:w-10 bg-gold" : "w-2 sm:w-2.5 bg-white/40 hover:bg-white/70"
                 }`}

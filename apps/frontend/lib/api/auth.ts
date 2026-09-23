@@ -18,10 +18,14 @@ export interface CurrentUser {
 }
 
 async function authenticatedOptions(
-  options: RequestOptions = {}
+  options: RequestOptions = {},
+  token?: string
 ): Promise<RequestOptions> {
-  const { data } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
+  let accessToken = token;
+  if (!accessToken) {
+    const { data } = await supabase.auth.getSession();
+    accessToken = data.session?.access_token;
+  }
   if (!accessToken) throw new Error("Authentication required");
 
   return {
@@ -33,9 +37,10 @@ async function authenticatedOptions(
   };
 }
 
-export async function getCurrentUser(): Promise<CurrentUser> {
-  return apiFetch<CurrentUser>("/me/", await authenticatedOptions());
+export async function getCurrentUser(token?: string): Promise<CurrentUser> {
+  return apiFetch<CurrentUser>("/me/", await authenticatedOptions({}, token));
 }
+
 
 export async function updateCurrentProfile(
   payload: Partial<CustomerProfile>

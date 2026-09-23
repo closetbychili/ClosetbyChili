@@ -90,7 +90,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     heading: "Draped in grace.\nMade to be seen.",
     ctaText: "SHOP DRESSES",
     ctaHref: "/products?category=dresses",
-    image: "/assets/hero/hero-1.png",
+    image: "/assets/hero/hero-1.webp",
   },
   {
     id: "hero-2",
@@ -99,7 +99,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     heading: "Twirl into elegance.\nEvery curve, celebrated.",
     ctaText: "SHOP ANARKALI",
     ctaHref: "/products?category=anarkali-sets",
-    image: "/assets/hero/hero-2.png",
+    image: "/assets/hero/hero-2.webp",
   },
   {
     id: "hero-3",
@@ -108,7 +108,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     heading: "Effortless ease.\nAll-day beautiful.",
     ctaText: "SHOP KURTIS",
     ctaHref: "/products?category=kurtis",
-    image: "/assets/hero/hero-3.png",
+    image: "/assets/hero/hero-3.webp",
   },
   {
     id: "hero-4",
@@ -117,7 +117,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     heading: "Thoughtfully matched.\nEffortlessly styled.",
     ctaText: "SHOP CO-ORDS",
     ctaHref: "/products?category=co-ord-sets",
-    image: "/assets/hero/hero-4.jpeg",
+    image: "/assets/hero/hero-4.webp",
   },
 ];
 

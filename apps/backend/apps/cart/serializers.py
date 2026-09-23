@@ -14,8 +14,12 @@ from apps.catalog.models import Product, ProductVariant
 class CartProductSummarySerializer(serializers.ModelSerializer):
     """Minimal product representation for cart item line display."""
 
-    category_name = serializers.CharField(source="category.name", read_only=True, default="")
-    category_slug = serializers.CharField(source="category.slug", read_only=True, default="")
+    category_name = serializers.CharField(
+        source="category.name", read_only=True, default=""
+    )
+    category_slug = serializers.CharField(
+        source="category.slug", read_only=True, default=""
+    )
 
     class Meta:
         model = Product
@@ -98,11 +102,13 @@ class CartSerializer(serializers.ModelSerializer):
         decimal_places=2,
         read_only=True,
     )
+    user_id = serializers.UUIDField(source="user.id", read_only=True, default=None)
 
     class Meta:
         model = Cart
         fields = [
             "id",
+            "user_id",
             "session_key",
             "items",
             "item_count",

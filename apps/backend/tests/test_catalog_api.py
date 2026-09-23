@@ -442,17 +442,18 @@ class ProductQueryEfficiencyTest(TestCase):
 
     def test_product_list_query_count_is_bounded(self):
         """
-        Verify that listing 5 products with category + collection + variant does not
+        Verify that listing 5 products with category + collection + variant + images does not
         produce O(N) queries. The select_related/prefetch_related in
-        ProductViewSet.get_queryset() collapses all fetches into exactly 5 queries:
+        ProductViewSet.get_queryset() collapses all fetches into exactly 6 queries:
           1. COUNT for pagination
           2. SELECT products (with category via LEFT JOIN / select_related)
           3. SELECT collections (prefetch_related via JOIN through ProductCollection)
           4. SELECT variants (prefetch_related)
           5. SELECT product_collections (prefetch_related)
+          6. SELECT images (prefetch_related)
         This is constant regardless of the number of products in the result set.
         """
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             r = self.client.get("/api/v1/catalog/products/")
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(r.json()["count"], 5)

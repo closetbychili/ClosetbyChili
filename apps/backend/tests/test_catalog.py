@@ -13,6 +13,7 @@ from apps.catalog.models import (
     Collection,
     Product,
     ProductCollection,
+    ProductImage,
     ProductVariant,
 )
 
@@ -163,3 +164,72 @@ class ProductVariantModelTest(TestCase):
                 color="Blue",
                 retail_price=Decimal("999.00"),
             )
+
+
+class ProductImageModelTest(TestCase):
+    """Test ProductImage model functionality and database constraints."""
+
+    def setUp(self):
+        self.product = Product.objects.create(
+            name="Bandhani Kurti", slug="bandhani-kurti"
+        )
+
+    def test_create_product_image_with_relative_path(self):
+        img = ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-1.jpg",
+            alt_text="Front view of Bandhani Kurti",
+            ordering=0,
+            is_primary=True,
+        )
+        self.assertIsInstance(img.id, uuid.UUID)
+        self.assertEqual(img.image_url, "/assets/products/kurti-1.jpg")
+        self.assertTrue(img.is_primary)
+        self.assertEqual(img.ordering, 0)
+        self.assertIn("image 0 [primary]", str(img))
+
+    def test_ordering_unique_per_product(self):
+        ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-1.jpg",
+            ordering=0,
+            is_primary=True,
+        )
+        with self.assertRaises(IntegrityError):
+            ProductImage.objects.create(
+                product=self.product,
+                image_url="/assets/products/kurti-2.jpg",
+                ordering=0,
+                is_primary=False,
+            )
+
+    def test_at_most_one_primary_image_per_product(self):
+        ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-1.jpg",
+            ordering=0,
+            is_primary=True,
+        )
+        with self.assertRaises(IntegrityError):
+            ProductImage.objects.create(
+                product=self.product,
+                image_url="/assets/products/kurti-2.jpg",
+                ordering=1,
+                is_primary=True,
+            )
+
+    def test_multiple_non_primary_images_allowed(self):
+        img1 = ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-1.jpg",
+            ordering=1,
+            is_primary=False,
+        )
+        img2 = ProductImage.objects.create(
+            product=self.product,
+            image_url="/assets/products/kurti-2.jpg",
+            ordering=2,
+            is_primary=False,
+        )
+        self.assertEqual(self.product.images.count(), 2)
+

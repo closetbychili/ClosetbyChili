@@ -21,6 +21,7 @@ from apps.catalog.models import (
     Category,
     Collection,
     Product,
+    ProductImage,
     ProductVariant,
 )
 from apps.inventory.models import InventoryItem
@@ -36,6 +37,7 @@ class CatalogSeedCommandTest(TestCase):
         self.assertEqual(counts["categories"], 11)
         self.assertEqual(counts["collections"], 5)
         self.assertEqual(counts["products"], 9)
+        self.assertEqual(counts["images"], 19)
         self.assertEqual(counts["variants"], 34)
         self.assertEqual(counts["inventory_items"], 34)
 
@@ -43,6 +45,7 @@ class CatalogSeedCommandTest(TestCase):
         self.assertEqual(Category.objects.count(), 11)
         self.assertEqual(Collection.objects.count(), 5)
         self.assertEqual(Product.objects.count(), 9)
+        self.assertEqual(ProductImage.objects.count(), 19)
         self.assertEqual(ProductVariant.objects.count(), 34)
         self.assertEqual(InventoryItem.objects.count(), 34)
 
@@ -53,6 +56,7 @@ class CatalogSeedCommandTest(TestCase):
         initial_cat_count = Category.objects.count()
         initial_col_count = Collection.objects.count()
         initial_prod_count = Product.objects.count()
+        initial_img_count = ProductImage.objects.count()
         initial_var_count = ProductVariant.objects.count()
         initial_inv_count = InventoryItem.objects.count()
 
@@ -61,6 +65,7 @@ class CatalogSeedCommandTest(TestCase):
         self.assertEqual(Category.objects.count(), initial_cat_count)
         self.assertEqual(Collection.objects.count(), initial_col_count)
         self.assertEqual(Product.objects.count(), initial_prod_count)
+        self.assertEqual(ProductImage.objects.count(), initial_img_count)
         self.assertEqual(ProductVariant.objects.count(), initial_var_count)
         self.assertEqual(InventoryItem.objects.count(), initial_inv_count)
 
@@ -154,3 +159,8 @@ class SeededCatalogApiVerificationTest(TestCase):
         var_skus = [v["sku"] for v in data["variants"]]
         self.assertIn("SBP-KRT-YEL-S", var_skus)
         self.assertNotIn("SBP-KRT-GRN-M", var_skus)
+
+        # Sprint 0.3: Database-driven images
+        self.assertEqual(len(data["images"]), 3)
+        self.assertTrue(data["images"][0]["is_primary"])
+        self.assertEqual(data["images"][0]["image_url"], "/assets/products/kurti-1.jpg")

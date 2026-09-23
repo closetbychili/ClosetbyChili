@@ -135,6 +135,7 @@ class ProductViewSet(
                 "collections",
                 "variants",
                 "product_collections",
+                "images",
             )
             .distinct()
         )

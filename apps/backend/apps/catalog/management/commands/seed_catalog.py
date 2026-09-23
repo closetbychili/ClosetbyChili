@@ -21,6 +21,7 @@ from apps.catalog.models import (
     Collection,
     Product,
     ProductCollection,
+    ProductImage,
     ProductVariant,
 )
 from apps.catalog.seed_data import CATEGORIES, COLLECTIONS, PRODUCTS
@@ -37,6 +38,7 @@ def run_catalog_seed() -> dict[str, int]:
         "categories": 0,
         "collections": 0,
         "products": 0,
+        "images": 0,
         "variants": 0,
         "inventory_items": 0,
     }
@@ -145,6 +147,19 @@ def run_catalog_seed() -> dict[str, int]:
                 )
                 counts["inventory_items"] += 1
 
+            # 4. Product Images (Sprint 0.3)
+            for img_data in p_data.get("images", []):
+                ProductImage.objects.update_or_create(
+                    product=product,
+                    ordering=img_data["ordering"],
+                    defaults={
+                        "image_url": img_data["image_url"],
+                        "alt_text": img_data.get("alt_text", ""),
+                        "is_primary": img_data.get("is_primary", False),
+                    },
+                )
+                counts["images"] += 1
+
     return counts
 
 
@@ -164,6 +179,7 @@ class Command(BaseCommand):
                 f"  - Categories:      {counts['categories']}\n"
                 f"  - Collections:     {counts['collections']}\n"
                 f"  - Products:        {counts['products']}\n"
+                f"  - Images:          {counts['images']}\n"
                 f"  - Variants:        {counts['variants']}\n"
                 f"  - Inventory Items: {counts['inventory_items']}"
             )

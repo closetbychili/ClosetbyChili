@@ -9,6 +9,19 @@ import * as cartApi from '@/lib/api/cart';
 import type { Cart, ProductVariantSummary } from '@/lib/api/types';
 import { ApiClientError } from '@/lib/api/client';
 
+vi.mock('@/components/AuthProvider', () => ({
+  useAuth: () => ({
+    user: null,
+    session: null,
+    supabaseUser: null,
+    loading: false,
+    signOut: vi.fn(),
+    refreshUser: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+
 describe('Cart UI and Integrations', () => {
   const mockCartWithItem: Cart = {
     id: 'cart-1',
@@ -121,7 +134,7 @@ describe('Cart UI and Integrations', () => {
     const increaseBtn = screen.getByLabelText('Increase quantity');
     fireEvent.click(increaseBtn);
 
-    expect(updateSpy).toHaveBeenCalledWith('item-1', { quantity: 3 });
+    expect(updateSpy).toHaveBeenCalledWith('item-1', { quantity: 3 }, undefined);
   });
 
   it('removes an item when clicking remove button', async () => {
@@ -141,7 +154,7 @@ describe('Cart UI and Integrations', () => {
     const removeBtn = screen.getByLabelText(/remove silk anarkali from bag/i);
     fireEvent.click(removeBtn);
 
-    expect(removeSpy).toHaveBeenCalledWith('item-1');
+    expect(removeSpy).toHaveBeenCalledWith('item-1', undefined);
   });
 
   it('clears the cart when clicking clear shopping bag', async () => {
@@ -226,7 +239,7 @@ describe('Cart UI and Integrations', () => {
       expect(addSpy).toHaveBeenCalledWith({
         variant_id: 'var-1',
         quantity: 1,
-      });
+      }, undefined);
       expect(
         screen.getByText(/exceeds available stock/i)
       ).toBeInTheDocument();

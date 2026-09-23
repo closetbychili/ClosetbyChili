@@ -6,6 +6,7 @@
  */
 
 import { apiFetch, ApiClientError } from './client';
+import { supabase } from '@/lib/supabase/client';
 import type {
   Cart,
   AddToCartPayload,
@@ -56,7 +57,7 @@ export function setStoredCartSession(sessionKey: string): void {
 }
 
 /**
- * Clears the stored cart session key upon cart expiration or explicit reset.
+ * Clears the stored cart session key upon cart expiration, merge, or logout.
  */
 export function clearStoredCartSession(): void {
   if (typeof window === 'undefined') return;
@@ -71,16 +72,30 @@ export function clearStoredCartSession(): void {
 }
 
 /**
- * Generates headers for Cart API requests with session identification.
+ * Generates headers for Cart API requests with session identification and optional bearer token.
  */
-function getCartHeaders(): HeadersInit {
+async function getCartHeaders(token?: string): Promise<HeadersInit> {
+  const headers: Record<string, string> = {};
   const session = getStoredCartSession();
   if (session) {
-    return {
-      'X-Cart-Session': session,
-    };
+    headers['X-Cart-Session'] = session;
   }
-  return {};
+
+  let accessToken = token;
+  if (!accessToken && typeof window !== 'undefined') {
+    try {
+      const { data } = await supabase.auth.getSession();
+      accessToken = data.session?.access_token;
+    } catch {
+      // Graceful fallback if supabase is uninitialized or in isolated test
+    }
+  }
+
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  return headers;
 }
 
 /**
@@ -99,6 +114,7 @@ function handleCartResponse(cart: Cart): Cart {
 export function createEmptyCart(): Cart {
   return {
     id: null,
+    user_id: null,
     session_key: null,
     items: [],
     item_count: 0,
@@ -110,12 +126,12 @@ export function createEmptyCart(): Cart {
 }
 
 /**
- * Fetches the active cart for the current guest session.
+ * Fetches the active cart for the current session or authenticated user.
  */
-export async function getCart(): Promise<Cart> {
+export async function getCart(token?: string): Promise<Cart> {
   try {
     const res = await apiFetch<Cart>('/cart/', {
-      headers: getCartHeaders(),
+      headers: await getCartHeaders(token),
       cache: 'no-store',
     });
     return handleCartResponse(res);
@@ -131,10 +147,13 @@ export async function getCart(): Promise<Cart> {
 /**
  * Adds an item to the active cart.
  */
-export async function addToCart(payload: AddToCartPayload): Promise<Cart> {
+export async function addToCart(
+  payload: AddToCartPayload,
+  token?: string
+): Promise<Cart> {
   const res = await apiFetch<Cart>('/cart/items/', {
     method: 'POST',
-    headers: getCartHeaders(),
+    headers: await getCartHeaders(token),
     body: JSON.stringify(payload),
     cache: 'no-store',
   });
@@ -146,11 +165,12 @@ export async function addToCart(payload: AddToCartPayload): Promise<Cart> {
  */
 export async function updateCartItem(
   itemId: string,
-  payload: UpdateCartItemPayload
+  payload: UpdateCartItemPayload,
+  token?: string
 ): Promise<Cart> {
   const res = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
     method: 'PATCH',
-    headers: getCartHeaders(),
+    headers: await getCartHeaders(token),
     body: JSON.stringify(payload),
     cache: 'no-store',
   });
@@ -160,10 +180,13 @@ export async function updateCartItem(
 /**
  * Removes a line item from the cart.
  */
-export async function removeCartItem(itemId: string): Promise<Cart> {
+export async function removeCartItem(
+  itemId: string,
+  token?: string
+): Promise<Cart> {
   const res = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
     method: 'DELETE',
-    headers: getCartHeaders(),
+    headers: await getCartHeaders(token),
     cache: 'no-store',
   });
   return handleCartResponse(res);
@@ -172,11 +195,32 @@ export async function removeCartItem(itemId: string): Promise<Cart> {
 /**
  * Clears all items from the current cart.
  */
-export async function clearCart(): Promise<Cart> {
+export async function clearCart(token?: string): Promise<Cart> {
   const res = await apiFetch<Cart>('/cart/', {
     method: 'DELETE',
-    headers: getCartHeaders(),
+    headers: await getCartHeaders(token),
     cache: 'no-store',
   });
+  return handleCartResponse(res);
+}
+
+/**
+ * Merges the current guest cart into the authenticated customer's cart.
+ */
+export async function mergeCart(token?: string): Promise<Cart> {
+  const headers = await getCartHeaders(token);
+  const session = getStoredCartSession();
+  const body = session
+    ? JSON.stringify({ guest_session_key: session })
+    : JSON.stringify({});
+
+  const res = await apiFetch<Cart>('/cart/merge/', {
+    method: 'POST',
+    headers,
+    body,
+    cache: 'no-store',
+  });
+
+  clearStoredCartSession();
   return handleCartResponse(res);
 }

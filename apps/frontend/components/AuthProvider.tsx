@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
@@ -29,26 +30,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadApplicationUser = useCallback(async (currentSession?: Session | null) => {
-    const activeSession =
-      currentSession ?? (await supabase.auth.getSession()).data.session;
+  const cachedUserRef = useRef<CurrentUser | null>(null);
+  const inFlightPromiseRef = useRef<Promise<CurrentUser | null> | null>(null);
+  const lastFetchedTokenRef = useRef<string | null>(null);
 
-    if (!activeSession?.access_token) {
+  const loadApplicationUser = useCallback(async (currentSession?: Session | null) => {
+    let activeSession = currentSession;
+    if (activeSession === undefined) {
+      const { data } = await supabase.auth.getSession();
+      activeSession = data.session;
+    }
+
+    const token = activeSession?.access_token;
+    if (!token) {
+      lastFetchedTokenRef.current = null;
+      inFlightPromiseRef.current = null;
+      cachedUserRef.current = null;
       setUser(null);
       return;
     }
 
-    try {
-      const current = await getCurrentUser();
-      setUser(current);
-    } catch (error) {
-      console.error("Failed to load application user:", error);
-      setUser(null);
+    // Skip if user is already loaded for this exact token
+    if (token === lastFetchedTokenRef.current && cachedUserRef.current) {
+      return;
     }
+
+    // If a request for this token is currently in-flight, await it to prevent duplicate network calls
+    if (token === lastFetchedTokenRef.current && inFlightPromiseRef.current) {
+      try {
+        await inFlightPromiseRef.current;
+      } catch {
+        // Handled within inFlight promise
+      }
+      return;
+    }
+
+    lastFetchedTokenRef.current = token;
+    const fetchPromise = (async () => {
+      try {
+        const current = await getCurrentUser(token);
+        cachedUserRef.current = current;
+        setUser(current);
+        return current;
+      } catch (error) {
+        console.error("Failed to load application user:", error);
+        cachedUserRef.current = null;
+        setUser(null);
+        return null;
+      } finally {
+        inFlightPromiseRef.current = null;
+      }
+    })();
+
+    inFlightPromiseRef.current = fetchPromise;
+    await fetchPromise;
   }, []);
 
   useEffect(() => {
     let mounted = true;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+      if (!mounted) return;
+
+      if (event === "INITIAL_SESSION" && lastFetchedTokenRef.current) {
+        return;
+      }
+
+      setSession(nextSession);
+
+      if (!nextSession) {
+        lastFetchedTokenRef.current = null;
+        inFlightPromiseRef.current = null;
+        cachedUserRef.current = null;
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      await loadApplicationUser(nextSession);
+      if (mounted) setLoading(false);
+    });
 
     const initialize = async () => {
       const {
@@ -63,34 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadApplicationUser(initialSession);
       }
 
-      if (mounted) {
-        setLoading(false);
-      }
+      if (mounted) setLoading(false);
     };
 
     void initialize();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      if (!mounted) return;
-
-      setSession(nextSession);
-
-      if (!nextSession) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      await loadApplicationUser(nextSession);
-
-      if (mounted) {
-        setLoading(false);
-      }
-    });
 
     return () => {
       mounted = false;
@@ -99,10 +138,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [loadApplicationUser]);
 
   const signOut = useCallback(async () => {
+    lastFetchedTokenRef.current = null;
+    inFlightPromiseRef.current = null;
+    cachedUserRef.current = null;
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    lastFetchedTokenRef.current = null;
+    inFlightPromiseRef.current = null;
+    cachedUserRef.current = null;
+    await loadApplicationUser();
+  }, [loadApplicationUser]);
 
   const value = useMemo(
     () => ({
@@ -111,9 +160,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       loading,
       signOut,
-      refreshUser: loadApplicationUser,
+      refreshUser,
     }),
-    [session, user, loading, signOut, loadApplicationUser]
+    [session, user, loading, signOut, refreshUser]
   );
 
   return (
