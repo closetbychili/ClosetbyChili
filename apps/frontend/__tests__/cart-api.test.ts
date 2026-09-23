@@ -5,6 +5,7 @@ import {
   updateCartItem,
   removeCartItem,
   clearCart,
+  mergeCart,
   getStoredCartSession,
   setStoredCartSession,
   clearStoredCartSession,
@@ -178,6 +179,34 @@ describe('Cart API Client', () => {
           method: 'DELETE',
         })
       );
+    });
+
+    it('mergeCart sends POST request to /cart/merge/ with auth header and clears guest session', async () => {
+      setStoredCartSession('guest-to-merge-123');
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ ...mockCart, session_key: null, user_id: 'user-456' }),
+      } as Response);
+
+      const cart = await mergeCart('test-auth-token');
+      expect(cart.user_id).toBe('user-456');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/cart/merge/'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-auth-token',
+            'X-Cart-Session': 'guest-to-merge-123',
+          }),
+          body: JSON.stringify({ guest_session_key: 'guest-to-merge-123' }),
+        })
+      );
+
+      // Guest session must be cleared after merge
+      expect(getStoredCartSession()).toBeNull();
     });
   });
 });

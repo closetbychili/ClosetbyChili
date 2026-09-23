@@ -47,9 +47,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="productimage",
-            index=models.Index(
-                fields=["product"], name="idx_product_image_product"
-            ),
+            index=models.Index(fields=["product"], name="idx_product_image_product"),
         ),
         # Stable seed key: (product, ordering) is unique.
         migrations.AddConstraint(

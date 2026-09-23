@@ -19,4 +19,6 @@ class CurrentUserView(APIView):
         serializer = UpdateProfileSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(CurrentUserSerializer(request.user).data, status=status.HTTP_200_OK)
+        return Response(
+            CurrentUserSerializer(request.user).data, status=status.HTTP_200_OK
+        )

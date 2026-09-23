@@ -5,12 +5,13 @@ Entities defined by 05-database-architecture.md ยง25-26 and 06-domain-model.md ย
 - Cart: Mutable shopping session record for guests (and future authenticated users).
 - CartItem: Selected product variant and quantity within a cart.
 
-Authoritative prices and inventory are resolved dynamically from catalog and inventory domains.
+Authoritative prices and inventory are resolved dynamically from
+catalog and inventory domains.
 Cart records never duplicate financial or product catalog data.
 """
 
-from decimal import Decimal
 import uuid
+from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -25,15 +26,28 @@ class Cart(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="carts",
+        help_text="Authenticated owner of the shopping cart.",
+    )
     session_key = models.CharField(
         max_length=255,
+        null=True,
+        blank=True,
         unique=True,
         db_index=True,
         help_text="Secure anonymous guest identifier or session token.",
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Soft status flag; deactivated upon order conversion or explicit expiration.",
+        help_text=(
+            "Soft status flag; deactivated upon order conversion "
+            "or explicit expiration."
+        ),
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -41,13 +55,24 @@ class Cart(models.Model):
     class Meta:
         db_table = "cart_carts"
         ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(user__isnull=False, is_active=True),
+                name="uq_active_user_cart",
+            ),
+        ]
         indexes = [
             models.Index(fields=["session_key"], name="idx_cart_session_key"),
             models.Index(fields=["is_active"], name="idx_cart_is_active"),
+            models.Index(fields=["user", "is_active"], name="idx_cart_user_active"),
         ]
 
     def __str__(self) -> str:
-        return f"Cart {self.id} (session={self.session_key[:8]}...)"
+        if self.user:
+            return f"Cart {self.id} (user={self.user})"
+        session_part = self.session_key[:8] if self.session_key else "none"
+        return f"Cart {self.id} (session={session_part}...)"
 
     @property
     def item_count(self) -> int:

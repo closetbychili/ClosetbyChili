@@ -110,9 +110,7 @@ def _jwks_client() -> jwt.PyJWKClient:
     )
 
     try:
-        return jwt.PyJWKClient(
-            jwks_url, cache_jwk_set=True, lifespan=300, timeout=5
-        )
+        return jwt.PyJWKClient(jwks_url, cache_jwk_set=True, lifespan=300, timeout=5)
     except (ValueError, OSError) as exc:
         logger.exception("Failed to initialise Supabase JWKS client: %s", exc)
         raise InvalidSupabaseToken(

@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import type { Cart } from "@/lib/api/types";
 import {
@@ -14,9 +15,13 @@ import {
   updateCartItem as apiUpdateCartItem,
   removeCartItem as apiRemoveCartItem,
   clearCart as apiClearCart,
+  mergeCart as apiMergeCart,
+  getStoredCartSession,
+  clearStoredCartSession,
   createEmptyCart,
 } from "@/lib/api/cart";
 import { ApiClientError } from "@/lib/api/client";
+import { useAuth } from "./AuthProvider";
 
 interface CartContextValue {
   cart: Cart | null;
@@ -38,10 +43,14 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user, session } = useAuth();
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+
+  const lastMergedTokenRef = useRef<string | null>(null);
+  const isMergingRef = useRef<boolean>(false);
 
   const clearError = useCallback(() => setError(null), []);
   const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
@@ -51,7 +60,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getCart();
+      const token = session?.access_token;
+      const data = await getCart(token);
       setCart(data);
     } catch (err) {
       console.error("Failed to fetch cart:", err);
@@ -63,27 +73,67 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session?.access_token]);
 
-  // Initial cart load on client mount
+  // Handle auth transition: login triggers cart merge once; logout resets cart
+  useEffect(() => {
+    const token = session?.access_token;
+    if (user && token) {
+      if (lastMergedTokenRef.current === token || isMergingRef.current) {
+        return;
+      }
+      const guestSession = getStoredCartSession();
+      if (guestSession) {
+        isMergingRef.current = true;
+        lastMergedTokenRef.current = token;
+        setIsLoading(true);
+        apiMergeCart(token)
+          .then((merged) => {
+            setCart(merged);
+          })
+          .catch((err) => {
+            console.error("Failed to merge guest cart:", err);
+            void refreshCart();
+          })
+          .finally(() => {
+            isMergingRef.current = false;
+            setIsLoading(false);
+          });
+      } else {
+        lastMergedTokenRef.current = token;
+        void refreshCart();
+      }
+    } else if (!user && !session) {
+      if (lastMergedTokenRef.current) {
+        lastMergedTokenRef.current = null;
+        isMergingRef.current = false;
+        clearStoredCartSession();
+        setCart(createEmptyCart());
+      }
+    }
+  }, [user, session, refreshCart]);
+
+  // Initial cart load on client mount for unauthenticated guests
   useEffect(() => {
     let active = true;
-    getCart()
-      .then((data) => {
-        if (active) setCart(data);
-      })
-      .catch((err) => {
-        if (active) {
-          console.error("Failed to fetch cart:", err);
-          setCart(createEmptyCart());
-          if (err instanceof ApiClientError) {
-            setError(err.message);
+    if (!user && !session) {
+      getCart()
+        .then((data) => {
+          if (active) setCart(data);
+        })
+        .catch((err) => {
+          if (active) {
+            console.error("Failed to fetch cart:", err);
+            setCart(createEmptyCart());
+            if (err instanceof ApiClientError) {
+              setError(err.message);
+            }
           }
-        }
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+        })
+        .finally(() => {
+          if (active) setIsLoading(false);
+        });
+    }
 
     return () => {
       active = false;
@@ -95,10 +145,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
         setError(null);
-        const updatedCart = await apiAddToCart({
-          variant_id: variantId,
-          quantity,
-        });
+        const token = session?.access_token;
+        const updatedCart = await apiAddToCart(
+          {
+            variant_id: variantId,
+            quantity,
+          },
+          token
+        );
         setCart(updatedCart);
         setIsDrawerOpen(true);
       } catch (err) {
@@ -113,7 +167,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    []
+    [session?.access_token]
   );
 
   const handleUpdateQuantity = useCallback(
@@ -121,12 +175,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
         setError(null);
+        const token = session?.access_token;
         if (quantity < 1) {
-          const updated = await apiRemoveCartItem(itemId);
+          const updated = await apiRemoveCartItem(itemId, token);
           setCart(updated);
           return;
         }
-        const updated = await apiUpdateCartItem(itemId, { quantity });
+        const updated = await apiUpdateCartItem(itemId, { quantity }, token);
         setCart(updated);
       } catch (err) {
         console.error("Failed to update cart quantity:", err);
@@ -140,33 +195,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    []
+    [session?.access_token]
   );
 
-  const handleRemoveItem = useCallback(async (itemId: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const updated = await apiRemoveCartItem(itemId);
-      setCart(updated);
-    } catch (err) {
-      console.error("Failed to remove item:", err);
-      const message =
-        err instanceof ApiClientError
-          ? err.message
-          : "Could not remove item from bag.";
-      setError(message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const handleRemoveItem = useCallback(
+    async (itemId: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const token = session?.access_token;
+        const updated = await apiRemoveCartItem(itemId, token);
+        setCart(updated);
+      } catch (err) {
+        console.error("Failed to remove item:", err);
+        const message =
+          err instanceof ApiClientError
+            ? err.message
+            : "Could not remove item from bag.";
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [session?.access_token]
+  );
 
   const handleClearCart = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const updated = await apiClearCart();
+      const token = session?.access_token;
+      const updated = await apiClearCart(token);
       setCart(updated);
     } catch (err) {
       console.error("Failed to clear cart:", err);
@@ -179,7 +239,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [session?.access_token]);
 
   const itemCount = cart?.item_count || 0;
   const subtotal = cart?.subtotal || "0.00";

@@ -197,6 +197,7 @@ export interface CartItem {
 
 export interface Cart {
   id: string | null;
+  user_id?: string | null;
   session_key: string | null;
   items: CartItem[];
   item_count: number;
