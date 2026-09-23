@@ -1,4 +1,31 @@
-"""DRF authentication backed by Supabase Auth JWTs."""
+"""DRF authentication backed by Supabase Auth JWTs.
+
+Design
+------
+``SupabaseJWTAuthentication.authenticate()`` does two things:
+
+1. **Verify the JWT** — always, on every request.  Uses HS256 when
+   ``SUPABASE_JWT_SECRET`` is set (no network call), or RS256/ES* via the
+   Supabase JWKS endpoint otherwise.
+
+2. **Resolve the application User** — read-first, write-only-when-needed:
+   * Happy path (existing user): one indexed SELECT by ``supabase_user_id``.
+     No write; no transaction.
+   * First-time user (SIGNED_IN / new device): ``get_or_create`` inside a
+     transaction, plus profile row creation.
+   * Email change: update only when the stored email differs from the JWT claim.
+
+This keeps the hot path (authenticated GET requests from returning users) to a
+single read-only DB round trip.
+
+JWKS
+----
+``_jwks_client()`` is only called when ``SUPABASE_JWT_SECRET`` is **absent**.
+The ``@lru_cache`` ensures the JWKS endpoint is only fetched once per process
+(refreshed after ``lifespan`` seconds).  In a test environment that sets
+``SUPABASE_JWT_SECRET`` to any truthy value the JWKS client is never
+instantiated and no outbound HTTPS traffic is attempted.
+"""
 
 from __future__ import annotations
 
@@ -64,17 +91,23 @@ def _audience() -> str:
 
 @lru_cache(maxsize=1)
 def _jwks_client() -> jwt.PyJWKClient:
+    """Return a cached JWKS client.
+
+    Only called when ``SUPABASE_JWT_SECRET`` is not configured.  The
+    ``@lru_cache`` makes this a one-time setup per worker process; subsequent
+    key refreshes are handled transparently by PyJWKClient's internal cache
+    (``lifespan=300`` seconds).
+    """
     jwks_url = os.environ.get("SUPABASE_JWKS_URL") or (
         f"{_supabase_url()}/auth/v1/.well-known/jwks.json" if _supabase_url() else ""
     )
 
     _require_valid_http_url(jwks_url, "SUPABASE_JWKS_URL or SUPABASE_URL")
 
-    if not os.environ.get("SUPABASE_JWT_SECRET"):
-        logger.info(
-            "SUPABASE_JWT_SECRET is not set; verifying Supabase JWTs via JWKS at %s",
-            jwks_url,
-        )
+    logger.info(
+        "SUPABASE_JWT_SECRET is not set; verifying Supabase JWTs via JWKS at %s",
+        jwks_url,
+    )
 
     try:
         return jwt.PyJWKClient(
@@ -90,6 +123,12 @@ def _jwks_client() -> jwt.PyJWKClient:
 
 
 def _decode_token(token: str) -> dict:
+    """Verify and decode a Supabase JWT.  Returns the verified claims dict.
+
+    Verification path:
+    * HS256 via ``SUPABASE_JWT_SECRET`` — no network I/O.
+    * RS256 / ES* via JWKS — one network call per worker lifetime (cached).
+    """
     secret = os.environ.get("SUPABASE_JWT_SECRET", "")
     issuer = _issuer()
     audience = _audience()
@@ -102,6 +141,7 @@ def _decode_token(token: str) -> dict:
 
     try:
         if secret:
+            # Fast path: symmetric HS256 — no remote key fetch required.
             claims = jwt.decode(
                 token,
                 secret,
@@ -111,10 +151,10 @@ def _decode_token(token: str) -> dict:
                 options={"require": ["sub", "exp", "iat"]},
             )
         else:
+            # JWKS path: only entered when SUPABASE_JWT_SECRET is absent.
             try:
                 signing_key = _jwks_client().get_signing_key_from_jwt(token)
             except jwt.exceptions.PyJWKClientError as exc:
-                msg = str(exc)
                 if "ConnectionError" in type(exc).__name__ or isinstance(
                     getattr(exc, "__cause__", None), OSError
                 ):
@@ -129,12 +169,15 @@ def _decode_token(token: str) -> dict:
                     ) from exc
                 logger.exception("JWKS key lookup failed: %s", exc)
                 raise InvalidSupabaseToken(
-                    f"JWT verification failed: JWKS lookup error ({type(exc).__name__})."
+                    "JWT verification failed: JWKS lookup error"
+                    f" ({type(exc).__name__})."
                 ) from exc
 
             algorithm = jwt.get_unverified_header(token).get("alg")
             if algorithm not in {"RS256", "ES256", "ES384", "ES512"}:
-                raise InvalidSupabaseToken("Unsupported Supabase JWT signing algorithm.")
+                raise InvalidSupabaseToken(
+                    "Unsupported Supabase JWT signing algorithm."
+                )
             claims = jwt.decode(
                 token,
                 signing_key.key,
@@ -160,12 +203,31 @@ def _decode_token(token: str) -> dict:
     try:
         uuid_subject = str(subject)
         __import__("uuid").UUID(uuid_subject)
-    except (ValueError, AttributeError):
-        raise InvalidSupabaseToken("Authentication token has an invalid subject.")
+    except (ValueError, AttributeError) as exc:
+        raise InvalidSupabaseToken(
+            "Authentication token has an invalid subject."
+        ) from exc
     return claims
 
 
-def _provision_user(claims: dict) -> User:
+def _resolve_user(claims: dict) -> User:
+    """Return the application User for the given verified JWT claims.
+
+    Hot path (returning user)
+    -------------------------
+    Attempts a read-only ``SELECT`` by ``supabase_user_id``.  If the user
+    exists and their stored email matches the JWT claim, this is the only DB
+    operation — no transaction, no write.
+
+    Cold path (new user / first login)
+    ------------------------------------
+    Falls back to ``get_or_create`` inside a transaction, plus profile row.
+
+    Email sync
+    ----------
+    Updates the stored email only when it has actually changed, keeping the
+    ``updated_at`` timestamp stable for unchanged rows.
+    """
     from uuid import UUID
 
     subject = UUID(str(claims["sub"]))
@@ -178,18 +240,45 @@ def _provision_user(claims: dict) -> User:
         or ""
     )[:150]
 
+    # ── Hot path: read-only lookup ────────────────────────────────────────
+    try:
+        user = User.objects.select_related("profile").get(supabase_user_id=subject)
+    except User.DoesNotExist:
+        user = None
+
+    if user is not None:
+        if not user.is_active:
+            raise InvalidSupabaseToken("This application account is inactive.")
+
+        # Update email only when it has actually changed.
+        if email and user.email != email:
+            user.email = email
+            user.save(update_fields=["email", "updated_at"])
+
+        # Ensure profile row exists (guard against partial legacy data).
+        try:
+            profile = user.profile
+        except CustomerProfile.DoesNotExist:
+            profile = CustomerProfile.objects.create(user=user)
+
+        if display_name and profile.display_name != display_name:
+            profile.display_name = display_name
+            profile.save(update_fields=["display_name", "updated_at"])
+
+        return user
+
+    # ── Cold path: first login — provision user + profile ────────────────
     with transaction.atomic():
         user, _ = User.objects.get_or_create(
             supabase_user_id=subject,
             defaults={"email": email},
         )
-        changed = False
-        if email and user.email != email:
-            user.email = email
-            changed = True
         if not user.is_active:
             raise InvalidSupabaseToken("This application account is inactive.")
-        if changed:
+
+        # Sync email if it was set after creation (race with get_or_create).
+        if email and user.email != email:
+            user.email = email
             user.save(update_fields=["email", "updated_at"])
 
         profile, _ = CustomerProfile.objects.get_or_create(user=user)
@@ -212,10 +301,12 @@ class SupabaseJWTAuthentication(BaseAuthentication):
 
         parts = header.split()
         if len(parts) != 2 or parts[0].lower() != self.keyword.lower():
-            raise InvalidSupabaseToken("Authorization header must use Bearer authentication.")
+            raise InvalidSupabaseToken(
+                "Authorization header must use Bearer authentication."
+            )
 
         claims = _decode_token(parts[1])
-        user = _provision_user(claims)
+        user = _resolve_user(claims)
         return user, claims
 
     def authenticate_header(self, request: Request) -> str:

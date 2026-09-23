@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ShoppingBag,
@@ -10,6 +11,7 @@ import {
   User,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 import {
   NAV_LINKS,
@@ -17,18 +19,41 @@ import {
   SHOP_BY_SET_NAV,
 } from "@/lib/homepage-data";
 import { useCart } from "@/components/CartContext";
+import { useAuth } from "@/components/AuthProvider";
 
 export interface HeaderProps {
   variant?: "solid" | "transparent";
 }
 
-export default function Header({ variant: _variant }: HeaderProps = {}) {
+export default function Header() {
+  const router = useRouter();
+  const { user, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [wishlistCount] = useState(0);
   const { itemCount, openDrawer } = useCart();
   const shopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function getInitials(name: string, fallback: string): string {
+    const trimmed = (name || "").trim();
+    const source = trimmed.length > 0 ? trimmed : fallback;
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "C";
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  }
+
+  async function handleSignOutMobile() {
+    setMobileOpen(false);
+    try {
+      await signOut();
+    } catch {
+      // ignore — at worst, session already cleared client-side
+    }
+    router.push("/");
+    router.refresh();
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -224,11 +249,25 @@ export default function Header({ variant: _variant }: HeaderProps = {}) {
 
             {/* Account */}
             <Link
-              href="/account"
-              aria-label="Customer account"
-              className={`p-1.5 transition-colors duration-300 hidden lg:block ${iconClasses}`}
+              href={user ? "/account" : "/login"}
+              aria-label={user ? "Customer account" : "Sign in to your account"}
+              title={user ? "My Account" : "Sign In"}
+              className={`inline-flex items-center justify-center transition-colors duration-300 ${iconClasses} ${
+                user
+                  ? "relative p-0 -my-0.5"
+                  : "p-1.5"
+              }`}
             >
-              <User size={19} strokeWidth={1.5} />
+              {user ? (
+                <span
+                  aria-hidden
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/70 bg-[#fff8f7] font-[var(--font-cinzel)] text-[12px] text-[#680007] shadow-sm ring-1 ring-black/10"
+                >
+                  {getInitials(user.profile.display_name ?? "", user.email)}
+                </span>
+              ) : (
+                <User size={19} strokeWidth={1.5} />
+              )}
             </Link>
 
             {/* Shopping Bag */}
@@ -335,6 +374,62 @@ export default function Header({ variant: _variant }: HeaderProps = {}) {
                   ))}
                 </ul>
               </div>
+            </div>
+
+            {/* Drawer Account */}
+            <div className="px-6 pt-5 border-t border-ink/8">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8b000a] mb-3">
+                Account
+              </p>
+              {user ? (
+                <div className="space-y-3">
+                  <Link
+                    href="/account"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 p-3 -mx-2 rounded-md hover:bg-white transition-colors"
+                  >
+                    <span
+                      aria-hidden
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-white/70 bg-[#fff8f7] font-[var(--font-cinzel)] text-[14px] text-[#680007] shadow-sm ring-1 ring-black/10"
+                    >
+                      {getInitials(user.profile.display_name ?? "", user.email)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-medium text-ink">
+                        {user.profile.display_name || "My Profile"}
+                      </p>
+                      <p className="truncate text-[11px] text-ink/50">
+                        {user.email}
+                      </p>
+                    </div>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOutMobile}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-[#680007]/15 bg-ivory px-3.5 py-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#680007] transition-colors hover:bg-[#680007] hover:text-white"
+                  >
+                    <LogOut size={14} strokeWidth={1.75} />
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex items-center justify-center rounded-md border border-[#680007]/20 bg-white px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.15em] text-[#680007] transition-colors hover:bg-[#680007] hover:text-white"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex items-center justify-center rounded-md bg-[#680007] px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.15em] text-white shadow-sm transition-opacity hover:opacity-95"
+                  >
+                    Join
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Drawer Footer */}

@@ -9,6 +9,19 @@ import * as cartApi from '@/lib/api/cart';
 import type { Cart, ProductVariantSummary } from '@/lib/api/types';
 import { ApiClientError } from '@/lib/api/client';
 
+vi.mock('@/components/AuthProvider', () => ({
+  useAuth: () => ({
+    user: null,
+    session: null,
+    supabaseUser: null,
+    loading: false,
+    signOut: vi.fn(),
+    refreshUser: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+
 describe('Cart UI and Integrations', () => {
   const mockCartWithItem: Cart = {
     id: 'cart-1',
