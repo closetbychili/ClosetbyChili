@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -12,6 +13,10 @@ import { getProductGallery, mapProductToUi } from "@/lib/adapters/catalog-adapte
 import type { ProductDetail, ProductListItem } from "@/lib/api/types";
 import type { ProductItem } from "@/lib/homepage-data";
 
+const getCachedProduct = cache(async (slug: string) => {
+  return getProduct(slug);
+});
+
 interface ProductPageProps {
   params: Promise<{
     slug: string;
@@ -24,7 +29,7 @@ export async function generateMetadata({
   const { slug } = await params;
 
   try {
-    const product = await getProduct(slug);
+    const product = await getCachedProduct(slug);
     const categoryName = product.category?.name || "Ethnic Wear";
 
     return {
@@ -48,7 +53,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   let relatedProducts: ProductItem[] = [];
 
   try {
-    product = await getProduct(slug);
+    product = await getCachedProduct(slug);
 
     // Fetch related products from same category or bestsellers
     if (product.category?.slug) {

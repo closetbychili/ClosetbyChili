@@ -7,10 +7,11 @@ export default function FestiveCollection() {
       {/* ── Background: Luxury Festive Photography / Texture ── */}
       <div className="absolute inset-0">
         <Image
-          src="/assets/hero/hero-5.jpg"
+          src="/assets/hero/hero-5.webp"
           alt="Celebrate in Your Own Style — Festive Collection"
           fill
           sizes="100vw"
+          loading="lazy"
           className="object-cover object-center"
         />
 
