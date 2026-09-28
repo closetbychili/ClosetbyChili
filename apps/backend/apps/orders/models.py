@@ -30,10 +30,25 @@ class Order(models.Model):
         REFUNDED = "REFUNDED", "Refunded"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    cart = models.ForeignKey(
+        "cart.Cart",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+        help_text="The active cart that was converted into this order.",
+    )
     user = models.ForeignKey(
         "accounts.User",
         on_delete=models.PROTECT,
         related_name="orders",
+    )
+    idempotency_key = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Client-supplied checkout idempotency key for this user.",
     )
     order_number = models.CharField(max_length=32, unique=True, db_index=True)
     status = models.CharField(
@@ -85,6 +100,18 @@ class Order(models.Model):
     class Meta:
         db_table = "orders"
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "idempotency_key"],
+                condition=Q(idempotency_key__isnull=False),
+                name="uq_order_user_idempotency_key",
+            ),
+            models.UniqueConstraint(
+                fields=["cart"],
+                condition=Q(cart__isnull=False),
+                name="uq_order_cart",
+            ),
+        ]
         indexes = [
             models.Index(fields=["user", "created_at"], name="idx_order_user_created"),
             models.Index(fields=["status"], name="idx_order_status"),
