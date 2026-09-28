@@ -269,18 +269,14 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Checkout CTA Placeholder */}
                 <div className="space-y-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      alert("Checkout orchestration will be enabled in Sprint 2.6 / Sprint 3!");
-                    }}
+                  <Link
+                    href="/checkout"
                     className="w-full h-12 flex items-center justify-center gap-2.5 bg-[#8b000a] text-[#fff8f7] text-xs font-semibold uppercase tracking-[0.25em] hover:bg-[#6c0008] transition-all shadow-md hover:shadow-lg transform active:scale-[0.99]"
                   >
                     <span>Proceed to Checkout</span>
                     <ArrowRight size={16} />
-                  </button>
+                  </Link>
 
                   <p className="text-[10px] text-center text-ink/40 leading-relaxed">
                     By proceeding to checkout you agree to Closet by Chilli terms of service and luxury care policies.

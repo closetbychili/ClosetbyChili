@@ -30,37 +30,37 @@ export const PRODUCT_GALLERY_MAP: Record<string, string[]> = {
   'sunflower-block-print-kurti': [
     '/assets/products/kurti-1.jpg',
     '/assets/products/kurti-2.jpg',
-    '/assets/hero/hero-2.jpg',
+    '/assets/hero/hero-2.webp',
   ],
   'chikankari-embroidered-kurti': [
     '/assets/products/kurti-2.jpg',
     '/assets/products/kurti-3.jpg',
-    '/assets/hero/hero-3.jpg',
+    '/assets/hero/hero-3.webp',
   ],
   'royal-silk-anarkali-set': [
     '/assets/products/kurti-3.jpg',
     '/assets/products/kurti-1.jpg',
-    '/assets/hero/hero-4.jpg',
+    '/assets/hero/hero-4.webp',
   ],
   'floral-cotton-2-piece-kurta-set': [
     '/assets/products/kurti-1.jpg',
-    '/assets/hero/hero-3.jpg',
+    '/assets/hero/hero-3.webp',
   ],
   'ethnic-embroidered-3-piece-suit': [
     '/assets/products/kurti-2.jpg',
-    '/assets/hero/hero-5.jpg',
+    '/assets/hero/hero-5.webp',
   ],
   'maxi-ethnic-dress': [
     '/assets/products/kurti-3.jpg',
-    '/assets/hero/hero-4.jpg',
+    '/assets/hero/hero-4.webp',
   ],
   'bandhani-print-dupatta': [
     '/assets/products/kurti-1.jpg',
-    '/assets/hero/hero-5.jpg',
+    '/assets/hero/hero-5.webp',
   ],
   'rayon-palazzo-pants': [
     '/assets/products/kurti-2.jpg',
-    '/assets/hero/hero-2.jpg',
+    '/assets/hero/hero-2.webp',
   ],
 };
 
@@ -108,12 +108,12 @@ export const CATEGORY_SUBTITLE_MAP: Record<string, string> = {
  * Editorial category background imagery mappings.
  */
 export const CATEGORY_IMAGE_MAP: Record<string, string> = {
-  kurtis: '/assets/hero/hero-2.jpg',
-  'kurta-sets': '/assets/hero/hero-3.jpg',
-  dresses: '/assets/hero/hero-4.jpg',
-  'anarkali-sets': '/assets/hero/hero-4.jpg',
+  kurtis: '/assets/hero/hero-2.webp',
+  'kurta-sets': '/assets/hero/hero-3.webp',
+  dresses: '/assets/hero/hero-4.webp',
+  'anarkali-sets': '/assets/hero/hero-4.webp',
   'bottom-wear': '/assets/products/kurti-2.jpg',
-  dupattas: '/assets/hero/hero-5.jpg',
+  dupattas: '/assets/hero/hero-5.webp',
 };
 
 /**

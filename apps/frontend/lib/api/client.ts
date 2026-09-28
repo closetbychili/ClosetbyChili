@@ -126,8 +126,28 @@ export async function apiFetch<T>(
     );
   }
 
+  const responseHeaders = response.headers && typeof response.headers.get === 'function'
+    ? response.headers
+    : new Headers();
+  const contentLength = responseHeaders.get('content-length');
+  if (response.status === 204 || contentLength === '0') {
+    return undefined as T;
+  }
+
   try {
-    return (await response.json()) as T;
+    if (typeof response.text === 'function') {
+      const text = await response.text();
+      if (!text) {
+        return undefined as T;
+      }
+      return JSON.parse(text) as T;
+    }
+
+    if (typeof response.json === 'function') {
+      return (await response.json()) as T;
+    }
+
+    return undefined as T;
   } catch (error) {
     throw new ApiClientError(
       `Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown parsing error'}`,

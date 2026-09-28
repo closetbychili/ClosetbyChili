@@ -268,16 +268,14 @@ export default function CartDrawer() {
                 View & Edit Bag
               </Link>
 
-              <button
-                type="button"
-                onClick={() => {
-                  alert("Checkout flow will be enabled in Sprint 2.6 / Sprint 3!");
-                }}
+              <Link
+                href="/checkout"
+                onClick={closeDrawer}
                 className="w-full h-11 flex items-center justify-center gap-2 bg-[#8b000a] text-[#fff8f7] text-xs font-semibold uppercase tracking-[0.2em] hover:bg-[#6c0008] transition-colors shadow-md"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight size={14} />
-              </button>
+              </Link>
 
               <button
                 type="button"

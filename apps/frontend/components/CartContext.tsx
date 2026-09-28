@@ -65,8 +65,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCart(data);
     } catch (err) {
       console.error("Failed to fetch cart:", err);
-      // Fallback to empty cart on failure without crashing UI
-      setCart(createEmptyCart());
+      // Preserve the last known-good cart instead of silently replacing it with an empty cart.
+      setCart((current) => current ?? createEmptyCart());
       if (err instanceof ApiClientError) {
         setError(err.message);
       }
@@ -115,30 +115,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Initial cart load on client mount for unauthenticated guests
   useEffect(() => {
-    let active = true;
-    if (!user && !session) {
-      getCart()
-        .then((data) => {
-          if (active) setCart(data);
-        })
-        .catch((err) => {
-          if (active) {
-            console.error("Failed to fetch cart:", err);
-            setCart(createEmptyCart());
-            if (err instanceof ApiClientError) {
-              setError(err.message);
-            }
-          }
-        })
-        .finally(() => {
-          if (active) setIsLoading(false);
-        });
+    // Only load guest cart when we know for sure there's no session.
+    // The auth transition effect handles loading for authenticated users.
+    // We guard against !user && !session strictly to avoid double-loading.
+    if (user || session) {
+      // Auth is present — the auth-transition effect handles cart loading.
+      return;
     }
+
+    let active = true;
+    getCart()
+      .then((data) => {
+        if (active) setCart(data);
+      })
+      .catch((err) => {
+        if (active) {
+          console.error("Failed to fetch cart:", err);
+          setCart((current) => current ?? createEmptyCart());
+          if (err instanceof ApiClientError) {
+            setError(err.message);
+          }
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [user, session]);
 
   const handleAddToCart = useCallback(
     async (variantId: string, quantity = 1) => {
