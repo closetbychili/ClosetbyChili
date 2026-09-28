@@ -215,3 +215,91 @@ export interface AddToCartPayload {
 export interface UpdateCartItemPayload {
   quantity: number;
 }
+
+// =============================================================================
+// Address & Checkout Domain Types
+// =============================================================================
+
+export interface Address {
+  id: string;
+  user: string;
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2: string;
+  landmark: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  address_type: 'HOME' | 'OFFICE' | 'OTHER';
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAddressPayload {
+  user_id?: string;
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2?: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country?: string;
+  address_type?: 'HOME' | 'OFFICE' | 'OTHER';
+  is_default?: boolean;
+}
+
+export interface CheckoutOrderItem {
+  id: string;
+  product: string;
+  variant: string;
+  product_name: string;
+  variant_name: string;
+  sku: string;
+  unit_price: string;
+  quantity: number;
+  line_total: string;
+}
+
+export interface CheckoutAddressSnapshot {
+  id: string;
+  full_name: string;
+  phone?: string;
+  address_line1?: string;
+  address_line2?: string;
+  landmark?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  address_type?: string;
+  is_default?: boolean;
+}
+
+export interface CheckoutOrder {
+  id: string;
+  order_number: string;
+  status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  payment_status: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  currency: string;
+  subtotal: string;
+  discount: string;
+  shipping_amount: string;
+  tax_amount: string;
+  total: string;
+  shipping_address_snapshot: CheckoutAddressSnapshot;
+  billing_address_snapshot: CheckoutAddressSnapshot;
+  created_at: string;
+  updated_at: string;
+  item_count: number;
+  items: CheckoutOrderItem[];
+}
+
+export interface PlaceOrderPayload {
+  shipping_address_id: string;
+  idempotency_key?: string;
+}

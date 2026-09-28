@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import React, { useState } from 'react';
 import { CartProvider, useCart } from '@/components/CartContext';
@@ -63,9 +63,12 @@ const mockMergedCart: Cart = {
 };
 
 function TestCartConsumer() {
-  const { cart, itemCount, subtotal } = useCart();
+  const { cart, itemCount, subtotal, refreshCart } = useCart();
   return (
     <div>
+      <button type="button" onClick={() => void refreshCart()}>
+        refresh cart
+      </button>
       <span data-testid="cart-id">{cart?.id || 'no-cart'}</span>
       <span data-testid="item-count">{itemCount}</span>
       <span data-testid="subtotal">{subtotal}</span>
@@ -167,6 +170,28 @@ describe('Cart Merge & Auth Lifecycle Integration', () => {
 
     // Merge must NOT be called again
     expect(mergeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the current cart when a refresh fails instead of replacing it with an empty cart', async () => {
+    const getCartSpy = vi.spyOn(cartApi, 'getCart').mockResolvedValueOnce(mockMergedCart).mockRejectedValueOnce(new Error('network failure'));
+
+    render(
+      <CartProvider>
+        <TestCartConsumer />
+      </CartProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('cart-id').textContent).toBe('user-cart-merged-1');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'refresh cart' }));
+
+    await waitFor(() => {
+      expect(getCartSpy).toHaveBeenCalledTimes(2);
+      expect(screen.getByTestId('cart-id').textContent).toBe('user-cart-merged-1');
+      expect(screen.getByTestId('item-count').textContent).toBe('3');
+    });
   });
 
   it('does not trigger merge when logging in without a guest cart session', async () => {
