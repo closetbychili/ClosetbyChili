@@ -297,9 +297,24 @@ export interface CheckoutOrder {
   updated_at: string;
   item_count: number;
   items: CheckoutOrderItem[];
+  razorpay_order_id?: string | null;
 }
 
 export interface PlaceOrderPayload {
   shipping_address_id: string;
   idempotency_key?: string;
+}
+
+export interface RazorpayOrderSession {
+  razorpay_order_id: string;
+  key_id: string;
+  amount: number;
+  currency: string;
+  order_number: string;
+}
+
+export interface VerifyPaymentPayload {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
 }

@@ -209,6 +209,10 @@ class CheckoutApiTests(TestCase):
         self.assertEqual(Order.objects.count(), 1)
 
     def test_concurrent_checkout_requests_for_same_cart_cannot_create_duplicate_orders(self):
+        from django.db import connection
+        if connection.vendor == "sqlite":
+            self.skipTest("SQLite does not support concurrent multi-threaded writes.")
+
         def submit_checkout(key_suffix: str):
             client = APIClient()
             client.force_authenticate(user=self.user)

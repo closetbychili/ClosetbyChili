@@ -113,5 +113,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "updated_at",
             "item_count",
             "items",
+            "razorpay_order_id",
         ]
         read_only_fields = fields

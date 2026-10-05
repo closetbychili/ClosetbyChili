@@ -146,8 +146,12 @@ class CartView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        is_authenticated = bool(
+            getattr(request, "user", None) and request.user.is_authenticated
+        )
         session_key = _extract_session_key(request)
-        if not session_key:
+
+        if not is_authenticated and not session_key:
             # Return standard empty cart structure for fresh guest sessions
             return Response(
                 {
@@ -163,7 +167,25 @@ class CartView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        cart = _get_cart(request, must_exist=True)
+        if is_authenticated:
+            cart = _get_cart(request, must_exist=False)
+            if not cart:
+                return Response(
+                    {
+                        "id": None,
+                        "session_key": None,
+                        "items": [],
+                        "item_count": 0,
+                        "subtotal": "0.00",
+                        "is_active": True,
+                        "created_at": None,
+                        "updated_at": None,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+        else:
+            cart = _get_cart(request, must_exist=True)
+
         serializer = CartSerializer(cart)
         response = Response(serializer.data, status=status.HTTP_200_OK)
         return _attach_cart_session(response, cart)

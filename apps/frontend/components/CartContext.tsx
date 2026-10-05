@@ -43,14 +43,16 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
 
-  const lastMergedTokenRef = useRef<string | null>(null);
+  const lastProcessedTokenRef = useRef<string | null>(null);
   const isMergingRef = useRef<boolean>(false);
+  const guestLoadedRef = useRef<boolean>(false);
+  const wasAuthenticatedRef = useRef<boolean>(false);
 
   const clearError = useCallback(() => setError(null), []);
   const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
@@ -75,17 +77,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session?.access_token]);
 
-  // Handle auth transition: login triggers cart merge once; logout resets cart
+  // Single authoritative effect to coordinate initial load, auth transition, cart merge, and logout
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     const token = session?.access_token;
-    if (user && token) {
-      if (lastMergedTokenRef.current === token || isMergingRef.current) {
+    if (token) {
+      wasAuthenticatedRef.current = true;
+      if (lastProcessedTokenRef.current === token || isMergingRef.current) {
         return;
       }
       const guestSession = getStoredCartSession();
       if (guestSession) {
         isMergingRef.current = true;
-        lastMergedTokenRef.current = token;
+        lastProcessedTokenRef.current = token;
         setIsLoading(true);
         apiMergeCart(token)
           .then((merged) => {
@@ -100,51 +107,48 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(false);
           });
       } else {
-        lastMergedTokenRef.current = token;
+        lastProcessedTokenRef.current = token;
         void refreshCart();
       }
-    } else if (!user && !session) {
-      if (lastMergedTokenRef.current) {
-        lastMergedTokenRef.current = null;
+    } else {
+      if (wasAuthenticatedRef.current) {
+        wasAuthenticatedRef.current = false;
+        lastProcessedTokenRef.current = null;
         isMergingRef.current = false;
         clearStoredCartSession();
         setCart(createEmptyCart());
+        setIsLoading(false);
+        return;
       }
-    }
-  }, [user, session, refreshCart]);
 
-  // Initial cart load on client mount for unauthenticated guests
-  useEffect(() => {
-    // Only load guest cart when we know for sure there's no session.
-    // The auth transition effect handles loading for authenticated users.
-    // We guard against !user && !session strictly to avoid double-loading.
-    if (user || session) {
-      // Auth is present — the auth-transition effect handles cart loading.
-      return;
-    }
+      if (guestLoadedRef.current) {
+        return;
+      }
+      guestLoadedRef.current = true;
 
-    let active = true;
-    getCart()
-      .then((data) => {
-        if (active) setCart(data);
-      })
-      .catch((err) => {
-        if (active) {
-          console.error("Failed to fetch cart:", err);
-          setCart((current) => current ?? createEmptyCart());
-          if (err instanceof ApiClientError) {
-            setError(err.message);
+      let active = true;
+      getCart()
+        .then((data) => {
+          if (active) setCart(data);
+        })
+        .catch((err) => {
+          if (active) {
+            console.error("Failed to fetch cart:", err);
+            setCart((current) => current ?? createEmptyCart());
+            if (err instanceof ApiClientError) {
+              setError(err.message);
+            }
           }
-        }
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+        })
+        .finally(() => {
+          if (active) setIsLoading(false);
+        });
 
-    return () => {
-      active = false;
-    };
-  }, [user, session]);
+      return () => {
+        active = false;
+      };
+    }
+  }, [authLoading, session?.access_token, refreshCart]);
 
   const handleAddToCart = useCallback(
     async (variantId: string, quantity = 1) => {

@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 from django.core.cache import cache
-from django.db import transaction
+from django.db import (
+    IntegrityError,
+    transaction,
+)
 from django.db.models import QuerySet
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -41,7 +47,11 @@ class CheckoutView(APIView):
         )
 
     def _get_cached_order_for_cart(self, user_id: str, cart_id: str) -> Order | None:
-        cached_order_id = cache.get(f"checkout:cart:{user_id}:{cart_id}")
+        try:
+            cached_order_id = cache.get(f"checkout:cart:{user_id}:{cart_id}")
+        except Exception:
+            # Redis unavailable — fall back to DB lookup.
+            return None
         if not cached_order_id:
             return None
         return (
@@ -52,7 +62,11 @@ class CheckoutView(APIView):
         )
 
     def _get_cached_order_for_key(self, user_id: str, idempotency_key: str) -> Order | None:
-        cached_order_id = cache.get(f"checkout:key:{user_id}:{idempotency_key}")
+        try:
+            cached_order_id = cache.get(f"checkout:key:{user_id}:{idempotency_key}")
+        except Exception:
+            # Redis unavailable — fall back to DB lookup.
+            return None
         if not cached_order_id:
             return None
         return (
@@ -241,12 +255,24 @@ class CheckoutView(APIView):
             cart.items.all().delete()
             cart.save(update_fields=["updated_at"])
 
-            cache.set(f"checkout:cart:{request.user.id}:{cart.id}", str(order.id), timeout=60 * 60 * 24)
-            if idempotency_key:
+            try:
                 cache.set(
-                    f"checkout:key:{request.user.id}:{idempotency_key}",
+                    f"checkout:cart:{request.user.id}:{cart.id}",
                     str(order.id),
                     timeout=60 * 60 * 24,
+                )
+                if idempotency_key:
+                    cache.set(
+                        f"checkout:key:{request.user.id}:{idempotency_key}",
+                        str(order.id),
+                        timeout=60 * 60 * 24,
+                    )
+            except Exception:
+                # Redis unavailable — cache is a performance optimisation only.
+                # The DB-backed idempotency guards (unique idempotency_key +
+                # cart FK on Order) prevent duplicate orders regardless.
+                logger.warning(
+                    "Cache unavailable; idempotency will rely on DB constraints."
                 )
 
             order = (

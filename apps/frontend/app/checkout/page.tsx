@@ -1,15 +1,24 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Loader2, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, Loader2, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/components/AuthProvider";
 import { useCart } from "@/components/CartContext";
-import { createAddress, getAddresses, placeOrder, type Address, type CheckoutOrder } from "@/lib/api";
+import {
+  createAddress,
+  createRazorpayOrder,
+  getAddresses,
+  placeOrder,
+  verifyRazorpayPayment,
+  type Address,
+  type CheckoutOrder,
+} from "@/lib/api";
+import { launchRazorpayCheckout } from "@/lib/razorpay";
 
 const emptyAddressForm = {
   full_name: "",
@@ -28,16 +37,20 @@ const emptyAddressForm = {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, session, loading: authLoading } = useAuth();
-  const { cart, itemCount, subtotal, isLoading: cartLoading } = useCart();
+  const { cart, itemCount, subtotal, isLoading: cartLoading, refreshCart } = useCart();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
   const [addressForm, setAddressForm] = useState(emptyAddressForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [order, setOrder] = useState<CheckoutOrder | null>(null);
+
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -49,7 +62,6 @@ export default function CheckoutPage() {
     if (!user || !session?.access_token) return;
 
     let active = true;
-    setIsLoadingAddresses(true);
     getAddresses(session.access_token)
       .then((data) => {
         if (!active) return;
@@ -72,6 +84,7 @@ export default function CheckoutPage() {
   }, [session?.access_token, user]);
 
   const itemTotal = useMemo(() => Number.parseFloat(subtotal) || 0, [subtotal]);
+  // Only treat as having no items once we have a confirmed cart (not while loading).
   const hasItems = (cart?.items?.length ?? 0) > 0;
 
   const handleSubmitAddress = async (event: FormEvent<HTMLFormElement>) => {
@@ -91,34 +104,92 @@ export default function CheckoutPage() {
     }
   };
 
+  const startPaymentFlow = async (targetOrder: CheckoutOrder) => {
+    if (!session?.access_token) return;
+    setIsPaying(true);
+    setPaymentNotice(null);
+
+    try {
+      const paymentSession = await createRazorpayOrder(targetOrder.order_number, session.access_token);
+      await launchRazorpayCheckout({
+        session: paymentSession,
+        user: {
+          name: user?.profile?.display_name || user?.email || "",
+          email: user?.email || "",
+          phone: user?.profile?.phone || "",
+        },
+        onSuccess: async (paymentDetails) => {
+          try {
+            const verified = await verifyRazorpayPayment(paymentDetails, session.access_token);
+            setOrder(verified);
+            setPaymentNotice(null);
+          } catch (verifyErr) {
+            setPaymentNotice(
+              verifyErr instanceof Error
+                ? verifyErr.message
+                : "Payment verification failed. Please contact support if your account was charged."
+            );
+          } finally {
+            setIsPaying(false);
+          }
+        },
+        onFailure: (err) => {
+          setIsPaying(false);
+          setPaymentNotice(err.description || "Payment failed or was cancelled. You can retry below.");
+        },
+        onDismiss: () => {
+          setIsPaying(false);
+          setPaymentNotice("Payment window closed before completion. You can retry anytime.");
+        },
+      });
+    } catch (err) {
+      setIsPaying(false);
+      setPaymentNotice(err instanceof Error ? err.message : "Unable to launch payment. You can retry below.");
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddressId || !user || !session?.access_token) {
       setFormError("Please choose a delivery address before placing the order.");
+      return;
+    }
+    if (isSubmitting || isPaying) {
+      // Prevent double-submit: silently discard subsequent clicks while in-flight.
       return;
     }
 
     setIsSubmitting(true);
     setFormError(null);
 
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = `checkout-${user.id}-${cart?.id || "cart"}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+    const idempotencyKey = idempotencyKeyRef.current;
+
     try {
       const created = await placeOrder(
         {
           shipping_address_id: selectedAddressId,
-          idempotency_key: `checkout-${user.id}-${Date.now()}`,
+          ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
         },
         session.access_token
       );
+      // Refresh cart so the header/drawer reflect the now-empty cart.
+      void refreshCart();
       setOrder(created);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "We could not place your order.");
-    } finally {
       setIsSubmitting(false);
+
+      // Launch Razorpay standard checkout flow
+      void startPaymentFlow(created);
+    } catch (error) {
+      setIsSubmitting(false);
+      setFormError(error instanceof Error ? error.message : "We could not place your order. Please try again.");
     }
   };
 
   if (authLoading || !user) {
     return (
-      <main className="min-h-screen bg-[#fff8f7] text-[#111111]">
+      <main className="min-h-screen bg-ivory text-ink">
         <Header />
         <div className="flex min-h-[60vh] items-center justify-center pt-32 text-sm text-ink/60">
           <Loader2 className="mr-2 animate-spin" size={16} />
@@ -130,18 +201,37 @@ export default function CheckoutPage() {
   }
 
   if (order) {
+    const isPaid = order.payment_status === "PAID";
     return (
-      <div className="min-h-screen bg-[#fff8f7]">
+      <div className="min-h-screen bg-ivory">
         <Header />
         <main className="mx-auto max-w-3xl px-5 pb-20 pt-28 sm:pt-34">
-          <div className="rounded-2xl border border-emerald-200 bg-white p-8 shadow-sm">
-            <div className="flex items-center gap-3 text-emerald-700">
-              <CheckCircle2 className="h-10 w-10" />
+          <div
+            className={`rounded-2xl border ${
+              isPaid ? "border-emerald-200" : "border-amber-200"
+            } bg-white p-8 shadow-sm`}
+          >
+            <div className={`flex items-center gap-3 ${isPaid ? "text-emerald-700" : "text-amber-700"}`}>
+              {isPaid ? (
+                <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+              ) : (
+                <CreditCard className="h-10 w-10 text-amber-600" />
+              )}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">Order placed</p>
-                <h1 className="font-display text-3xl text-ink">Thank you for your order</h1>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">
+                  {isPaid ? "Order placed & paid" : "Order placed — pending payment"}
+                </p>
+                <h1 className="font-display text-3xl text-ink">
+                  Thank you for your order
+                </h1>
               </div>
             </div>
+
+            {paymentNotice && (
+              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+                {paymentNotice}
+              </div>
+            )}
 
             <div className="mt-6 space-y-3 rounded-xl bg-[#f7f2ee] p-5 text-sm text-ink/80">
               <p>
@@ -150,8 +240,15 @@ export default function CheckoutPage() {
               <p>
                 <span className="font-semibold text-ink">Status:</span> {order.status}
               </p>
-              <p>
-                <span className="font-semibold text-ink">Payment status:</span> {order.payment_status}
+              <p className="flex items-center gap-2">
+                <span className="font-semibold text-ink">Payment status:</span>
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                    isPaid ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {order.payment_status}
+                </span>
               </p>
               <p>
                 <span className="font-semibold text-ink">Total:</span> ₹{Number.parseFloat(order.total).toLocaleString("en-IN")}
@@ -159,9 +256,29 @@ export default function CheckoutPage() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              {!isPaid && (
+                <button
+                  type="button"
+                  onClick={() => startPaymentFlow(order)}
+                  disabled={isPaying}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory disabled:opacity-60"
+                >
+                  {isPaying ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Opening Payment…
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={14} />
+                      Pay Now / Retry
+                    </>
+                  )}
+                </button>
+              )}
               <Link
                 href="/account"
-                className="inline-flex items-center justify-center rounded-full bg-[#8b000a] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#fff8f7]"
+                className="inline-flex items-center justify-center rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory"
               >
                 View Orders
               </Link>
@@ -179,18 +296,32 @@ export default function CheckoutPage() {
     );
   }
 
+
+  if (cartLoading) {
+    return (
+      <main className="min-h-screen bg-ivory text-ink">
+        <Header />
+        <div className="flex min-h-[60vh] items-center justify-center pt-32 text-sm text-ink/60">
+          <Loader2 className="mr-2 animate-spin" size={16} />
+          Loading your bag…
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
   if (!hasItems) {
     return (
-      <div className="min-h-screen bg-[#fff8f7]">
+      <div className="min-h-screen bg-ivory">
         <Header />
         <main className="mx-auto max-w-xl px-5 pb-20 pt-28 text-center sm:pt-36">
           <div className="rounded-2xl border border-ink/10 bg-white p-10 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8b000a]">Checkout</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-chili">Checkout</p>
             <h1 className="mt-3 font-display text-3xl text-ink">Your bag is empty</h1>
             <p className="mt-3 text-sm text-ink/60">Add a few statement pieces before checking out.</p>
             <Link
               href="/products"
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-[#8b000a] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#fff8f7]"
+              className="mt-6 inline-flex items-center justify-center rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory"
             >
               Shop now
             </Link>
@@ -202,7 +333,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f7] text-[#111111]">
+    <div className="min-h-screen bg-ivory text-ink">
       <Header />
       <main className="mx-auto max-w-6xl px-5 pb-20 pt-28 sm:pt-34">
         <div className="mb-8 flex items-center gap-3">
@@ -217,7 +348,7 @@ export default function CheckoutPage() {
             <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8b000a]">Shipping</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-chili">Shipping</p>
                   <h1 className="mt-2 font-display text-2xl text-ink">Delivery address</h1>
                 </div>
                 <button
@@ -237,7 +368,7 @@ export default function CheckoutPage() {
                       required
                       value={addressForm.full_name}
                       onChange={(event) => setAddressForm((current) => ({ ...current, full_name: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -246,7 +377,7 @@ export default function CheckoutPage() {
                       required
                       value={addressForm.phone}
                       onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -255,7 +386,7 @@ export default function CheckoutPage() {
                       required
                       value={addressForm.postal_code}
                       onChange={(event) => setAddressForm((current) => ({ ...current, postal_code: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -264,7 +395,7 @@ export default function CheckoutPage() {
                       required
                       value={addressForm.address_line1}
                       onChange={(event) => setAddressForm((current) => ({ ...current, address_line1: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -272,7 +403,7 @@ export default function CheckoutPage() {
                     <input
                       value={addressForm.address_line2}
                       onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -280,7 +411,7 @@ export default function CheckoutPage() {
                     <input
                       value={addressForm.landmark}
                       onChange={(event) => setAddressForm((current) => ({ ...current, landmark: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -289,7 +420,7 @@ export default function CheckoutPage() {
                       required
                       value={addressForm.city}
                       onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -298,7 +429,7 @@ export default function CheckoutPage() {
                       required
                       value={addressForm.state}
                       onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
@@ -306,7 +437,7 @@ export default function CheckoutPage() {
                     <input
                       value={addressForm.country}
                       onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[#8b000a]"
+                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
                     />
                   </label>
                   <div className="sm:col-span-2">
@@ -314,7 +445,7 @@ export default function CheckoutPage() {
                     <div className="flex gap-2 flex-wrap">
                       {(["HOME", "OFFICE", "OTHER"] as const).map((type) => (
                         <button key={type} type="button" onClick={() => setAddressForm((c) => ({ ...c, address_type: type }))}
-                          className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition ${addressForm.address_type === type ? 'border-[#8b000a] bg-[#fff5f5] text-[#8b000a]' : 'border-ink/15 text-ink/60 hover:border-[#8b000a]/40'}`}>
+                          className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition ${addressForm.address_type === type ? 'border-chili bg-[#fff5f5] text-chili' : 'border-ink/15 text-ink/60 hover:border-chili/40'}`}>
                           {type.charAt(0) + type.slice(1).toLowerCase()}
                         </button>
                       ))}
@@ -322,7 +453,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-ink/70">
-                      <input type="checkbox" checked={addressForm.is_default} onChange={(e) => setAddressForm((c) => ({ ...c, is_default: e.target.checked }))} className="h-4 w-4 accent-[#8b000a] rounded" />
+                      <input type="checkbox" checked={addressForm.is_default} onChange={(e) => setAddressForm((c) => ({ ...c, is_default: e.target.checked }))} className="h-4 w-4 accent-chili rounded" />
                       Set as default address
                     </label>
                   </div>
@@ -334,7 +465,7 @@ export default function CheckoutPage() {
                   <div className="sm:col-span-2 flex justify-end">
                     <button
                       type="submit"
-                      className="rounded-full bg-[#8b000a] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#fff8f7]"
+                      className="rounded-full bg-chili px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ivory"
                     >
                       Save address
                     </button>
@@ -357,7 +488,7 @@ export default function CheckoutPage() {
                       key={address.id}
                       className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
                         selectedAddressId === address.id
-                          ? 'border-[#8b000a] bg-[#fff5f5]'
+                          ? 'border-chili bg-[#fff5f5]'
                           : 'border-ink/10 bg-[#fffaf9]'
                       }`}
                     >
@@ -366,7 +497,7 @@ export default function CheckoutPage() {
                         name="shipping-address"
                         checked={selectedAddressId === address.id}
                         onChange={() => setSelectedAddressId(address.id)}
-                        className="mt-1 h-4 w-4 accent-[#8b000a]"
+                        className="mt-1 h-4 w-4 accent-chili"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -390,7 +521,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-[#8b000a]">
+              <div className="flex items-center gap-2 text-chili">
                 <Sparkles size={16} />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">Security</p>
               </div>
@@ -428,7 +559,7 @@ export default function CheckoutPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span>Estimated total</span>
-                <span className="text-base font-display font-bold text-[#8b000a]">₹{itemTotal.toLocaleString('en-IN')}</span>
+                <span className="text-base font-display font-bold text-chili">₹{itemTotal.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -442,7 +573,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={handlePlaceOrder}
               disabled={isSubmitting || cartLoading || !selectedAddressId}
-              className="mt-6 w-full rounded-full bg-[#8b000a] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#fff8f7] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-6 w-full rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center justify-center gap-2">

@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.orders",
     "apps.addresses",
+    "apps.payments",
 ]
 
 MIDDLEWARE = [
@@ -256,3 +257,11 @@ CACHES = {
         "LOCATION": os.environ.get("REDIS_URL", "redis://localhost:6379/0"),
     }
 }
+
+# ============================================================
+# Razorpay Configuration
+# ============================================================
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
+

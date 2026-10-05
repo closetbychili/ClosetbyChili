@@ -26,6 +26,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from apps.accounts.models import User
 from apps.cart.models import Cart, CartItem
 from apps.catalog.models import Category, Product, ProductVariant
 from apps.inventory.models import InventoryItem
@@ -73,6 +74,36 @@ class CartApiIntegrationTest(TestCase):
         InventoryItem.objects.create(variant=self.inactive_variant, quantity_available=10)
 
     def test_get_cart_without_session_returns_empty_structure(self) -> None:
+        response = self.client.get("/api/v1/cart/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["items"], [])
+        self.assertEqual(data["item_count"], 0)
+        self.assertEqual(data["subtotal"], "0.00")
+
+    def test_get_cart_for_authenticated_user_returns_items(self) -> None:
+        user = User.objects.create(
+            supabase_user_id=uuid.uuid4(),
+            email="auth_cart_user@example.com",
+        )
+        user_cart = Cart.objects.create(user=user, is_active=True)
+        CartItem.objects.create(cart=user_cart, variant=self.variant_s, quantity=2)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.get("/api/v1/cart/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["item_count"], 2)
+        self.assertEqual(len(data["items"]), 1)
+        self.assertEqual(data["items"][0]["variant"]["sku"], "CHK-MAXI-S")
+        self.assertEqual(data["subtotal"], "9000.00")
+
+    def test_get_cart_for_authenticated_user_without_cart_returns_empty_structure(self) -> None:
+        user = User.objects.create(
+            supabase_user_id=uuid.uuid4(),
+            email="empty_cart_user@example.com",
+        )
+        self.client.force_authenticate(user=user)
         response = self.client.get("/api/v1/cart/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
