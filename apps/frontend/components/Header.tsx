@@ -2,67 +2,28 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  ShoppingBag,
-  Heart,
-  User,
-  Menu,
-  X,
-  LogOut,
-} from "lucide-react";
-import {
-  NAV_LINKS,
-  SHOP_BY_TYPE,
-  SHOP_BY_SET_NAV,
-} from "@/lib/homepage-data";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthProvider";
-
-export interface HeaderProps {
-  variant?: "solid" | "transparent";
-}
 
 export default function Header() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { itemCount, subtotal, openDrawer } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
-  const [wishlistCount] = useState(0);
-  const { itemCount, openDrawer } = useCart();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const shopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function getInitials(name: string, fallback: string): string {
-    const trimmed = (name || "").trim();
-    const source = trimmed.length > 0 ? trimmed : fallback;
-    const parts = source.split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return "C";
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-  }
-
-  async function handleSignOutMobile() {
-    setMobileOpen(false);
-    try {
-      await signOut();
-    } catch {
-      // ignore — at worst, session already cleared client-side
-    }
-    router.push("/");
-    router.refresh();
-  }
-
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 30);
+    const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
@@ -80,368 +41,426 @@ export default function Header() {
   };
 
   const handleShopLeave = () => {
-    shopTimeoutRef.current = setTimeout(() => setShopOpen(false), 200);
+    shopTimeoutRef.current = setTimeout(() => setShopOpen(false), 180);
   };
 
-  // Always solid — ivory background, dark text, dark logo
-  const headerContainerClasses = scrolled
-    ? "bg-[#fff8f7] border-b border-[#111111]/10 shadow-[0_2px_18px_rgba(0,0,0,0.07)]"
-    : "bg-[#fff8f7] border-b border-[#111111]/8 shadow-[0_1px_6px_rgba(0,0,0,0.04)]";
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
-  const navLinkClasses = "text-[#111111]/85 hover:text-[#8b000a]";
-  const iconClasses = "text-[#111111]/80 hover:text-[#8b000a]";
+  const formattedSubtotal = Number(subtotal || 0).toLocaleString("en-IN");
 
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-[background-color,backdrop-filter,box-shadow,border-color] duration-300 ease-in-out ${headerContainerClasses}`}
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+          scrolled
+            ? "bg-surface/98 backdrop-blur-md shadow-[0_2px_12px_rgba(0,0,0,0.06)] border-b border-outline-variant/30"
+            : "bg-surface/95 backdrop-blur-sm shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-outline-variant/20"
+        }`}
       >
-        {/* Main Header Bar: Logo on LEFT, Navigation in CENTER, Icons on RIGHT */}
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-8 lg:px-12 h-[72px] sm:h-[80px] lg:h-[88px] flex items-center justify-between relative">
-          {/* ── LEFT ZONE: hamburger + desktop logo ── */}
-          <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-            {/* Mobile Hamburger Button */}
+        {/* ── Top Announcement Bar ── */}
+        <div className="bg-inverse-surface text-secondary-fixed py-2 text-center font-label-caps text-[10px] sm:text-label-caps tracking-widest uppercase px-4 flex items-center justify-center gap-2">
+          <span>COMPLIMENTARY DOMESTIC SHIPPING ON ORDERS ABOVE ₹2,999</span>
+          <span className="opacity-40">|</span>
+          <span className="hidden sm:inline">EXPRESS DISPATCH ACROSS INDIA</span>
+          <span className="sm:hidden">EXPRESS DISPATCH</span>
+        </div>
+
+        {/* ── Main Navigation Bar ── */}
+        <div className="h-16 md:h-20 max-w-360 mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between gap-4 lg:gap-8">
+          {/* Left: Mobile Menu Trigger + Brand Logo */}
+          <div className="flex items-center gap-3 md:gap-8">
             <button
-              aria-label="Open navigation menu"
+              type="button"
+              aria-label="Open mobile navigation"
               onClick={() => setMobileOpen(true)}
-              className={`lg:hidden p-1.5 -ml-1 transition-colors duration-300 ${iconClasses}`}
+              className="lg:hidden flex items-center justify-center p-1.5 text-on-surface hover:text-primary transition-colors focus:outline-none"
             >
-              <Menu size={24} strokeWidth={1.5} />
+              <span className="material-symbols-outlined text-[24px]">menu</span>
             </button>
 
-            {/* Logo — Desktop only, stays in left zone */}
             <Link
               href="/"
-              aria-label="Closet by Chili Home"
-              className="hidden lg:flex items-center group focus:outline-none"
+              data-path="home"
+              className="flex items-center gap-3 shrink-0 py-1 focus:outline-none"
             >
-              <div className="relative w-[136px] h-[74px]">
-                <Image
-                  src="/assets/brand/logo.png"
-                  alt="Closet by Chili"
-                  fill
-                  sizes="155px"
-                  className="object-contain object-center"
-                  priority
-                />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt="Closet by Chili Logo"
+                className="h-10 sm:h-12 md:h-13 w-auto object-contain transition-transform duration-200 hover:scale-[1.02]"
+                src="/assets/brand/logo.png"
+              />
             </Link>
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-7">
+              <Link
+                href="/products?collection=new-arrivals"
+                data-path="new-arrivals"
+                className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 relative flex items-center gap-1.5 font-medium"
+              >
+                <span>New Arrivals</span>
+                <span className="bg-primary text-on-primary text-[8px] font-bold px-1.5 py-0.5 leading-none tracking-normal">
+                  NEW
+                </span>
+              </Link>
+
+              {/* Shop Dropdown */}
+              <div
+                className="relative group py-2"
+                onMouseEnter={handleShopEnter}
+                onMouseLeave={handleShopLeave}
+              >
+                <Link
+                  href="/products"
+                  data-path="shop"
+                  className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 font-medium"
+                >
+                  <span>Shop</span>
+                  <span
+                    className={`material-symbols-outlined text-[16px] text-outline transition-transform duration-200 ${
+                      shopOpen ? "rotate-180" : ""
+                    }`}
+                  >
+                    expand_more
+                  </span>
+                </Link>
+
+                {shopOpen && (
+                  <div className="absolute top-full left-0 flex flex-col bg-surface shadow-xl border border-outline-variant/30 py-2 w-52 z-50 rounded-xs animate-fade-in">
+                    <Link
+                      href="/products?category=dresses"
+                      data-path="dresses"
+                      onClick={() => setShopOpen(false)}
+                      className="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors"
+                    >
+                      Dresses &amp; Gowns
+                    </Link>
+                    <Link
+                      href="/products?category=anarkali-sets"
+                      data-path="festive-sets"
+                      onClick={() => setShopOpen(false)}
+                      className="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors"
+                    >
+                      Anarkali Sets
+                    </Link>
+                    <Link
+                      href="/products?category=kurtis"
+                      data-path="kurtas-and-tunics"
+                      onClick={() => setShopOpen(false)}
+                      className="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors"
+                    >
+                      Kurtas &amp; Tunics
+                    </Link>
+                    <Link
+                      href="/products?category=co-ord-sets"
+                      data-path="co-ord-sets"
+                      onClick={() => setShopOpen(false)}
+                      className="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors"
+                    >
+                      Co-ord Sets
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/products?collection=bestsellers"
+                data-path="bestsellers"
+                className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium"
+              >
+                Bestsellers
+              </Link>
+
+              <Link
+                href="/products?collection=festive"
+                data-path="festive"
+                className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 relative flex items-center gap-1.5 font-medium"
+              >
+                <span>Festive</span>
+                <span className="bg-secondary text-on-secondary text-[8px] font-bold px-1.5 py-0.5 leading-none tracking-normal">
+                  HOT
+                </span>
+              </Link>
+
+              <Link
+                href="/#brand-manifesto"
+                data-path="about"
+                className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium"
+              >
+                About
+              </Link>
+            </nav>
           </div>
 
-          {/* Logo — Mobile only, absolutely centered in the viewport */}
-          <Link
-            href="/"
-            aria-label="Closet by Chili Home"
-            className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center group focus:outline-none z-10"
-          >
-            <div className="relative w-[110px] h-[60px]">
-              <Image
-                src="/assets/brand/logo.png"
-                alt="Closet by Chili"
-                fill
-                sizes="120px"
-                className="object-contain object-center"
-                priority
+          {/* Right: Search + Utility Actions */}
+          <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+            {/* Desktop Search Bar */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="hidden md:flex items-center bg-surface-container-low px-3.5 py-1.5 w-52 lg:w-68 border border-outline-variant/40 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px] text-outline mr-2 shrink-0">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search dresses, kurtis..."
+                className="bg-transparent text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none w-full"
               />
-            </div>
-          </Link>
+            </form>
 
-          {/* ── CENTER ZONE: DESKTOP NAVIGATION ── */}
-          <nav className="hidden lg:flex items-center justify-center gap-6 xl:gap-8 mx-auto px-4">
-            {NAV_LINKS.map((link) =>
-              link.label === "Shop" ? (
-                <div
-                  key={link.label}
-                  className="relative flex items-center"
-                  onMouseEnter={handleShopEnter}
-                  onMouseLeave={handleShopLeave}
-                >
-                  <Link
-                    href={link.href}
-                    className={`inline-flex items-center text-[12px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 py-2 whitespace-nowrap ${navLinkClasses}`}
-                  >
-                    Shop
-                  </Link>
+            <div className="flex items-center gap-2.5 sm:gap-4 text-on-surface">
+              {/* Mobile Search Toggle */}
+              <button
+                type="button"
+                aria-label="Search"
+                onClick={() => setMobileSearchOpen((prev) => !prev)}
+                className="md:hidden flex items-center justify-center p-1.5 text-on-surface-variant hover:text-on-surface focus:outline-none"
+              >
+                <span className="material-symbols-outlined text-[22px]">search</span>
+              </button>
 
-                  {/* Mega Menu Dropdown */}
-                  {shopOpen && (
-                    <div
-                      className="absolute left-1/2 -translate-x-1/2 top-full pt-3 animate-fade-in z-50"
-                      onMouseEnter={handleShopEnter}
-                      onMouseLeave={handleShopLeave}
-                    >
-                      <div className="w-[420px] bg-[#fff8f7] border border-ink/10 shadow-2xl p-6 grid grid-cols-2 gap-6">
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8b000a] mb-3.5 border-b border-ink/8 pb-2">
-                            Shop by Type
-                          </p>
-                          <ul className="space-y-2">
-                            {SHOP_BY_TYPE.map((item) => (
-                              <li key={item.label}>
-                                <Link
-                                  href={item.href}
-                                  onClick={() => setShopOpen(false)}
-                                  className="text-[12px] text-ink/75 hover:text-[#8b000a] transition-colors block py-0.5"
-                                >
-                                  {item.label}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8b000a] mb-3.5 border-b border-ink/8 pb-2">
-                            Shop by Set
-                          </p>
-                          <ul className="space-y-2">
-                            {SHOP_BY_SET_NAV.map((item) => (
-                              <li key={item.label}>
-                                <Link
-                                  href={item.href}
-                                  onClick={() => setShopOpen(false)}
-                                  className="text-[12px] text-ink/75 hover:text-[#8b000a] transition-colors block py-0.5"
-                                >
-                                  {item.label}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={`inline-flex items-center text-[12px] font-medium uppercase tracking-[0.18em] transition-colors duration-300 py-2 whitespace-nowrap ${navLinkClasses}`}
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
-          </nav>
-
-          {/* ── RIGHT ZONE: ICONS (Search, Wishlist, Account, Shopping Bag) ── */}
-          <div className="flex items-center justify-end gap-3.5 sm:gap-5 flex-shrink-0">
-            {/* Search */}
-            <button
-              aria-label="Search collection"
-              className={`p-1.5 transition-colors duration-300 ${iconClasses}`}
-            >
-              <Search size={19} strokeWidth={1.5} />
-            </button>
-
-            {/* Wishlist */}
-            <button
-              aria-label="View wishlist"
-              className={`relative p-1.5 transition-colors duration-300 hidden sm:block ${iconClasses}`}
-            >
-              <Heart size={19} strokeWidth={1.5} />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#8b000a] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {wishlistCount}
+              {/* Wishlist Link */}
+              <Link
+                href="/account?tab=wishlist"
+                data-path="wishlist"
+                aria-label="Wishlist"
+                className="relative p-1.5 text-on-surface-variant hover:text-primary transition-colors flex items-center focus:outline-none"
+              >
+                <span className="material-symbols-outlined text-[22px]">favorite</span>
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                  0
                 </span>
-              )}
-            </button>
+              </Link>
 
-            {/* Account */}
-            <Link
-              href={user ? "/account" : "/login"}
-              aria-label={user ? "Customer account" : "Sign in to your account"}
-              title={user ? "My Account" : "Sign In"}
-              className={`inline-flex items-center justify-center transition-colors duration-300 ${iconClasses} ${
-                user
-                  ? "relative p-0 -my-0.5"
-                  : "p-1.5"
-              }`}
-            >
-              {user ? (
-                <span
-                  aria-hidden
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/70 bg-[#fff8f7] font-[var(--font-cinzel)] text-[12px] text-[#680007] shadow-sm ring-1 ring-black/10"
-                >
-                  {getInitials(user.profile.display_name ?? "", user.email)}
+              {/* Shopping Bag Button (Triggers Drawer) */}
+              <button
+                type="button"
+                data-path="cart"
+                aria-label="Shopping bag"
+                onClick={openDrawer}
+                className="relative p-1.5 text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 focus:outline-none cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
+                <span className="hidden lg:inline-block font-label-ui text-label-ui text-on-surface font-semibold">
+                  ₹{formattedSubtotal} ({itemCount})
                 </span>
-              ) : (
-                <User size={19} strokeWidth={1.5} />
-              )}
-            </Link>
-
-            {/* Shopping Bag */}
-            <button
-              aria-label="Shopping bag"
-              onClick={openDrawer}
-              className={`relative p-1.5 transition-colors duration-300 ${iconClasses}`}
-            >
-              <ShoppingBag size={19} strokeWidth={1.5} />
-              {itemCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#8b000a] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                <span className="lg:hidden absolute -top-0.5 -right-0.5 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
                   {itemCount}
                 </span>
-              )}
-            </button>
+              </button>
+
+              {/* Sign In / Account Link */}
+              <Link
+                href={user ? "/account" : "/login"}
+                data-path="account"
+                aria-label="Account"
+                className="hidden sm:flex items-center gap-1.5 pl-1 text-on-surface hover:text-primary transition-colors focus:outline-none"
+              >
+                <div className="w-8 h-8 rounded-full bg-surface-container border border-outline-variant/50 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                    person
+                  </span>
+                </div>
+                <span className="font-label-caps text-[11px] tracking-wider uppercase font-semibold">
+                  {user ? "Account" : "Sign In"}
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
+
+        {/* ── Mobile Search Bar Expandable ── */}
+        {mobileSearchOpen && (
+          <div className="md:hidden px-4 pb-3 pt-1 border-t border-outline-variant/20 bg-surface">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex items-center bg-surface-container-low px-3 py-2 border border-outline-variant/40 rounded-full"
+            >
+              <span className="material-symbols-outlined text-[18px] text-outline mr-2">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search dresses, kurtis..."
+                className="bg-transparent text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none w-full"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-outline text-xs px-1"
+                >
+                  ✕
+                </button>
+              )}
+            </form>
+          </div>
+        )}
       </header>
 
-      {/* ── MOBILE SLIDE-IN DRAWER ───────────────────────────── */}
+      {/* ── Mobile Navigation Drawer ── */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[100] lg:hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile Navigation"
+          className="fixed inset-0 z-50 flex lg:hidden animate-fade-in"
+        >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-ink/50 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 bg-inverse-surface/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
 
-          {/* Drawer Panel */}
-          <nav className="absolute inset-y-0 left-0 w-[320px] max-w-[85vw] bg-[#fff8f7] animate-slide-in flex flex-col shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-ink/8">
-              <div className="relative w-[105px] h-[56px]">
-                <Image
-                  src="/assets/brand/logo.png"
-                  alt="Closet by Chili"
-                  fill
-                  sizes="105px"
-                  className="object-contain object-left"
-                />
-              </div>
+          {/* Drawer Content */}
+          <div className="relative w-4/5 max-w-sm bg-surface h-full shadow-2xl flex flex-col z-10 overflow-y-auto" data-lenis-prevent>
+            {/* Drawer Header */}
+            <div className="p-4 flex items-center justify-between border-b border-outline-variant/30">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt="Closet by Chili Logo"
+                className="h-10 w-auto object-contain"
+                src="/assets/brand/logo.png"
+              />
               <button
-                aria-label="Close navigation menu"
+                type="button"
+                aria-label="Close menu"
                 onClick={() => setMobileOpen(false)}
-                className="text-ink/60 hover:text-[#8b000a] p-1 transition-colors"
+                className="p-1.5 text-on-surface hover:text-primary"
               >
-                <X size={22} strokeWidth={1.5} />
+                <span className="material-symbols-outlined text-[24px]">close</span>
               </button>
             </div>
 
-            {/* Links List */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-              {/* Primary links */}
-              <ul className="space-y-1">
-                {NAV_LINKS.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="block py-2.5 text-[13px] font-medium uppercase tracking-[0.18em] text-ink hover:text-[#8b000a] transition-colors border-b border-ink/6"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            {/* Drawer Navigation Links */}
+            <div className="p-5 flex flex-col gap-3 font-label-caps text-[13px] uppercase tracking-wider">
+              <Link
+                href="/products?collection=new-arrivals"
+                data-path="new-arrivals"
+                onClick={() => setMobileOpen(false)}
+                className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 hover:text-primary"
+              >
+                <span>New Arrivals</span>
+                <span className="bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5">
+                  NEW
+                </span>
+              </Link>
 
-              {/* Shop by Type */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8b000a] mb-2.5">
-                  Categories
-                </p>
-                <ul className="space-y-1.5 pl-2 border-l border-ink/10">
-                  {SHOP_BY_TYPE.map((item) => (
-                    <li key={item.label}>
-                      <Link
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="text-[12px] text-ink/70 hover:text-[#8b000a] transition-colors block py-1"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Shop by Set */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8b000a] mb-2.5">
-                  Sets & Co-ords
-                </p>
-                <ul className="space-y-1.5 pl-2 border-l border-ink/10">
-                  {SHOP_BY_SET_NAV.map((item) => (
-                    <li key={item.label}>
-                      <Link
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="text-[12px] text-ink/70 hover:text-[#8b000a] transition-colors block py-1"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Drawer Account */}
-            <div className="px-6 pt-5 border-t border-ink/8">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8b000a] mb-3">
-                Account
-              </p>
-              {user ? (
-                <div className="space-y-3">
+              {/* Mobile Shop Accordion */}
+              <div className="py-2 border-b border-outline-variant/20">
+                <div className="flex items-center justify-between py-1 font-semibold text-on-surface">
                   <Link
-                    href="/account"
+                    href="/products"
+                    data-path="shop"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-3 -mx-2 rounded-md hover:bg-white transition-colors"
                   >
-                    <span
-                      aria-hidden
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-white/70 bg-[#fff8f7] font-[var(--font-cinzel)] text-[14px] text-[#680007] shadow-sm ring-1 ring-black/10"
-                    >
-                      {getInitials(user.profile.display_name ?? "", user.email)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-ink">
-                        {user.profile.display_name || "My Profile"}
-                      </p>
-                      <p className="truncate text-[11px] text-ink/50">
-                        {user.email}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleSignOutMobile}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-[#680007]/15 bg-ivory px-3.5 py-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-[#680007] transition-colors hover:bg-[#680007] hover:text-white"
-                  >
-                    <LogOut size={14} strokeWidth={1.75} />
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2.5">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="inline-flex items-center justify-center rounded-md border border-[#680007]/20 bg-white px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.15em] text-[#680007] transition-colors hover:bg-[#680007] hover:text-white"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setMobileOpen(false)}
-                    className="inline-flex items-center justify-center rounded-md bg-[#680007] px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.15em] text-white shadow-sm transition-opacity hover:opacity-95"
-                  >
-                    Join
+                    Shop All
                   </Link>
                 </div>
-              )}
+                <div className="pl-3 pt-2 flex flex-col gap-2 font-normal normal-case text-body-sm text-on-surface-variant">
+                  <Link
+                    href="/products?category=dresses"
+                    data-path="dresses"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-1 hover:text-primary"
+                  >
+                    Dresses &amp; Gowns
+                  </Link>
+                  <Link
+                    href="/products?category=anarkali-sets"
+                    data-path="festive-sets"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-1 hover:text-primary"
+                  >
+                    Anarkali Sets
+                  </Link>
+                  <Link
+                    href="/products?category=kurtis"
+                    data-path="kurtas-and-tunics"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-1 hover:text-primary"
+                  >
+                    Kurtas &amp; Tunics
+                  </Link>
+                  <Link
+                    href="/products?category=co-ord-sets"
+                    data-path="co-ord-sets"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-1 hover:text-primary"
+                  >
+                    Co-ord Sets
+                  </Link>
+                </div>
+              </div>
+
+              <Link
+                href="/products?collection=bestsellers"
+                data-path="bestsellers"
+                onClick={() => setMobileOpen(false)}
+                className="py-2.5 border-b border-outline-variant/20 hover:text-primary"
+              >
+                Bestsellers
+              </Link>
+
+              <Link
+                href="/products?collection=festive"
+                data-path="festive"
+                onClick={() => setMobileOpen(false)}
+                className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 hover:text-primary"
+              >
+                <span>Festive</span>
+                <span className="bg-secondary text-on-secondary text-[9px] font-bold px-1.5 py-0.5">
+                  HOT
+                </span>
+              </Link>
+
+              <Link
+                href="/#brand-manifesto"
+                data-path="about"
+                onClick={() => setMobileOpen(false)}
+                className="py-2.5 border-b border-outline-variant/20 hover:text-primary"
+              >
+                About
+              </Link>
+
+              <Link
+                href={user ? "/account" : "/login"}
+                data-path="account"
+                onClick={() => setMobileOpen(false)}
+                className="py-2.5 flex items-center gap-2 hover:text-primary"
+              >
+                <span className="material-symbols-outlined text-[18px]">person</span>
+                <span>{user ? "My Account" : "Sign In"}</span>
+              </Link>
             </div>
 
-            {/* Drawer Footer */}
-            <div className="px-6 py-5 border-t border-ink/8 bg-blush-soft">
-              <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-ink/60">
-                Bold · Feminine · Timeless
-              </p>
-              <p className="text-[9px] text-ink/40 mt-1">
-                Handcrafted Luxury Indian Fashion
-              </p>
+            {/* Drawer Footer Perks */}
+            <div className="mt-auto p-5 bg-surface-container-low border-t border-outline-variant/20 flex flex-col gap-2 text-xs text-on-surface-variant">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary text-[18px]">
+                  local_shipping
+                </span>
+                <span>Complimentary Shipping &gt; ₹2,999</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary text-[18px]">
+                  verified
+                </span>
+                <span>Pure Silk &amp; Chanderi Weaves</span>
+              </div>
             </div>
-          </nav>
+          </div>
         </div>
       )}
     </>

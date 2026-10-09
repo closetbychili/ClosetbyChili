@@ -14,3 +14,4 @@ redis>=5.2,<6.0
 gunicorn>=23.0,<24.0
 PyJWT>=2.10,<3.0
 cryptography>=44,<47
+razorpay>=2.0,<3.0

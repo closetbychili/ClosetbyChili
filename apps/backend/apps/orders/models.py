@@ -61,6 +61,26 @@ class Order(models.Model):
         choices=PaymentStatus.choices,
         default=PaymentStatus.PENDING,
     )
+    razorpay_order_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Razorpay order identifier (order_xxxx).",
+    )
+    razorpay_payment_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Razorpay payment identifier (pay_xxxx).",
+    )
+    razorpay_signature = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Razorpay payment verification signature.",
+    )
     currency = models.CharField(max_length=3, default="INR")
     subtotal = models.DecimalField(
         max_digits=12,
@@ -110,6 +130,16 @@ class Order(models.Model):
                 fields=["cart"],
                 condition=Q(cart__isnull=False),
                 name="uq_order_cart",
+            ),
+            models.UniqueConstraint(
+                fields=["razorpay_order_id"],
+                condition=Q(razorpay_order_id__isnull=False),
+                name="uq_order_razorpay_order_id",
+            ),
+            models.UniqueConstraint(
+                fields=["razorpay_payment_id"],
+                condition=Q(razorpay_payment_id__isnull=False),
+                name="uq_order_razorpay_payment_id",
             ),
         ]
         indexes = [

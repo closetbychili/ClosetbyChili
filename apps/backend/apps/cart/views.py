@@ -63,6 +63,10 @@ def _get_cart(request: Request, must_exist: bool = False) -> Cart | None:
             .filter(user=request.user, is_active=True)
             .first()
         )
+        if cart and cart.orders.exists() and cart.items.count() == 0:
+            cart.is_active = False
+            cart.save(update_fields=["is_active", "updated_at"])
+            cart = None
         if not cart and must_exist:
             raise CartSessionExpiredError("User cart does not exist or has expired.")
         return cart
@@ -97,6 +101,10 @@ def _get_or_create_cart(request: Request) -> tuple[Cart, bool]:
     """
     if getattr(request, "user", None) and request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user, is_active=True).first()
+        if cart and cart.orders.exists() and cart.items.count() == 0:
+            cart.is_active = False
+            cart.save(update_fields=["is_active", "updated_at"])
+            cart = None
         if cart:
             return cart, False
         cart, created = Cart.objects.get_or_create(
@@ -146,8 +154,12 @@ class CartView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        is_authenticated = bool(
+            getattr(request, "user", None) and request.user.is_authenticated
+        )
         session_key = _extract_session_key(request)
-        if not session_key:
+
+        if not is_authenticated and not session_key:
             # Return standard empty cart structure for fresh guest sessions
             return Response(
                 {
@@ -163,7 +175,25 @@ class CartView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        cart = _get_cart(request, must_exist=True)
+        if is_authenticated:
+            cart = _get_cart(request, must_exist=False)
+            if not cart:
+                return Response(
+                    {
+                        "id": None,
+                        "session_key": None,
+                        "items": [],
+                        "item_count": 0,
+                        "subtotal": "0.00",
+                        "is_active": True,
+                        "created_at": None,
+                        "updated_at": None,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+        else:
+            cart = _get_cart(request, must_exist=True)
+
         serializer = CartSerializer(cart)
         response = Response(serializer.data, status=status.HTTP_200_OK)
         return _attach_cart_session(response, cart)

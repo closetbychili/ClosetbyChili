@@ -1,23 +1,213 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #111111;
+  --color-primary: #8b000a;
+  --color-primary-container: #b31317;
+  --color-primary-fixed: #ffdad6;
+  --color-primary-fixed-dim: #ffb4ab;
+  --color-on-primary: #ffffff;
+  --color-on-primary-fixed: #410002;
+  --color-on-primary-fixed-variant: #93000b;
+  --color-on-primary-container: #ffc3bc;
+
+  --color-secondary: #735c00;
+  --color-secondary-container: #fed65b;
+  --color-secondary-fixed: #ffe088;
+  --color-secondary-fixed-dim: #e9c349;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-fixed: #241a00;
+  --color-on-secondary-fixed-variant: #574500;
+  --color-on-secondary-container: #745c00;
+
+  --color-tertiary: #722c19;
+  --color-tertiary-container: #90422d;
+  --color-tertiary-fixed: #ffdbd2;
+  --color-tertiary-fixed-dim: #ffb4a1;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-fixed: #3c0800;
+  --color-on-tertiary-fixed-variant: #78301d;
+  --color-on-tertiary-container: #ffc3b3;
+
+  --color-terracotta: #A6533D;
+  --color-page-bg: #F7F3EE;
+  --color-border-sand: #E6DED6;
+  --color-text-muted: #766D66;
+
+  --color-background: #fcf9f8;
+  --color-surface: #fcf9f8;
+  --color-surface-card: #FFFFFF;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container: #f0edec;
+  --color-surface-container-high: #ebe7e7;
+  --color-surface-container-highest: #e5e2e1;
+  --color-surface-variant: #e5e2e1;
+  --color-surface-bright: #fcf9f8;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-tint: #ba1a1b;
+
+  --color-inverse-surface: #313030;
+  --color-inverse-on-surface: #f3f0ef;
+  --color-inverse-primary: #ffb4ab;
+
+  --color-on-surface: #1c1b1b;
+  --color-on-surface-variant: #5b403d;
+  --color-outline: #906f6c;
+  --color-outline-variant: #e4beb9;
+
+  --color-ink: #1c1b1b;
   --color-charcoal: #1c1917;
   --color-chili: #8b000a;
   --color-chili-deep: #680007;
   --color-chili-light: #b31317;
   --color-chili-soft: #fbf0f0;
-
   --color-gold: #d4af37;
   --color-gold-light: #e8cd6e;
-  --color-ivory: #fff8f7;
+  --color-ivory: #fcf9f8;
   --color-cream: #fbf7f4;
   --color-blush: #faeceb;
   --color-blush-soft: #fcf4f3;
 
-  --font-display: var(--font-cinzel), serif;
-  --font-body: var(--font-montserrat), sans-serif;
+  --font-display: var(--font-bodoni-moda), "Bodoni Moda", var(--font-cinzel), serif;
+  --font-headline: var(--font-bodoni-moda), "Bodoni Moda", serif;
+  --font-body: var(--font-montserrat), "Montserrat", sans-serif;
 }
+
+/* ── Stitch Typography Classes ────────────────────────────── */
+.font-headline-lg {
+  font-family: var(--font-bodoni-moda), "Bodoni Moda", serif;
+  font-size: 34px;
+  line-height: 42px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+@media (min-width: 768px) {
+  .font-headline-lg {
+    font-size: 40px;
+    line-height: 48px;
+  }
+}
+
+.font-headline-md {
+  font-family: var(--font-bodoni-moda), "Bodoni Moda", serif;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 600;
+}
+@media (min-width: 768px) {
+  .font-headline-md {
+    font-size: 28px;
+    line-height: 36px;
+  }
+}
+
+.font-headline-sm {
+  font-family: var(--font-bodoni-moda), "Bodoni Moda", serif;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+@media (min-width: 768px) {
+  .font-headline-sm {
+    font-size: 20px;
+    line-height: 26px;
+  }
+}
+
+.font-display-hero {
+  font-family: var(--font-bodoni-moda), "Bodoni Moda", serif;
+  font-size: 40px;
+  line-height: 46px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+@media (min-width: 768px) {
+  .font-display-hero {
+    font-size: 48px;
+    line-height: 54px;
+  }
+}
+@media (min-width: 1024px) {
+  .font-display-hero {
+    font-size: 54px;
+    line-height: 60px;
+  }
+}
+
+.font-title-editorial {
+  font-family: var(--font-bodoni-moda), "Bodoni Moda", serif;
+  font-size: 18px;
+  line-height: 26px;
+  letter-spacing: 0.03em;
+}
+
+.font-body-lg {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.font-body-md {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.font-body-sm {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+.font-label-caps {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+
+.font-label-ui {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.font-price-regular {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.font-price-original {
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+/* Material Symbols Outlined */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
 
 /* ── Animations ───────────────────────────────────────────── */
 

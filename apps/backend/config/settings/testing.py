@@ -51,3 +51,10 @@ CACHES = {
 # ============================================================
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# ============================================================
+# Razorpay — Test / Mock Keys
+# ============================================================
+RAZORPAY_KEY_ID = "rzp_test_mock_key_12345"
+RAZORPAY_KEY_SECRET = "mock_secret_key_abcdef123456"
+RAZORPAY_WEBHOOK_SECRET = "mock_webhook_secret_abcdef123456"
