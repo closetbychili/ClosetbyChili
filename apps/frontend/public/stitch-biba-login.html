@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Sign In | Closet by Chili</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&amp;family=Montserrat:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      display: inline-block;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#8b000a",
+            "inverse-surface": "#313030",
+            "error-container": "#ffdad6",
+            "primary-fixed": "#ffdad6",
+            "on-primary-fixed-variant": "#93000b",
+            "outline-variant": "#e4beb9",
+            "secondary-container": "#fed65b",
+            "on-tertiary-fixed-variant": "#78301d",
+            "surface-container-highest": "#e5e2e1",
+            "surface-dim": "#dcd9d9",
+            "secondary-fixed-dim": "#e9c349",
+            "on-surface": "#1c1b1b",
+            "on-secondary-fixed": "#241a00",
+            "tertiary-container": "#90422d",
+            "secondary-fixed": "#ffe088",
+            "background": "#fcf9f8",
+            "tertiary-fixed-dim": "#ffb4a1",
+            "tertiary-fixed": "#ffdbd2",
+            "secondary": "#735c00",
+            "on-primary": "#ffffff",
+            "surface-container-high": "#ebe7e7",
+            "surface-container-low": "#f6f3f2",
+            "surface-tint": "#ba1a1b",
+            "on-tertiary-fixed": "#3c0800",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#745c00",
+            "on-primary-fixed": "#410002",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "surface-container": "#f0edec",
+            "outline": "#906f6c",
+            "page-bg": "#F7F3EE",
+            "on-primary-container": "#ffc3bc",
+            "on-background": "#1c1b1b",
+            "surface": "#fcf9f8",
+            "tertiary": "#722c19",
+            "primary-container": "#b31317",
+            "inverse-on-surface": "#f3f0ef",
+            "inverse-primary": "#ffb4ab",
+            "border-sand": "#E6DED6",
+            "primary-fixed-dim": "#ffb4ab",
+            "surface-bright": "#fcf9f8",
+            "on-surface-variant": "#5b403d",
+            "on-secondary-fixed-variant": "#574500",
+            "on-tertiary-container": "#ffc3b3",
+            "surface-variant": "#e5e2e1",
+            "surface-card": "#FFFFFF",
+            "terracotta": "#A6533D",
+            "error": "#ba1a1a",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "text-muted": "#766D66"
+          },
+          fontFamily: {
+            "body-sm": ["Montserrat", "sans-serif"],
+            "headline-md": ["Bodoni Moda", "serif"],
+            "label-ui": ["Montserrat", "sans-serif"],
+            "price-regular": ["Montserrat", "sans-serif"],
+            "headline-sm": ["Bodoni Moda", "serif"],
+            "display-hero": ["Bodoni Moda", "serif"],
+            "body-md": ["Montserrat", "sans-serif"],
+            "title-editorial": ["Bodoni Moda", "serif"],
+            "body-lg": ["Montserrat", "sans-serif"],
+            "headline-lg": ["Bodoni Moda", "serif"],
+            "price-original": ["Montserrat", "sans-serif"],
+            "label-caps": ["Montserrat", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased">
+  <!-- ── Global Header ── -->
+  <header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+    <div class="bg-inverse-surface text-secondary-fixed py-2 text-center font-label-caps text-label-caps tracking-widest uppercase px-4 flex items-center justify-center gap-2">
+      <span>COMPLIMENTARY DOMESTIC SHIPPING ON ORDERS ABOVE ₹2,999</span>
+      <span class="opacity-40">|</span>
+      <span>EXPRESS DISPATCH ACROSS INDIA</span>
+    </div>
+    <div class="h-20 max-w-360 mx-auto px-6 lg:px-12 flex items-center justify-between gap-6">
+      <div class="flex items-center gap-8">
+        <a class="flex items-center gap-3 shrink-0 py-1" data-path="home" href="/">
+          <img alt="Closet by Chili Logo" class="h-12 md:h-14 w-auto object-contain" src="/assets/brand/logo.png"/>
+        </a>
+        <nav class="hidden lg:flex items-center gap-7">
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 relative flex items-center gap-1.5 font-medium" data-path="new-arrivals" href="/products?collection=new-arrivals">
+            New Arrivals
+            <span class="bg-primary text-on-primary text-[8px] font-bold px-1.5 py-0.5 leading-none tracking-normal">NEW</span>
+          </a>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium" data-path="shop" href="/products">
+            Shop
+          </a>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium" data-path="bestsellers" href="/#bestsellers">
+            Bestsellers
+          </a>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 relative flex items-center gap-1.5 font-medium" data-path="festive" href="/products?category=festive-sets">
+            Festive
+            <span class="bg-secondary text-on-secondary text-[8px] font-bold px-1.5 py-0.5 leading-none tracking-normal">HOT</span>
+          </a>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium" data-path="about" href="/#brand-manifesto">
+            About
+          </a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-5 shrink-0">
+        <div class="hidden md:flex items-center bg-surface-container-low px-3.5 py-2 w-52 lg:w-64 border border-outline-variant/40">
+          <span class="material-symbols-outlined text-[18px] text-outline mr-2">search</span>
+          <input class="bg-transparent text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none w-full" placeholder="Search dresses, kurtis..." type="text"/>
+        </div>
+        <div class="flex items-center gap-3 sm:gap-4 text-on-surface">
+          <a aria-label="Wishlist" class="relative p-1 text-on-surface-variant hover:text-primary transition-colors flex items-center" data-path="wishlist" href="/#">
+            <span class="material-symbols-outlined text-[22px]">favorite</span>
+          </a>
+          <a aria-label="Shopping Bag" class="relative p-1 text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5" data-path="cart" href="/cart">
+            <span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+            <span class="hidden lg:inline-block font-label-ui text-label-ui text-on-surface font-semibold">₹0 (0)</span>
+          </a>
+          <a class="flex items-center gap-1.5 pl-1 text-primary transition-colors" data-path="account" href="/login">
+            <div class="w-8 h-8 rounded-full bg-surface-container border border-primary/40 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-[18px]">person</span>
+            </div>
+            <span class="font-label-caps text-[11px] tracking-wider uppercase font-semibold">Sign In</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main Sign In Container ── -->
+  <main class="w-full pt-24 sm:pt-28 bg-background">
+    <div class="flex flex-col w-full relative">
+      <div class="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-12 py-10 lg:py-16">
+        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[760px] shadow-xl shadow-on-surface/5 bg-surface-container-lowest">
+          
+          <!-- Left Column: Editorial Imagery & Brand Philosophy (5 Cols) -->
+          <div class="lg:col-span-5 relative flex flex-col justify-between p-8 sm:p-12 lg:p-14 overflow-hidden bg-inverse-surface text-inverse-on-surface">
+            <div class="absolute inset-0 z-0">
+              <div class="w-full h-full bg-cover bg-center opacity-45 transform scale-105 transition-transform duration-1000" style="background-image: url('/assets/hero/hero-1.webp')"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-inverse-surface via-inverse-surface/85 to-inverse-surface/40"></div>
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(179,19,23,0.35),transparent_65%)]"></div>
+            </div>
+
+            <div class="relative z-10 flex flex-col gap-6">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-px bg-secondary-fixed"></span>
+                <span class="font-label-caps text-label-caps uppercase tracking-widest text-secondary-fixed">The Atelier Experience</span>
+              </div>
+              <div class="flex flex-col gap-3">
+                <h2 class="font-headline-lg text-headline-lg text-on-primary leading-tight">
+                  Bold. Feminine.<br/>
+                  <span class="italic font-normal font-title-editorial text-secondary-fixed">Timeless.</span>
+                </h2>
+                <p class="font-body-md text-body-md text-inverse-on-surface/80 max-w-sm leading-relaxed">
+                  We do not simply design attire; we craft an enduring narrative of courage, drape, and sovereign Indian luxury.
+                </p>
+              </div>
+            </div>
+
+            <!-- Privileges Strip -->
+            <div class="relative z-10 mt-12 pt-8 flex flex-col gap-5 bg-inverse-surface/40 backdrop-blur-md p-6 border border-outline-variant/15">
+              <span class="font-label-caps text-label-caps uppercase tracking-widest text-secondary-fixed-dim">Muse Membership Privileges</span>
+              <div class="grid grid-cols-1 gap-4 font-body-sm text-body-sm text-inverse-on-surface/90">
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-secondary-fixed text-[18px] shrink-0 mt-0.5">local_shipping</span>
+                  <span>Express real-time consignment dispatch &amp; doorstep tracking</span>
+                </div>
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-secondary-fixed text-[18px] shrink-0 mt-0.5">diamond</span>
+                  <span>Exclusive first preview access to limited seasonal capsule drops</span>
+                </div>
+                <div class="flex items-start gap-3">
+                  <span class="material-symbols-outlined text-secondary-fixed text-[18px] shrink-0 mt-0.5">support_agent</span>
+                  <span>Dedicated bespoke styling advisory &amp; festive concierge</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Subtle Watermark Credential -->
+            <div class="relative z-10 pt-8 flex items-center justify-between text-inverse-on-surface/50 font-label-caps text-[10px] tracking-wider uppercase">
+              <span>Rooted in Jaipur &amp; Delhi</span>
+              <span>Guaranteed Authentic</span>
+            </div>
+          </div>
+
+          <!-- Right Column: Authentication Panel (7 Cols) -->
+          <div class="lg:col-span-7 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-surface-container-lowest">
+            <div class="w-full max-w-xl mx-auto flex flex-col gap-8">
+              <!-- Header Area -->
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-label-caps text-label-caps tracking-widest text-primary font-semibold uppercase">Closet by Chili Account</span>
+                  <a class="font-label-caps text-[11px] uppercase tracking-wider text-outline hover:text-primary transition-colors flex items-center gap-1" href="mailto:support@closetbychili.com">
+                    <span>Assistance</span>
+                    <span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+                  </a>
+                </div>
+                <h1 class="font-headline-md text-headline-md text-on-surface tracking-tight" id="auth-heading">Welcome Back, Muse</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant" id="auth-subheading">
+                  Access your saved silhouettes, order archives, and complimentary personal curations.
+                </p>
+              </div>
+
+              <!-- Auth Mode Toggle Bar -->
+              <div class="flex items-center bg-surface-container-low p-1 w-full" id="auth-tab-bar" role="tablist">
+                <button aria-selected="true" class="flex-1 py-3 px-4 font-label-caps text-label-caps tracking-widest uppercase transition-all duration-200 text-center bg-surface-container-lowest text-primary shadow-sm font-semibold" id="tab-mobile" onclick="switchAuthTab('mobile')" role="tab" type="button">
+                  Instant OTP / Mobile
+                </button>
+                <button aria-selected="false" class="flex-1 py-3 px-4 font-label-caps text-label-caps tracking-widest uppercase transition-all duration-200 text-center text-on-surface-variant hover:text-on-surface" id="tab-email" onclick="switchAuthTab('email')" role="tab" type="button">
+                  Email &amp; Password
+                </button>
+              </div>
+
+              <!-- Interactive Form Pane: Mobile OTP -->
+              <form class="flex flex-col gap-5" id="pane-mobile" onsubmit="handleOtpSubmit(event)">
+                <div class="flex flex-col gap-2">
+                  <label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-semibold flex items-center justify-between" for="phone-input">
+                    <span>Mobile Number</span>
+                    <span class="text-[10px] text-tertiary lowercase tracking-normal font-normal">SMS OTP will be delivered</span>
+                  </label>
+                  <div class="flex items-stretch bg-surface-container-low focus-within:bg-surface-container-lowest border border-outline-variant/40 focus-within:border-primary transition-colors">
+                    <div class="flex items-center gap-1.5 px-3.5 py-3.5 bg-surface-container text-on-surface shrink-0 select-none border-r border-outline-variant/30">
+                      <span class="text-[13px] font-bold">🇮🇳</span>
+                      <span class="font-body-md text-body-md font-medium text-on-surface">+91</span>
+                      <span class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span>
+                    </div>
+                    <input class="w-full px-4 py-3.5 bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none" id="phone-input" maxlength="10" pattern="[0-9]{10}" placeholder="Enter 10-digit mobile number" required="" type="tel"/>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2.5 pt-1">
+                  <input checked="" class="mt-1 w-4 h-4 accent-primary cursor-pointer" id="whatsapp-updates" type="checkbox"/>
+                  <label class="font-body-sm text-body-sm text-on-surface-variant cursor-pointer select-none" for="whatsapp-updates">
+                    Get order tracking alerts and dispatch confirmations instantly via WhatsApp.
+                  </label>
+                </div>
+
+                <!-- Primary Submission -->
+                <button class="w-full bg-primary-container text-on-primary hover:bg-primary py-4 px-6 font-label-caps text-label-caps tracking-widest uppercase flex items-center justify-center gap-2 transition-colors duration-200 shadow-sm mt-2" type="submit">
+                  <span>Send One-Time Password (OTP)</span>
+                  <span class="material-symbols-outlined text-[18px]">east</span>
+                </button>
+              </form>
+
+              <!-- Interactive Form Pane: Email & Password -->
+              <form class="hidden flex-col gap-5" id="pane-email" onsubmit="handleEmailSubmit(event)">
+                <div class="flex flex-col gap-2">
+                  <label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-semibold" for="user-email">
+                    Email Address
+                  </label>
+                  <div class="flex items-center bg-surface-container-low focus-within:bg-surface-container-lowest border border-outline-variant/40 focus-within:border-primary transition-colors px-4 py-3.5">
+                    <span class="material-symbols-outlined text-[20px] text-outline mr-3">mail</span>
+                    <input class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none" id="user-email" placeholder="name@luxury-domain.com" required="" type="email"/>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-center justify-between">
+                    <label class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-semibold" for="user-password">
+                      Password
+                    </label>
+                    <a class="font-body-sm text-body-sm text-tertiary hover:underline" href="#">
+                      Forgot Password?
+                    </a>
+                  </div>
+                  <div class="flex items-center bg-surface-container-low focus-within:bg-surface-container-lowest border border-outline-variant/40 focus-within:border-primary transition-colors px-4 py-3.5">
+                    <span class="material-symbols-outlined text-[20px] text-outline mr-3">lock</span>
+                    <input class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none" id="user-password" placeholder="Enter your confidential passcode" required="" type="password"/>
+                    <button class="text-outline hover:text-on-surface focus:outline-none" onclick="togglePasswordVisibility()" type="button">
+                      <span class="material-symbols-outlined text-[20px]" id="eye-icon">visibility</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                  <label class="flex items-center gap-2.5 cursor-pointer">
+                    <input class="w-4 h-4 accent-primary cursor-pointer" type="checkbox"/>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Remember this workstation</span>
+                  </label>
+                </div>
+
+                <button class="w-full bg-primary-container text-on-primary hover:bg-primary py-4 px-6 font-label-caps text-label-caps tracking-widest uppercase flex items-center justify-center gap-2 transition-colors duration-200 shadow-sm mt-2" type="submit">
+                  <span>Sign In to Account</span>
+                  <span class="material-symbols-outlined text-[18px]">east</span>
+                </button>
+              </form>
+
+              <!-- Divider Separator -->
+              <div class="relative flex items-center justify-center py-2">
+                <div class="w-full h-px bg-surface-container-high"></div>
+                <span class="absolute bg-surface-container-lowest px-4 font-label-caps text-[10px] uppercase tracking-widest text-outline">
+                  Or Fast Track Access
+                </span>
+              </div>
+
+              <!-- Social Authentications -->
+              <div class="grid grid-cols-2 gap-3.5">
+                <button class="flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-low hover:bg-surface-container transition-colors font-label-ui text-label-ui text-on-surface border border-outline-variant/30" type="button">
+                  <svg class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"></path>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"></path>
+                  </svg>
+                  <span>Google</span>
+                </button>
+                <button class="flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-low hover:bg-surface-container transition-colors font-label-ui text-label-ui text-on-surface border border-outline-variant/30" type="button">
+                  <svg class="w-4 h-4 fill-current" viewbox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-2 .6-2.64 1.34-.56.65-.99 1.71-.86 2.72 1.01.08 1.98-.51 2.58-1.21z"></path>
+                  </svg>
+                  <span>Apple ID</span>
+                </button>
+              </div>
+
+              <!-- Registration Invitation -->
+              <div class="bg-surface-container-low/70 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left border border-outline-variant/30">
+                <div class="flex flex-col">
+                  <span class="font-label-caps text-[11px] uppercase tracking-wider text-on-surface font-semibold">New to Closet by Chili?</span>
+                  <span class="font-body-sm text-body-sm text-on-surface-variant">Unlock personalized sizing profile &amp; member benefits.</span>
+                </div>
+                <a class="px-4 py-2.5 bg-surface-container text-primary hover:bg-primary hover:text-on-primary font-label-caps text-label-caps uppercase tracking-wider transition-colors shrink-0 font-semibold" href="/register">
+                  Register as a Muse
+                </a>
+              </div>
+
+              <!-- B2B & Wholesale Direct Access Link -->
+              <div class="flex items-center justify-center pt-2">
+                <a class="font-body-sm text-body-sm text-outline hover:text-primary transition-colors flex items-center gap-1.5" href="/#wholesale">
+                  <span class="material-symbols-outlined text-[16px]">storefront</span>
+                  <span>Boutique &amp; Wholesale Partner Portal? Sign in here</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Footnote / Trust Credentials -->
+            <div class="w-full max-w-xl mx-auto pt-10 mt-8 border-t border-surface-container-high/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-outline font-label-caps text-[10px] tracking-wider uppercase">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+                <span>256-Bit Encrypted Secure Session</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px] text-secondary">verified</span>
+                <span>Authentic Indian Haute Couture</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Supplementary Brand Values Mosaic Strip -->
+        <div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 p-8 bg-surface-container-low text-center border border-outline-variant/20">
+          <div class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[28px]">design_services</span>
+            <h4 class="font-label-caps text-label-caps uppercase tracking-widest text-on-surface font-semibold">Bespoke Fit</h4>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Customized sleeve, drape, and hem alterations upon request.</p>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[28px]">all_inclusive</span>
+            <h4 class="font-label-caps text-label-caps uppercase tracking-widest text-on-surface font-semibold">Pure Textiles</h4>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Ethically sourced tussar, raw silk, organza, and velvet weaves.</p>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[28px]">package_2</span>
+            <h4 class="font-label-caps text-label-caps uppercase tracking-widest text-on-surface font-semibold">Signature Packaging</h4>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Each ensemble encased in breathable garment covers and satin ribbons.</p>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[28px]">published_with_changes</span>
+            <h4 class="font-label-caps text-label-caps uppercase tracking-widest text-on-surface font-semibold">Easy Exchanges</h4>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Complimentary reverse pickups across 19,000+ Indian postal codes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Global Footer ── -->
+  <footer class="w-full bg-surface-container-low border-t border-outline-variant/30">
+    <div class="max-w-360 mx-auto px-6 lg:px-12 pt-16 pb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
+        <div class="lg:col-span-4 flex flex-col gap-4">
+          <div class="flex items-center gap-3">
+            <img alt="Closet by Chili Logo" class="h-10 md:h-12 w-auto object-contain" src="/assets/brand/logo.png"/>
+          </div>
+          <p class="font-title-editorial text-title-editorial text-tertiary italic">Bold. Feminine. Timeless.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-sm leading-relaxed">Where style meets confidence. Contemporary silhouettes infused with bold craftsmanship and modern ethnic sensibilities for the discerning muse.</p>
+          <div class="flex items-center gap-3 pt-2">
+            <a aria-label="Social Channel" class="w-9 h-9 bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary transition-colors" href="https://instagram.com" rel="noopener noreferrer" target="_blank"><span class="material-symbols-outlined text-[18px]">share</span></a>
+            <a aria-label="Gallery" class="w-9 h-9 bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">photo_camera</span></a>
+            <a aria-label="Community" class="w-9 h-9 bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">public</span></a>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h3 class="font-label-caps text-label-caps tracking-widest text-on-surface uppercase font-semibold">Shop Categories</h3>
+          <nav class="flex flex-col gap-2.5 pt-1">
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="new-arrivals" href="/products?collection=new-arrivals">New In</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="co-ord-sets" href="/products?category=co-ord-sets">Co-ord Sets</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="kurtas-and-tunics" href="/products?category=kurtas-and-tunics">Kurtas &amp; Tunics</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="dresses" href="/products?category=dresses">Dresses</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="festive-sets" href="/products?category=festive-sets">Festive Edit</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="wholesale" href="/#wholesale">Wholesale Inquiries</a>
+          </nav>
+        </div>
+
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h3 class="font-label-caps text-label-caps tracking-widest text-on-surface uppercase font-semibold">Customer Support</h3>
+          <nav class="flex flex-col gap-2.5 pt-1">
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="track-order" href="#">Track Order</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="shipping-and-delivery" href="#">Shipping &amp; Delivery</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="returns-and-exchanges" href="#">Returns &amp; Exchanges</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="size-guide" href="#">Size Guide</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="contact" href="#">Contact Us</a>
+          </nav>
+        </div>
+
+        <div class="lg:col-span-4 flex flex-col gap-4">
+          <h3 class="font-label-caps text-label-caps tracking-widest text-on-surface uppercase font-semibold">Stay In The Chilli Loop</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">Be the first to preview new collections, runway drops, and intimate festive promotions.</p>
+          <form class="flex flex-col sm:flex-row gap-2 pt-1" onsubmit="return false;">
+            <input class="bg-surface border border-outline-variant/60 px-4 py-3 text-body-md font-body-md text-on-surface placeholder:text-outline focus:outline-none flex-1" placeholder="Enter your email address" type="email"/>
+            <button class="bg-primary-container text-on-primary font-label-caps text-label-caps uppercase px-6 py-3 tracking-widest hover:bg-primary transition-colors shrink-0" type="submit">Subscribe</button>
+          </form>
+          <div class="flex items-center gap-4 pt-3">
+            <nav class="flex flex-wrap gap-x-4 gap-y-2">
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="our-story" href="/#brand-manifesto">Our Story</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="wholesale" href="/#wholesale">Wholesale &amp; B2B</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="privacy-policy" href="#">Privacy Policy</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="terms-of-service" href="#">Terms of Service</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="sustainability" href="#">Sustainability</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-outline-variant/30 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <p class="font-body-sm text-body-sm text-on-surface-variant text-center md:text-left">© 2025 Closet by Chilli. All rights reserved. Crafted with timeless Indian craftsmanship.</p>
+        <div class="flex items-center gap-3 text-on-surface-variant font-label-caps text-label-caps">
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">UPI</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">VISA</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">MASTERCARD</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">RAZORPAY</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">NET BANKING</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function switchAuthTab(tab) {
+      const paneMobile = document.getElementById('pane-mobile');
+      const paneEmail = document.getElementById('pane-email');
+      const tabMobile = document.getElementById('tab-mobile');
+      const tabEmail = document.getElementById('tab-email');
+
+      if (tab === 'mobile') {
+        paneMobile.classList.remove('hidden');
+        paneMobile.classList.add('flex');
+        paneEmail.classList.add('hidden');
+        paneEmail.classList.remove('flex');
+
+        tabMobile.setAttribute('aria-selected', 'true');
+        tabMobile.className = 'flex-1 py-3 px-4 font-label-caps text-label-caps tracking-widest uppercase transition-all duration-200 text-center bg-surface-container-lowest text-primary shadow-sm font-semibold';
+        
+        tabEmail.setAttribute('aria-selected', 'false');
+        tabEmail.className = 'flex-1 py-3 px-4 font-label-caps text-label-caps tracking-widest uppercase transition-all duration-200 text-center text-on-surface-variant hover:text-on-surface';
+      } else {
+        paneEmail.classList.remove('hidden');
+        paneEmail.classList.add('flex');
+        paneMobile.classList.add('hidden');
+        paneMobile.classList.remove('flex');
+
+        tabEmail.setAttribute('aria-selected', 'true');
+        tabEmail.className = 'flex-1 py-3 px-4 font-label-caps text-label-caps tracking-widest uppercase transition-all duration-200 text-center bg-surface-container-lowest text-primary shadow-sm font-semibold';
+        
+        tabMobile.setAttribute('aria-selected', 'false');
+        tabMobile.className = 'flex-1 py-3 px-4 font-label-caps text-label-caps tracking-widest uppercase transition-all duration-200 text-center text-on-surface-variant hover:text-on-surface';
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const pwdInput = document.getElementById('user-password');
+      const eyeIcon = document.getElementById('eye-icon');
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        eyeIcon.textContent = 'visibility_off';
+      } else {
+        pwdInput.type = 'password';
+        eyeIcon.textContent = 'visibility';
+      }
+    }
+
+    function handleOtpSubmit(e) {
+      e.preventDefault();
+      const phone = document.getElementById('phone-input').value;
+      if (phone.length === 10) {
+        alert('OTP code sent successfully to +91 ' + phone + '. (Preview Simulation)');
+      }
+    }
+
+    function handleEmailSubmit(e) {
+      e.preventDefault();
+      alert('Signing in to Closet by Chili account... (Preview Simulation)');
+    }
+  </script>
+</body>
+</html>

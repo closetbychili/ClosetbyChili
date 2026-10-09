@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="web_standard" name="shell-type"/>
+  <title>Closet by Chilli | Bold. Feminine. Timeless.</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&amp;family=Montserrat:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      display: inline-block;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#8b000a",
+            "inverse-surface": "#313030",
+            "error-container": "#ffdad6",
+            "primary-fixed": "#ffdad6",
+            "on-primary-fixed-variant": "#93000b",
+            "outline-variant": "#e4beb9",
+            "secondary-container": "#fed65b",
+            "on-tertiary-fixed-variant": "#78301d",
+            "surface-container-highest": "#e5e2e1",
+            "surface-dim": "#dcd9d9",
+            "secondary-fixed-dim": "#e9c349",
+            "on-surface": "#1c1b1b",
+            "on-secondary-fixed": "#241a00",
+            "tertiary-container": "#90422d",
+            "secondary-fixed": "#ffe088",
+            "background": "#fcf9f8",
+            "tertiary-fixed-dim": "#ffb4a1",
+            "tertiary-fixed": "#ffdbd2",
+            "secondary": "#735c00",
+            "on-primary": "#ffffff",
+            "surface-container-high": "#ebe7e7",
+            "surface-container-low": "#f6f3f2",
+            "surface-tint": "#ba1a1b",
+            "on-tertiary-fixed": "#3c0800",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#745c00",
+            "on-primary-fixed": "#410002",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "surface-container": "#f0edec",
+            "outline": "#906f6c",
+            "page-bg": "#F7F3EE",
+            "on-primary-container": "#ffc3bc",
+            "on-background": "#1c1b1b",
+            "surface": "#fcf9f8",
+            "tertiary": "#722c19",
+            "primary-container": "#b31317",
+            "inverse-on-surface": "#f3f0ef",
+            "inverse-primary": "#ffb4ab",
+            "border-sand": "#E6DED6",
+            "primary-fixed-dim": "#ffb4ab",
+            "surface-bright": "#fcf9f8",
+            "on-surface-variant": "#5b403d",
+            "on-secondary-fixed-variant": "#574500",
+            "on-tertiary-container": "#ffc3b3",
+            "surface-variant": "#e5e2e1",
+            "surface-card": "#FFFFFF",
+            "terracotta": "#A6533D",
+            "error": "#ba1a1a",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "text-muted": "#766D66"
+          },
+          fontFamily: {
+            "body-sm": ["Montserrat", "sans-serif"],
+            "headline-md": ["Bodoni Moda", "serif"],
+            "label-ui": ["Montserrat", "sans-serif"],
+            "price-regular": ["Montserrat", "sans-serif"],
+            "headline-sm": ["Bodoni Moda", "serif"],
+            "display-hero-mobile": ["Bodoni Moda", "serif"],
+            "headline-lg-mobile": ["Bodoni Moda", "serif"],
+            "display-hero": ["Bodoni Moda", "serif"],
+            "body-md": ["Montserrat", "sans-serif"],
+            "title-editorial": ["Bodoni Moda", "serif"],
+            "body-lg": ["Montserrat", "sans-serif"],
+            "headline-lg": ["Bodoni Moda", "serif"],
+            "price-original": ["Montserrat", "sans-serif"],
+            "label-caps": ["Montserrat", "sans-serif"]
+          },
+          fontSize: {
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "label-ui": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "price-regular": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "headline-sm": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+            "display-hero-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "0.01em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "display-hero": ["50px", { "lineHeight": "56px", "letterSpacing": "0.015em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "title-editorial": ["18px", { "lineHeight": "26px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-lg": ["15px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg": ["38px", { "lineHeight": "46px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "price-original": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.12em", "fontWeight": "600" }]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary">
+  <!-- ── HEADER (Refined BIBA Retail Proportions) ── -->
+  <header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-outline-variant/20 transition-all">
+    <!-- Announcement Bar -->
+    <div class="bg-inverse-surface text-secondary-fixed py-2 text-center font-label-caps text-[10px] sm:text-label-caps tracking-widest uppercase px-4 flex items-center justify-center gap-2">
+      <span>COMPLIMENTARY DOMESTIC SHIPPING ON ORDERS ABOVE ₹2,999</span>
+      <span class="opacity-40">|</span>
+      <span class="hidden sm:inline">EXPRESS DISPATCH ACROSS INDIA</span>
+      <span class="sm:hidden">EXPRESS DISPATCH</span>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <div class="h-16 md:h-20 max-w-360 mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between gap-4 lg:gap-8">
+      <div class="flex items-center gap-4 md:gap-8">
+        <a class="flex items-center gap-3 shrink-0 py-1" data-path="home" href="#">
+          <img alt="Closet by Chili Logo" class="h-10 sm:h-12 md:h-13 w-auto object-contain hover:scale-[1.02] transition-transform" src="/assets/brand/logo.png"/>
+        </a>
+        <nav class="hidden lg:flex items-center gap-6 xl:gap-7">
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 relative flex items-center gap-1.5 font-medium" data-path="new-arrivals" href="#">
+            New Arrivals
+            <span class="bg-primary text-on-primary text-[8px] font-bold px-1.5 py-0.5 leading-none">NEW</span>
+          </a>
+          <div class="relative group py-2">
+            <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 font-medium" data-path="shop" href="#">
+              Shop
+              <span class="material-symbols-outlined text-[16px] text-outline group-hover:rotate-180 transition-transform">expand_more</span>
+            </a>
+            <div class="absolute top-full left-0 hidden group-hover:flex flex-col bg-surface shadow-xl border border-outline-variant/30 py-2 w-52 z-50 rounded-xs">
+              <a class="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors" data-path="dresses" href="#">Dresses &amp; Gowns</a>
+              <a class="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors" data-path="festive-sets" href="#">Anarkali Sets</a>
+              <a class="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors" data-path="kurtas-and-tunics" href="#">Kurtas &amp; Tunics</a>
+              <a class="px-4 py-2 text-body-sm hover:bg-surface-container hover:text-primary transition-colors" data-path="co-ord-sets" href="#">Co-ord Sets</a>
+            </div>
+          </div>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium" data-path="bestsellers" href="#">Bestsellers</a>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 relative flex items-center gap-1.5 font-medium" data-path="festive" href="#">
+            Festive
+            <span class="bg-secondary text-on-secondary text-[8px] font-bold px-1.5 py-0.5 leading-none">HOT</span>
+          </a>
+          <a class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant hover:text-primary transition-colors py-2 font-medium" data-path="about" href="#brand-manifesto">About</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-4 sm:gap-6 shrink-0">
+        <div class="hidden md:flex items-center bg-surface-container-low px-3.5 py-1.5 w-52 lg:w-68 border border-outline-variant/40 rounded-full focus-within:border-primary transition-all">
+          <span class="material-symbols-outlined text-[18px] text-outline mr-2">search</span>
+          <input class="bg-transparent text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none w-full" placeholder="Search dresses, kurtis..." type="text"/>
+        </div>
+        <div class="flex items-center gap-2.5 sm:gap-4 text-on-surface">
+          <button aria-label="Search" class="md:hidden flex items-center justify-center p-1.5 text-on-surface-variant hover:text-on-surface">
+            <span class="material-symbols-outlined text-[22px]">search</span>
+          </button>
+          <a aria-label="Wishlist" class="relative p-1.5 text-on-surface-variant hover:text-primary transition-colors flex items-center" data-path="wishlist" href="#">
+            <span class="material-symbols-outlined text-[22px]">favorite</span>
+            <span class="absolute -top-0.5 -right-0.5 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">0</span>
+          </a>
+          <a aria-label="Shopping Bag" class="relative p-1.5 text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5" data-path="cart" href="#">
+            <span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+            <span class="hidden lg:inline-block font-label-ui text-label-ui text-on-surface font-semibold">₹0 (0)</span>
+            <span class="lg:hidden absolute -top-0.5 -right-0.5 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">0</span>
+          </a>
+          <a class="hidden sm:flex items-center gap-1.5 pl-1 text-on-surface hover:text-primary transition-colors" data-path="account" href="#">
+            <div class="w-8 h-8 rounded-full bg-surface-container border border-outline-variant/50 flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-surface-variant text-[18px]">person</span>
+            </div>
+            <span class="font-label-caps text-[11px] tracking-wider uppercase font-semibold">Sign In</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="w-full pt-24 sm:pt-28 bg-background">
+    <div class="flex flex-col w-full">
+      <!-- ── SECTION 1: HERO CAMPAIGN CAROUSEL (BIBA Proportions & Gradient Balance) ── -->
+      <section class="relative w-full overflow-hidden bg-page-bg group/carousel" id="hero-carousel">
+        <div class="relative w-full h-145 sm:h-155 lg:h-170 flex items-center">
+          <!-- Slide 1: DRESSES -->
+          <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-100 z-10" data-slide-index="0">
+            <div class="absolute inset-0 bg-cover bg-center lg:bg-position-[right_35%] bg-no-repeat" style="background-image: url('/assets/hero/hero-1.webp')">
+              <div class="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%]"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/60 to-transparent opacity-90 lg:hidden"></div>
+            </div>
+            <div class="relative h-full max-w-360 mx-auto px-6 sm:px-8 lg:px-16 flex items-center">
+              <div class="max-w-2xl py-8 flex flex-col items-start z-10">
+                <div class="inline-flex items-center gap-2.5 px-3 py-1 bg-surface/90 backdrop-blur-sm shadow-xs mb-4 sm:mb-5 border-l-2 border-primary">
+                  <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">DRESSES</span>
+                  <span class="text-outline-variant text-[10px]">|</span>
+                  <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Wear Your Story</span>
+                </div>
+                <h1 class="font-headline-lg text-headline-lg lg:text-display-hero text-on-surface tracking-tight leading-[1.1] mb-4 sm:mb-5">
+                  Draped in grace.<br/>
+                  <span class="italic font-normal text-tertiary">Made to be seen.</span>
+                </h1>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mb-6 sm:mb-8 leading-relaxed">
+                  Contemporary festive and draped tailoring crafted for the modern muse. Flowing pure satin weaves, razor-sharp cuts, and hand-gilded embellishments.
+                </p>
+                <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 w-full sm:w-auto mb-6 sm:mb-8">
+                  <a class="px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-on-primary font-label-caps text-label-caps tracking-widest uppercase hover:bg-primary-container transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center gap-3 font-semibold" data-path="dresses" href="#">
+                    <span>SHOP DRESSES</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </a>
+                  <a class="px-6 sm:px-8 py-3.5 sm:py-4 bg-surface/90 border border-border-sand text-on-surface font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface transition-all duration-200 shadow-xs flex items-center justify-center gap-2" data-path="collections" href="#">
+                    <span>View Lookbook</span>
+                  </a>
+                </div>
+                <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-on-surface-variant">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">local_shipping</span>
+                    <span class="font-body-sm text-body-sm">Complimentary Shipping above ₹2,999</span>
+                  </div>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant hidden sm:block"></span>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+                    <span class="font-body-sm text-body-sm">Pure Silk &amp; Chanderi Weaves</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 2: ANARKALI -->
+          <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-0 pointer-events-none z-0" data-slide-index="1">
+            <div class="absolute inset-0 bg-cover bg-center lg:bg-position-[right_35%] bg-no-repeat" style="background-image: url('/assets/hero/hero-2.webp')">
+              <div class="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%]"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/60 to-transparent opacity-90 lg:hidden"></div>
+            </div>
+            <div class="relative h-full max-w-360 mx-auto px-6 sm:px-8 lg:px-16 flex items-center">
+              <div class="max-w-2xl py-8 flex flex-col items-start z-10">
+                <div class="inline-flex items-center gap-2.5 px-3 py-1 bg-surface/90 backdrop-blur-sm shadow-xs mb-4 sm:mb-5 border-l-2 border-secondary">
+                  <span class="font-label-caps text-label-caps uppercase text-secondary tracking-widest font-semibold">ANARKALI</span>
+                  <span class="text-outline-variant text-[10px]">|</span>
+                  <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Flow &amp; Form</span>
+                </div>
+                <h1 class="font-headline-lg text-headline-lg lg:text-display-hero text-on-surface tracking-tight leading-[1.1] mb-4 sm:mb-5">
+                  Twirl into elegance.<br/>
+                  <span class="italic font-normal text-tertiary">Every curve, celebrated.</span>
+                </h1>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mb-6 sm:mb-8 leading-relaxed">
+                  Handcrafted pure silk weaves and royal flares with fluid movement. Intricate scalloped zari borders tailored for moments that linger forever.
+                </p>
+                <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 w-full sm:w-auto mb-6 sm:mb-8">
+                  <a class="px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-on-primary font-label-caps text-label-caps tracking-widest uppercase hover:bg-primary-container transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center gap-3 font-semibold" data-path="festive-sets" href="#">
+                    <span>SHOP ANARKALI</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </a>
+                  <a class="px-6 sm:px-8 py-3.5 sm:py-4 bg-surface/90 border border-border-sand text-on-surface font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface transition-all duration-200 shadow-xs flex items-center justify-center gap-2" data-path="festive-sets" href="#">
+                    <span>Festive Edit</span>
+                  </a>
+                </div>
+                <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-on-surface-variant">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">local_shipping</span>
+                    <span class="font-body-sm text-body-sm">Express Dispatch Across India</span>
+                  </div>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant hidden sm:block"></span>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">straighten</span>
+                    <span class="font-body-sm text-body-sm">Custom Length Alterations</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 3: KURTIS -->
+          <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-0 pointer-events-none z-0" data-slide-index="2">
+            <div class="absolute inset-0 bg-cover bg-center lg:bg-position-[right_35%] bg-no-repeat" style="background-image: url('/assets/hero/hero-3.webp')">
+              <div class="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%]"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/60 to-transparent opacity-90 lg:hidden"></div>
+            </div>
+            <div class="relative h-full max-w-360 mx-auto px-6 sm:px-8 lg:px-16 flex items-center">
+              <div class="max-w-2xl py-8 flex flex-col items-start z-10">
+                <div class="inline-flex items-center gap-2.5 px-3 py-1 bg-surface/90 backdrop-blur-sm shadow-xs mb-4 sm:mb-5 border-l-2 border-primary">
+                  <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">KURTIS</span>
+                  <span class="text-outline-variant text-[10px]">|</span>
+                  <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">The Everyday Edit</span>
+                </div>
+                <h1 class="font-headline-lg text-headline-lg lg:text-display-hero text-on-surface tracking-tight leading-[1.1] mb-4 sm:mb-5">
+                  Effortless ease.<br/>
+                  <span class="italic font-normal text-tertiary">All-day beautiful.</span>
+                </h1>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mb-6 sm:mb-8 leading-relaxed">
+                  Modern pleats, breezy silhouettes, and fine handcrafted artisan details. Contemporary ethnic kurtas styled for both workwear grace and weekend brunches.
+                </p>
+                <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 w-full sm:w-auto mb-6 sm:mb-8">
+                  <a class="px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-on-primary font-label-caps text-label-caps tracking-widest uppercase hover:bg-primary-container transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center gap-3 font-semibold" data-path="kurtas-and-tunics" href="#">
+                    <span>SHOP KURTIS</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </a>
+                  <a class="px-6 sm:px-8 py-3.5 sm:py-4 bg-surface/90 border border-border-sand text-on-surface font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface transition-all duration-200 shadow-xs flex items-center justify-center gap-2" data-path="kurtas-and-tunics" href="#">
+                    <span>Explore Tunics</span>
+                  </a>
+                </div>
+                <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-on-surface-variant">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+                    <span class="font-body-sm text-body-sm">Breathable Natural Fabrics</span>
+                  </div>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant hidden sm:block"></span>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">local_shipping</span>
+                    <span class="font-body-sm text-body-sm">Complimentary Shipping above ₹2,999</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 4: CO-ORD SETS -->
+          <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out opacity-0 pointer-events-none z-0" data-slide-index="3">
+            <div class="absolute inset-0 bg-cover bg-center lg:bg-position-[right_35%] bg-no-repeat" style="background-image: url('/assets/hero/hero-4.webp')">
+              <div class="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%]"></div>
+              <div class="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/60 to-transparent opacity-90 lg:hidden"></div>
+            </div>
+            <div class="relative h-full max-w-360 mx-auto px-6 sm:px-8 lg:px-16 flex items-center">
+              <div class="max-w-2xl py-8 flex flex-col items-start z-10">
+                <div class="inline-flex items-center gap-2.5 px-3 py-1 bg-surface/90 backdrop-blur-sm shadow-xs mb-4 sm:mb-5 border-l-2 border-primary">
+                  <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">CO-ORD SETS</span>
+                  <span class="text-outline-variant text-[10px]">|</span>
+                  <span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">Perfectly Paired</span>
+                </div>
+                <h1 class="font-headline-lg text-headline-lg lg:text-display-hero text-on-surface tracking-tight leading-[1.1] mb-4 sm:mb-5">
+                  Thoughtfully matched.<br/>
+                  <span class="italic font-normal text-tertiary">Effortlessly styled.</span>
+                </h1>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mb-6 sm:mb-8 leading-relaxed">
+                  Structured cuts meet fluid luxury for power dressing and festive occasions. Tailored blazers and coordinated flared trousers in rich royal tones.
+                </p>
+                <div class="flex flex-wrap items-center gap-3.5 sm:gap-4 w-full sm:w-auto mb-6 sm:mb-8">
+                  <a class="px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-on-primary font-label-caps text-label-caps tracking-widest uppercase hover:bg-primary-container transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center gap-3 font-semibold" data-path="co-ord-sets" href="#">
+                    <span>SHOP CO-ORDS</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </a>
+                  <a class="px-6 sm:px-8 py-3.5 sm:py-4 bg-surface/90 border border-border-sand text-on-surface font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface transition-all duration-200 shadow-xs flex items-center justify-center gap-2" data-path="co-ord-sets" href="#">
+                    <span>Power Dressing</span>
+                  </a>
+                </div>
+                <div class="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-on-surface-variant">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">workspace_premium</span>
+                    <span class="font-body-sm text-body-sm">Custom Crest Gold Buttons</span>
+                  </div>
+                  <span class="w-1 h-1 rounded-full bg-outline-variant hidden sm:block"></span>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[20px]">straighten</span>
+                    <span class="font-body-sm text-body-sm">Flawless Tailored Fit</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carousel Controls: Prev / Next Buttons -->
+          <button aria-label="Previous Slide" class="carousel-prev absolute left-3 sm:left-6 lg:left-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-surface/80 hover:bg-surface border border-outline-variant/40 text-on-surface hover:text-primary transition-all flex items-center justify-center shadow-md backdrop-blur-sm focus:outline-none">
+            <span class="material-symbols-outlined text-[24px]">chevron_left</span>
+          </button>
+          <button aria-label="Next Slide" class="carousel-next absolute right-3 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-surface/80 hover:bg-surface border border-outline-variant/40 text-on-surface hover:text-primary transition-all flex items-center justify-center shadow-md backdrop-blur-sm focus:outline-none">
+            <span class="material-symbols-outlined text-[24px]">chevron_right</span>
+          </button>
+
+          <!-- Bottom Indicators & Slide Counter -->
+          <div class="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 lg:left-16 z-30 flex items-center gap-5 sm:gap-6">
+            <span class="font-label-caps text-label-caps tracking-widest text-on-surface font-semibold slide-counter" id="carousel-counter">01 / 04</span>
+            <div class="flex items-center gap-2">
+              <button aria-label="Slide 1" class="carousel-dot h-1.5 w-8 bg-primary rounded-none transition-all duration-300" data-dot-index="0"></button>
+              <button aria-label="Slide 2" class="carousel-dot h-1.5 w-4 bg-outline-variant/60 hover:bg-outline-variant rounded-none transition-all duration-300" data-dot-index="1"></button>
+              <button aria-label="Slide 3" class="carousel-dot h-1.5 w-4 bg-outline-variant/60 hover:bg-outline-variant rounded-none transition-all duration-300" data-dot-index="2"></button>
+              <button aria-label="Slide 4" class="carousel-dot h-1.5 w-4 bg-outline-variant/60 hover:bg-outline-variant rounded-none transition-all duration-300" data-dot-index="3"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 2: SHOP BY CATEGORY (5 Arched Cards) ── -->
+      <section class="w-full py-16 sm:py-20 px-4 sm:px-6 lg:px-12 max-w-360 mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-12">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="h-px w-6 bg-primary"></span>
+              <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest">Curated Categories</span>
+            </div>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface">Discover By Category</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-1">Explore our signature cuts, fluid drapes, and hand-finished silhouettes.</p>
+          </div>
+          <a class="mt-4 md:mt-0 inline-flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-primary hover:text-on-surface transition-colors" data-path="collections" href="#">
+            <span>Browse All Silhouettes</span>
+            <span class="material-symbols-outlined text-[16px]">east</span>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
+          <!-- Category 1: Co-ord Sets -->
+          <a class="group flex flex-col items-center" data-path="co-ord-sets" href="#">
+            <div class="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
+              <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzx8ElMGHI0NrkXWNgHTbdaJ6bV3CcgVhVT8L13AJubN8bFocAr-ywaX3JB7PSuQMWgXb0H64Wq9B5LGPYuFyYfpfgQKeXHWeSDTg5dj99SQOnymK1B0B3TpfIg-Re420gCtr0Q6ljx7FQJwOyvZGB7Al6bBxH0pUZIBHpCB8S2fUoUgR4Q7XEe8cSQJHL4WkGrLobNysEygbr1GwT8_Oy99PofbpM9tki4_tp1UED0woveb0zCuEMJw" alt="Co-ord Sets"/>
+              <div class="absolute inset-0 bg-linear-to-t from-inverse-surface/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+              <div class="absolute bottom-3.5 inset-x-0 text-center px-2">
+                <span class="font-body-sm text-body-sm text-secondary-fixed tracking-widest uppercase font-medium">28 Styles</span>
+              </div>
+            </div>
+            <div class="mt-3.5 text-center">
+              <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">Co-ord Sets</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Structured &amp; Fluid Power Sets</p>
+            </div>
+          </a>
+
+          <!-- Category 2: Kurtas & Tunics -->
+          <a class="group flex flex-col items-center" data-path="kurtas-and-tunics" href="#">
+            <div class="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
+              <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPiNNT6opb1WvIUMmYs3Bm7A1DnRBs5_-xk23Zl2DwmBq9cuKhynPuHuBM9s54UoUJxJiDmK0deKfMH7ZgFb7KIHdVJAHMjwHkaKWdWyvipXXSKT9nnIZQtdVL0NKdIGczUDoCaeQp72nlPIe-iVqG7vOKOLvwl_QvcGV3lb7VdQpFbMtgSmUC3rwuu_sH8nBCZQqxpr_yB1l8TsJyuBNoo-jXfxtSLY-gmaxegRATrrziRH2Weyxxyw" alt="Kurtas & Tunics"/>
+              <div class="absolute inset-0 bg-linear-to-t from-inverse-surface/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+              <div class="absolute bottom-3.5 inset-x-0 text-center px-2">
+                <span class="font-body-sm text-body-sm text-secondary-fixed tracking-widest uppercase font-medium">34 Styles</span>
+              </div>
+            </div>
+            <div class="mt-3.5 text-center">
+              <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">Kurtas &amp; Tunics</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Modern Pleats &amp; Drapes</p>
+            </div>
+          </a>
+
+          <!-- Category 3: Festive Sets -->
+          <a class="group flex flex-col items-center" data-path="festive-sets" href="#">
+            <div class="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
+              <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1HZS5o8D9v-UN6yQyFN9fmZZLtpWObcpxs-PSzdRiyNy0UgOOosig-KMz6rKpagt06gaC74WCyHGT1b7DmFonER9Kkh5zXyhbAeS-EyLN_NQwi-Q38hJQb2gJZ9ZfdNXDcAQWsz3YVag6YE5ds-W97kSbFnJZqPyfbR_aYjCMQLAVO_m-z6xd-qWaxMi0tmEUZ8TGW5P3C91Eq4Bl4AHJVO7Me-jri3_25QySngSlfNC1Trv1be3P9Q" alt="Festive Sets"/>
+              <span class="absolute top-4 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-2.5 py-0.5 font-label-caps text-[9px] uppercase tracking-widest shadow-xs">Trending</span>
+              <div class="absolute inset-0 bg-linear-to-t from-inverse-surface/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+              <div class="absolute bottom-3.5 inset-x-0 text-center px-2">
+                <span class="font-body-sm text-body-sm text-secondary-fixed tracking-widest uppercase font-medium">42 Styles</span>
+              </div>
+            </div>
+            <div class="mt-3.5 text-center">
+              <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">Festive Sets</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Chanderi &amp; Organza Suiting</p>
+            </div>
+          </a>
+
+          <!-- Category 4: Dresses & Gowns -->
+          <a class="group flex flex-col items-center" data-path="dresses" href="#">
+            <div class="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
+              <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp9WmjTSPYmCN_VGJszhxxEoExWiB010R7W7OhRhLpk09DczafkA3KN1j0P3nFSsyCjZirRykCZRSwo-vrAy6SM9O_ljwNnsLA63r7rq8NIx_7c1HXXICee2e4gz7XFYSHnJy_gxJ1MV2L0TXdrkiMaX0XlfW6pWsOL8SUolUMvNsLmqxwefi0CgJNaKtorjz2FTnpSH0IsrAUCmedM88-tzRfBwILOqWmhZabtte8BjGa9IsuAd9cFA" alt="Dresses & Gowns"/>
+              <div class="absolute inset-0 bg-linear-to-t from-inverse-surface/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+              <div class="absolute bottom-3.5 inset-x-0 text-center px-2">
+                <span class="font-body-sm text-body-sm text-secondary-fixed tracking-widest uppercase font-medium">19 Styles</span>
+              </div>
+            </div>
+            <div class="mt-3.5 text-center">
+              <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">Dresses &amp; Gowns</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Evening Statements</p>
+            </div>
+          </a>
+
+          <!-- Category 5: The Silk Edit -->
+          <a class="group flex flex-col items-center col-span-2 sm:col-span-1" data-path="collections" href="#">
+            <div class="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
+              <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxV5bDZsrp2rrnmxcc9k1y8FgO8kIyYj3XzRtyabEOdNmcxcyOjpAAuVyXPbEHZdHt8gH57Xciym29vh7mmksYePEjd5bd1Af5GiBT-YfxKvvnR95ePYgQgecMdQY4SyeDE7FMrqYJPF7AlC0F-JZaDx94cKKTXpIQ7UezYd4_4PrKaPSaozICVwmpHctJ-O6oGVMdIZVUfJAWj8z_FHy7XHmzs9Q25WBZfMREmRens4HzvPXyO5sSQw" alt="The Silk Edit"/>
+              <div class="absolute inset-0 bg-linear-to-t from-inverse-surface/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+              <div class="absolute bottom-3.5 inset-x-0 text-center px-2">
+                <span class="font-body-sm text-body-sm text-secondary-fixed tracking-widest uppercase font-medium">22 Styles</span>
+              </div>
+            </div>
+            <div class="mt-3.5 text-center">
+              <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">The Silk Edit</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Pure Mulberry &amp; Drapes</p>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- ── SECTION 3: NEW ARRIVALS GRID (4 BIBA Retail Columns) ── -->
+      <section class="w-full py-16 sm:py-20 px-4 sm:px-6 lg:px-12 bg-surface-container-low" id="new-arrivals">
+        <div class="max-w-360 mx-auto">
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between pb-6 sm:pb-8 mb-8 border-b-0">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="h-2 w-2 rounded-full bg-primary-container"></span>
+                <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">Fresh Runway Drops</span>
+              </div>
+              <h2 class="font-headline-lg text-headline-lg text-on-surface">New Arrivals</h2>
+            </div>
+            <div class="mt-3 sm:mt-0 flex items-center gap-4">
+              <a class="font-label-caps text-label-caps uppercase text-on-surface hover:text-primary transition-colors flex items-center gap-1.5 tracking-wider font-semibold" data-path="new-arrivals" href="#">
+                <span>View All (42)</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+            <!-- Product 1 -->
+            <div class="group flex flex-col bg-surface-card border border-outline-variant/30 shadow-xs hover:shadow-lg transition-all duration-300 relative">
+              <div class="relative w-full aspect-3/4 overflow-hidden bg-surface-container">
+                <span class="absolute top-3 left-3 z-10 bg-primary-container text-on-primary px-2.5 py-1 font-label-caps text-[10px] uppercase tracking-wider font-semibold shadow-xs">Bestseller</span>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-3 right-3 z-10 w-8.5 h-8.5 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+                <img class="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6Vldsgnpv9ipjPEF41mHpgZThTSbqB3fk6r9kKRS5B5l73Q8_UbZMAZiwRVUARUxOgFAXqS63gHTNdQulsOfk-g8DUDGYzLHZU0j8p5dyJvZ5FaO4edgQtgFdM47pddIAUOTlQXFBvFKNuyxKQK5QLPD9n4oSXYAeqmnGKkif-WPOowHO3g5my7VAdhZ1XWNNzjBcFK5GRvDEcQy7hsfQ4lYwZGtnxOvVtOEZXdtMdcEWlx0duX9tuQ" alt="The Scarlet Empress Silk Blazer Set"/>
+                <div class="absolute inset-x-0 bottom-0 p-3 bg-surface/95 backdrop-blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex flex-col gap-2 shadow-md z-20">
+                  <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                    <span>SELECT SIZE</span>
+                    <a href="#" data-path="size-guide" class="text-primary hover:underline">Size Chart</a>
+                  </div>
+                  <div class="grid grid-cols-5 gap-1.5 text-center">
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XS</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">S</button>
+                    <button class="py-1 bg-primary text-on-primary font-label-ui text-xs font-semibold">M</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">L</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XL</button>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 flex flex-col gap-1.5">
+                <span class="font-label-caps text-[10px] uppercase text-outline tracking-wider">Tailored Co-ords</span>
+                <h3 class="font-headline-sm text-[15px] sm:text-[16px] text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2">The Scarlet Empress Silk Blazer Set</h3>
+                <div class="flex items-baseline gap-2 pt-0.5">
+                  <span class="font-price-regular text-price-regular text-on-surface font-semibold">₹6,499</span>
+                  <span class="font-price-original text-price-original text-outline line-through">₹8,999</span>
+                  <span class="font-label-caps text-[10px] text-primary font-bold">(28% OFF)</span>
+                </div>
+                <div class="flex items-center gap-1.5 pt-1.5">
+                  <span class="w-3.5 h-3.5 rounded-full bg-primary-container ring-2 ring-primary ring-offset-1 cursor-pointer" title="Crimson Red"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-inverse-surface cursor-pointer" title="Onyx Black"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#fdfbf7] border border-outline-variant cursor-pointer" title="Pure Ivory"></span>
+                  <span class="font-body-sm text-[11px] text-outline ml-1">+2 colors</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 2 -->
+            <div class="group flex flex-col bg-surface-card border border-outline-variant/30 shadow-xs hover:shadow-lg transition-all duration-300 relative">
+              <div class="relative w-full aspect-3/4 overflow-hidden bg-surface-container">
+                <span class="absolute top-3 left-3 z-10 bg-secondary text-on-secondary px-2.5 py-1 font-label-caps text-[10px] uppercase tracking-wider font-semibold shadow-xs">New</span>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-3 right-3 z-10 w-8.5 h-8.5 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+                <img class="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlHOD9mEVTE6sk-9zL6MIV-PM_GSkQ5FcECMj90EPrWhdHC1pHTFt6ZRL_NGEEbjm7kck_rCv5Xh3r-x3HL2lMQvfNgldwNC5F-sFTOow78Xqhzx9tnwz_ZorU73_8Sf6aM7YQhRs2Il_xIrKeTUuXyE7SS0CLUwiGch0JRPtBlg2hj1mOeP93gNkj1nBZmOJEASb4DpHMBGtfCVQvoprR5YS-hPcTLylOhNYSUJ4yfCIsAzak7ekdtQ" alt="Aura Pleated Asymmetric Kurta"/>
+                <div class="absolute inset-x-0 bottom-0 p-3 bg-surface/95 backdrop-blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex flex-col gap-2 shadow-md z-20">
+                  <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                    <span>SELECT SIZE</span>
+                    <a href="#" data-path="size-guide" class="text-primary hover:underline">Size Chart</a>
+                  </div>
+                  <div class="grid grid-cols-5 gap-1.5 text-center">
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XS</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">S</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">M</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">L</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XL</button>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 flex flex-col gap-1.5">
+                <span class="font-label-caps text-[10px] uppercase text-outline tracking-wider">Kurtas &amp; Tunics</span>
+                <h3 class="font-headline-sm text-[15px] sm:text-[16px] text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2">Aura Pleated Asymmetric Kurta</h3>
+                <div class="flex items-baseline gap-2 pt-0.5">
+                  <span class="font-price-regular text-price-regular text-on-surface font-semibold">₹4,299</span>
+                  <span class="font-price-original text-price-original text-outline line-through">₹5,499</span>
+                  <span class="font-label-caps text-[10px] text-primary font-bold">(21% OFF)</span>
+                </div>
+                <div class="flex items-center gap-1.5 pt-1.5">
+                  <span class="w-3.5 h-3.5 rounded-full bg-primary-container ring-2 ring-primary ring-offset-1 cursor-pointer" title="Deep Red"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-secondary cursor-pointer" title="Champagne Gold"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 3 -->
+            <div class="group flex flex-col bg-surface-card border border-outline-variant/30 shadow-xs hover:shadow-lg transition-all duration-300 relative">
+              <div class="relative w-full aspect-3/4 overflow-hidden bg-surface-container">
+                <span class="absolute top-3 left-3 z-10 bg-inverse-surface text-secondary-fixed px-2.5 py-1 font-label-caps text-[10px] uppercase tracking-wider font-semibold shadow-xs">Limited Drop</span>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-3 right-3 z-10 w-8.5 h-8.5 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+                <img class="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvY6iULpk55zFLir0Qyvvz_LbkNU3WLDnOx-jr_0eYKVskk9sj5Us-rABFbaakqX9cwbpy5-KM5yLA1MkCOa21PZllHaxzoDwq3W8CvWJjftob6cm3JO4W_YZ6RI_g5vYIZywDhobuI2YSXUMX0ecA4XGnzwxOqR3hlCXH6bJ7YyaAHnaWqGoqldakMOKRcTRmBDgBonCTBsKjejVn3CnSokihMKAbjbbwn2oHZdVu-KpXM3RPRGt6RQ" alt="Noor Draped Satin Evening Gown"/>
+                <div class="absolute inset-x-0 bottom-0 p-3 bg-surface/95 backdrop-blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex flex-col gap-2 shadow-md z-20">
+                  <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                    <span>SELECT SIZE</span>
+                    <a href="#" data-path="size-guide" class="text-primary hover:underline">Size Chart</a>
+                  </div>
+                  <div class="grid grid-cols-5 gap-1.5 text-center">
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XS</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">S</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">M</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">L</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XL</button>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 flex flex-col gap-1.5">
+                <span class="font-label-caps text-[10px] uppercase text-outline tracking-wider">Evening Wear</span>
+                <h3 class="font-headline-sm text-[15px] sm:text-[16px] text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2">Noor Draped Satin Evening Gown</h3>
+                <div class="flex items-baseline gap-2 pt-0.5">
+                  <span class="font-price-regular text-price-regular text-on-surface font-semibold">₹7,899</span>
+                  <span class="font-price-original text-price-original text-outline line-through">₹9,999</span>
+                  <span class="font-label-caps text-[10px] text-primary font-bold">(21% OFF)</span>
+                </div>
+                <div class="flex items-center gap-1.5 pt-1.5">
+                  <span class="w-3.5 h-3.5 rounded-full bg-primary-container ring-2 ring-primary ring-offset-1 cursor-pointer" title="Fiery Red"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-inverse-surface cursor-pointer" title="Midnight Black"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 4 -->
+            <div class="group flex flex-col bg-surface-card border border-outline-variant/30 shadow-xs hover:shadow-lg transition-all duration-300 relative">
+              <div class="relative w-full aspect-3/4 overflow-hidden bg-surface-container">
+                <span class="absolute top-3 left-3 z-10 bg-terracotta text-on-primary px-2.5 py-1 font-label-caps text-[10px] uppercase tracking-wider font-semibold shadow-xs">Handcrafted</span>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-3 right-3 z-10 w-8.5 h-8.5 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+                <img class="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk8cHyw3oCxH2dx62WSWUW43UWRu7AZZdSLlrmrxcIII9dHdikzsS0yfm0UjH2qBvv-d-qNUuPukNnmQAyxOiMhc7_iCYCw9UhU5uCSwG08KZvW0Bpew4Q4puwLYNMKEFeL7cHfpCU6dcD_XgrkI_EgcVDluUu-jtEbwinQWPM6SHIcT5WtXKzaRwaqm44BOpHi8iL2I1JQihM6zFtdRuGVxyLw1ubv0SvBUrD0cXMksjVyCX92QnnJw" alt="Zoya Handcrafted Chanderi Co-ord"/>
+                <div class="absolute inset-x-0 bottom-0 p-3 bg-surface/95 backdrop-blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex flex-col gap-2 shadow-md z-20">
+                  <div class="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
+                    <span>SELECT SIZE</span>
+                    <a href="#" data-path="size-guide" class="text-primary hover:underline">Size Chart</a>
+                  </div>
+                  <div class="grid grid-cols-5 gap-1.5 text-center">
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XS</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">S</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">M</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">L</button>
+                    <button class="py-1 bg-surface-container text-on-surface font-label-ui text-xs hover:bg-primary hover:text-on-primary transition-colors">XL</button>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4 flex flex-col gap-1.5">
+                <span class="font-label-caps text-[10px] uppercase text-outline tracking-wider">Festive Co-ords</span>
+                <h3 class="font-headline-sm text-[15px] sm:text-[16px] text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2">Zoya Handcrafted Chanderi Co-ord</h3>
+                <div class="flex items-baseline gap-2 pt-0.5">
+                  <span class="font-price-regular text-price-regular text-on-surface font-semibold">₹5,199</span>
+                  <span class="font-price-original text-price-original text-outline line-through">₹6,899</span>
+                  <span class="font-label-caps text-[10px] text-primary font-bold">(24% OFF)</span>
+                </div>
+                <div class="flex items-center gap-1.5 pt-1.5">
+                  <span class="w-3.5 h-3.5 rounded-full bg-terracotta ring-2 ring-terracotta ring-offset-1 cursor-pointer" title="Terracotta"></span>
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#f6f2ec] border border-outline-variant cursor-pointer" title="Warm Ivory"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 4: ASYMMETRIC EDITORIAL FEATURE ── -->
+      <section class="w-full py-20 sm:py-24 px-4 sm:px-6 lg:px-12 bg-page-bg border-t border-border-sand/40" id="brand-manifesto">
+        <div class="max-w-360 mx-auto">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+            <div class="lg:col-span-7 relative">
+              <div class="relative aspect-4/5 sm:aspect-16/11 lg:aspect-4/5 overflow-hidden shadow-xl bg-surface-container">
+                <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv5-fs4Wx92qNl0wcE4Dds9n2uIFzBRCKylR4FYaw3iahNyUx0SEg3Q-IeYHWCly4AHd36j1kBYKjBsbqCOTFVSxQTjgFdjgy6L-LM69lYZ1DxGCzQwrRQCGiVbdnihH4QaaLyVqoEcn0d8X6ZJ43ll2gCQ2jxNokktX4pDoqncYfTao8ChS_EbtobMGWyUQpdSLvBsyBn6ArA6fi4MfkOfaFd80frHuz_QzhWHaFsEEBpUZ4Nek36lg" alt="Striking luxury fashion editorial"/>
+                <div class="absolute inset-0 bg-linear-to-t from-inverse-surface/40 via-transparent to-transparent"></div>
+                <div class="absolute top-6 left-6 p-4 bg-surface/90 backdrop-blur-md hidden sm:flex flex-col gap-0.5 shadow-sm border-l-2 border-primary">
+                  <span class="font-headline-md text-headline-sm text-primary tracking-widest font-bold">CHILLI</span>
+                  <span class="font-label-caps text-[9px] uppercase tracking-widest text-on-surface">Signature Edition</span>
+                </div>
+              </div>
+              <div class="absolute -bottom-6 -right-3 sm:-right-6 bg-surface p-5 sm:p-6 shadow-xl max-w-xs hidden md:flex flex-col gap-2 z-10 border border-outline-variant/30">
+                <div class="flex items-center gap-2 text-secondary">
+                  <span class="material-symbols-outlined text-[20px]">workspace_premium</span>
+                  <span class="font-label-caps text-[11px] uppercase tracking-wider font-semibold">Artisanal Details</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">Custom molded gold buttons inspired by royal jharokha geometry, stitched by master karigars in Jaipur.</p>
+              </div>
+            </div>
+
+            <div class="lg:col-span-5 flex flex-col justify-center lg:pl-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="h-px w-8 bg-primary"></span>
+                <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">Brand Manifesto</span>
+              </div>
+              <h2 class="font-headline-lg text-headline-lg lg:text-[42px] text-on-surface leading-tight mb-5">
+                “We don't just dress you, <br/>
+                <span class="italic text-tertiary">we express you.”</span>
+              </h2>
+              <p class="font-title-editorial text-title-editorial text-on-surface-variant mb-5 leading-relaxed font-medium">
+                Closet by Chilli is where style meets confidence. The collection reflects sophistication with a dash of boldness—just like every woman who wears it.
+              </p>
+              <p class="font-body-md text-body-md text-on-surface-variant mb-7 leading-relaxed">
+                From power silhouettes to fluid evening drapes, we craft pieces for the woman who owns every room she enters. Rooted in red and gold—the hues of passion and royal heritage—each piece balances modern tailored poise with timeless Indian grandeur.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 pb-7">
+                <div class="flex items-start gap-3 p-3 bg-surface shadow-xs border border-outline-variant/20">
+                  <span class="material-symbols-outlined text-primary text-[22px] shrink-0">check_circle</span>
+                  <div class="flex flex-col">
+                    <span class="font-label-caps text-[11px] uppercase tracking-wider text-on-surface font-semibold">100% Silk &amp; Satin</span>
+                    <span class="font-body-sm text-[12px] text-outline">Lustrous breathable inner linings</span>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-surface shadow-xs border border-outline-variant/20">
+                  <span class="material-symbols-outlined text-primary text-[22px] shrink-0">check_circle</span>
+                  <div class="flex flex-col">
+                    <span class="font-label-caps text-[11px] uppercase tracking-wider text-on-surface font-semibold">Bespoke Fit Cut</span>
+                    <span class="font-body-sm text-[12px] text-outline">Engineered for Indian body shapes</span>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-surface shadow-xs border border-outline-variant/20">
+                  <span class="material-symbols-outlined text-primary text-[22px] shrink-0">check_circle</span>
+                  <div class="flex flex-col">
+                    <span class="font-label-caps text-[11px] uppercase tracking-wider text-on-surface font-semibold">Custom Gold Hardware</span>
+                    <span class="font-body-sm text-[12px] text-outline">Hand-polished metallic trims</span>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 bg-surface shadow-xs border border-outline-variant/20">
+                  <span class="material-symbols-outlined text-primary text-[22px] shrink-0">check_circle</span>
+                  <div class="flex flex-col">
+                    <span class="font-label-caps text-[11px] uppercase tracking-wider text-on-surface font-semibold">Packaging Experience</span>
+                    <span class="font-body-sm text-[12px] text-outline">Luxe satin bags &amp; wax seal box</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <a class="inline-flex items-center gap-3 px-8 py-4 bg-inverse-surface text-secondary-fixed font-label-caps text-label-caps uppercase tracking-widest hover:bg-primary-container hover:text-on-primary transition-all duration-300 shadow-sm hover:shadow-md font-semibold" data-path="collections" href="#">
+                  <span>Shop The Curated Edit</span>
+                  <span class="material-symbols-outlined text-[18px]">arrow_right_alt</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 5: MOST LOVED / SIGNATURE BEST-SELLERS ── -->
+      <section class="w-full py-20 px-4 sm:px-6 lg:px-12 bg-surface" id="bestsellers">
+        <div class="max-w-360 mx-auto">
+          <div class="text-center max-w-xl mx-auto mb-12 sm:mb-14">
+            <div class="inline-flex items-center gap-2 mb-2">
+              <span class="material-symbols-outlined text-secondary text-[18px]">star</span>
+              <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">Iconic Silhouettes</span>
+              <span class="material-symbols-outlined text-secondary text-[18px]">star</span>
+            </div>
+            <h2 class="font-headline-lg text-headline-lg text-on-surface">Most Loved By Our Muses</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-2">Pieces with verified 4.9+ ratings, designed to make an indelible impression at galas, soirées, and celebrations.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <!-- Spotlight Card 1 -->
+            <div class="group flex flex-col bg-surface-container-low overflow-hidden shadow-xs hover:shadow-xl border border-outline-variant/30 transition-all duration-300">
+              <div class="relative w-full aspect-4/5 overflow-hidden bg-surface-container">
+                <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgSDJ3ZHGNQC497HFcEjVGyGSIgTQShpgUbS1Lq23Vta3dqEq_7HMY_XHXTPMo1fwfkiekTfIcaKB3s2Qi3eBQ1Vaz0UFCGe-waF8nsp08tYImEH1Z5vXkffMOPXUBhYLmv4xi-LMSLku-KvX-0pBM-pM337-fmr5cZj5WCfukaw0o8FBbNGYbdzRegxwXIrBiBxolvyluQkv79s-L2_sCbz2xDKA2spdeORxSjov8pTlaVypXba4RfA" alt="The Regal Tuxedo Draped Dress"/>
+                <div class="absolute top-4 left-4 bg-surface/95 px-3 py-1 font-label-caps text-[10px] uppercase tracking-widest text-on-surface font-semibold shadow-xs">
+                  Rank #1 Best Seller
+                </div>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-4 right-4 w-9 h-9 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+              </div>
+              <div class="p-6 flex flex-col flex-1 justify-between bg-surface">
+                <div>
+                  <div class="flex items-center gap-1 text-secondary mb-2">
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="font-body-sm text-[12px] text-on-surface font-semibold ml-1.5">4.9 / 5.0</span>
+                    <span class="font-body-sm text-[11px] text-outline ml-1">(184 Reviews)</span>
+                  </div>
+                  <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors mb-2">The Regal Tuxedo Draped Dress</h3>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">Structured blazer front flowing into asymmetric knife pleats. Tailored with Italian crepe and pure silk lapel.</p>
+                </div>
+                <div class="pt-4 border-t border-outline-variant/20 flex items-center justify-between">
+                  <div>
+                    <span class="font-price-regular text-[18px] text-on-surface font-bold">₹8,499</span>
+                    <span class="block font-label-caps text-[10px] text-outline uppercase tracking-wider">Taxes Included</span>
+                  </div>
+                  <a class="px-5 py-2.5 bg-inverse-surface text-on-primary font-label-caps text-[11px] tracking-wider uppercase hover:bg-primary-container transition-colors shadow-xs font-semibold" data-path="dresses" href="#">
+                    Shop Now
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spotlight Card 2 -->
+            <div class="group flex flex-col bg-surface-container-low overflow-hidden shadow-xs hover:shadow-xl border border-outline-variant/30 transition-all duration-300">
+              <div class="relative w-full aspect-4/5 overflow-hidden bg-surface-container">
+                <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoS9fZZiGMiEQALCxtriJ9MV7ZwCnAM-JZpO9Um-_-ey0yawjfERRLY-gjEYriKdCkMpdDpxpvIYiUGKi5E-hlZwAT-shWr5dTpzLV0NH4yTsYcBBewFdzwKDBftH3maS79P1TyKeJsdP5fcGbSCEaKtThAnVMVeyGca06PEcrvK_jEsH3-Z3sAW0_Qbyed6kXzxdaAFGMUzlQuRirqI6yivsHP9HCbKmWRrxt8VnI6qcAfvhilzLZDQ" alt="Onyx Midnight Backless Silhouette"/>
+                <div class="absolute top-4 left-4 bg-surface/95 px-3 py-1 font-label-caps text-[10px] uppercase tracking-widest text-on-surface font-semibold shadow-xs">
+                  Celebrity Pick
+                </div>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-4 right-4 w-9 h-9 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+              </div>
+              <div class="p-6 flex flex-col flex-1 justify-between bg-surface">
+                <div>
+                  <div class="flex items-center gap-1 text-secondary mb-2">
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="font-body-sm text-[12px] text-on-surface font-semibold ml-1.5">5.0 / 5.0</span>
+                    <span class="font-body-sm text-[11px] text-outline ml-1">(92 Reviews)</span>
+                  </div>
+                  <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors mb-2">Onyx Midnight Backless Silhouette</h3>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">Plunging sculptured back framed by gold rope cord. Perfect for black-tie sangeets and red-carpet gatherings.</p>
+                </div>
+                <div class="pt-4 border-t border-outline-variant/20 flex items-center justify-between">
+                  <div>
+                    <span class="font-price-regular text-[18px] text-on-surface font-bold">₹9,299</span>
+                    <span class="block font-label-caps text-[10px] text-outline uppercase tracking-wider">Taxes Included</span>
+                  </div>
+                  <a class="px-5 py-2.5 bg-inverse-surface text-on-primary font-label-caps text-[11px] tracking-wider uppercase hover:bg-primary-container transition-colors shadow-xs font-semibold" data-path="dresses" href="#">
+                    Shop Now
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spotlight Card 3 -->
+            <div class="group flex flex-col bg-surface-container-low overflow-hidden shadow-xs hover:shadow-xl border border-outline-variant/30 transition-all duration-300">
+              <div class="relative w-full aspect-4/5 overflow-hidden bg-surface-container">
+                <img class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVsCs85vPU-f6hxAHxK1iSXIeBBLWZDS1YH4N9a5EggJufvVcHGbRe85dzrBoOk0EI_GQ7KPOn6eLUPfjfBXWempUGzpSiM7YrSwhfCk3teoNb11ePVWKsj9d4ictjF46nWQOWvw3pglUyzXYaUVAfbjmCgSdYrmbTndTSCSuhPhbO0UZUCBlw5z-zwdFL5tPYiq9VdOi0Kn94uJQBGM_jk__VNaQA2IJq19M3vScwC_lp2dFQ3AQUAg" alt="Ruhani Draped Sharara Set"/>
+                <div class="absolute top-4 left-4 bg-surface/95 px-3 py-1 font-label-caps text-[10px] uppercase tracking-widest text-on-surface font-semibold shadow-xs">
+                  Festive Essential
+                </div>
+                <button aria-label="Add to Wishlist" class="wishlist-btn absolute top-4 right-4 w-9 h-9 rounded-full bg-surface/90 hover:bg-surface text-on-surface hover:text-primary flex items-center justify-center transition-colors shadow-xs">
+                  <span class="material-symbols-outlined text-[18px]">favorite</span>
+                </button>
+              </div>
+              <div class="p-6 flex flex-col flex-1 justify-between bg-surface">
+                <div>
+                  <div class="flex items-center gap-1 text-secondary mb-2">
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star_half</span>
+                    <span class="font-body-sm text-[12px] text-on-surface font-semibold ml-1.5">4.8 / 5.0</span>
+                    <span class="font-body-sm text-[11px] text-outline ml-1">(215 Reviews)</span>
+                  </div>
+                  <h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors mb-2">Ruhani Draped Sharara Set</h3>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">Fluid accordion-pleated sharara trousers paired with a tailored sleeveless asymmetrical peplum kurti.</p>
+                </div>
+                <div class="pt-4 border-t border-outline-variant/20 flex items-center justify-between">
+                  <div>
+                    <span class="font-price-regular text-[18px] text-on-surface font-bold">₹7,199</span>
+                    <span class="block font-label-caps text-[10px] text-outline uppercase tracking-wider">Taxes Included</span>
+                  </div>
+                  <a class="px-5 py-2.5 bg-inverse-surface text-on-primary font-label-caps text-[11px] tracking-wider uppercase hover:bg-primary-container transition-colors shadow-xs font-semibold" data-path="festive-sets" href="#">
+                    Shop Now
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 6: THE CRAFT & BRAND ESSENCE STRIP ── -->
+      <section class="w-full py-16 px-4 sm:px-6 lg:px-12 bg-page-bg border-y border-border-sand/40">
+        <div class="max-w-360 mx-auto">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            <div class="flex items-start gap-4 p-5 bg-surface shadow-xs border border-outline-variant/30 hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 rounded-none bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+                <span class="material-symbols-outlined text-[26px]">dry_cleaning</span>
+              </div>
+              <div>
+                <h4 class="font-headline-sm text-[16px] text-on-surface font-semibold mb-1">Signature Drapes</h4>
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Fluid silk-satin silhouettes engineered for seamless movement and graceful lines.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4 p-5 bg-surface shadow-xs border border-outline-variant/30 hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 rounded-none bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+                <span class="material-symbols-outlined text-[26px]">precision_manufacturing</span>
+              </div>
+              <div>
+                <h4 class="font-headline-sm text-[16px] text-on-surface font-semibold mb-1">Bespoke Tailoring</h4>
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Precision cuts and shoulder architecture designed specifically for Indian silhouettes.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4 p-5 bg-surface shadow-xs border border-outline-variant/30 hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 rounded-none bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+                <span class="material-symbols-outlined text-[26px]">hotel_class</span>
+              </div>
+              <div>
+                <h4 class="font-headline-sm text-[16px] text-on-surface font-semibold mb-1">Artisanal Gold Trims</h4>
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Custom molded buttons, solid metallic fastenings, and antique zari hand-embellishment.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4 p-5 bg-surface shadow-xs border border-outline-variant/30 hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 rounded-none bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+                <span class="material-symbols-outlined text-[26px]">support_agent</span>
+              </div>
+              <div>
+                <h4 class="font-headline-sm text-[16px] text-on-surface font-semibold mb-1">Complimentary Fit Concierge</h4>
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Free length customizations and personalized WhatsApp styling assistance for all orders.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 7: WHOLESALE & B2B PATHWAY ── -->
+      <section class="w-full py-16 px-4 sm:px-6 lg:px-12 bg-page-bg">
+        <div class="max-w-360 mx-auto">
+          <div class="relative bg-inverse-surface text-on-primary p-8 sm:p-10 lg:p-14 shadow-2xl overflow-hidden border border-outline-variant/20">
+            <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-secondary/15 blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-primary/25 blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div class="lg:col-span-8 flex flex-col gap-3">
+                <div class="inline-flex items-center gap-2">
+                  <span class="font-label-caps text-label-caps uppercase text-secondary-fixed tracking-widest font-semibold">B2B &amp; Boutique Concierge</span>
+                  <span class="text-outline-variant text-[10px]">|</span>
+                  <span class="font-label-caps text-[11px] text-surface-variant uppercase tracking-wider">Global Dispatch</span>
+                </div>
+                <h2 class="font-headline-lg text-headline-lg lg:text-[36px] text-on-primary font-semibold leading-tight">
+                  Closet by Chilli for Boutiques &amp; Multi-Designer Stores
+                </h2>
+                <p class="font-body-md text-body-md text-surface-variant max-w-2xl leading-relaxed">
+                  Partner with India's fastest-growing contemporary ethnic house. We supply premium multi-designer multi-brand boutiques, bridal suites, and export retail partners with seasonal previews, low MOQs, and tailored capsule assortments.
+                </p>
+                <div class="flex flex-wrap items-center gap-5 sm:gap-6 pt-3 text-surface-variant font-body-sm text-body-sm">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-fixed text-[18px]">verified</span>
+                    <span>Low MOQ Starter Orders</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-fixed text-[18px]">public</span>
+                    <span>Worldwide Express Logistics</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-fixed text-[18px]">loyalty</span>
+                    <span>High-Margin Wholesale Tiers</span>
+                  </div>
+                </div>
+              </div>
+              <div class="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3.5 sm:gap-4">
+                <a class="w-full sm:w-auto px-8 py-4 bg-secondary-fixed text-on-secondary-fixed font-label-caps text-label-caps tracking-widest uppercase hover:bg-secondary-fixed-dim transition-all duration-300 text-center font-bold shadow-md" data-path="wholesale" href="#">
+                  Request B2B Catalog
+                </a>
+                <a class="w-full sm:w-auto px-6 py-3.5 bg-surface/10 text-on-primary font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface/20 transition-all text-center border border-surface/20" data-path="contact" href="#">
+                  Speak to Wholesale Rep
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION 8: INSTAGRAM & SOCIAL EDITORIAL GALLERY ── -->
+      <section class="w-full py-20 px-4 sm:px-6 lg:px-12 bg-surface">
+        <div class="max-w-360 mx-auto">
+          <div class="flex flex-col md:flex-row md:items-end justify-between mb-10">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="material-symbols-outlined text-primary text-[18px]">photo_camera</span>
+                <span class="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">Styled In Chilli</span>
+              </div>
+              <h2 class="font-headline-lg text-headline-lg text-on-surface">The Social Salon</h2>
+              <p class="font-body-md text-body-md text-on-surface-variant mt-1">Tag <span class="font-semibold text-primary">@closetbychili</span> and use <span class="font-semibold text-on-surface">#ClosetByChilli</span> to be featured on our curated runway feed.</p>
+            </div>
+            <a class="mt-4 md:mt-0 inline-flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-on-surface hover:text-primary transition-colors" href="https://instagram.com" rel="noopener" target="_blank">
+              <span>Follow Us on Instagram</span>
+              <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+            </a>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            <a class="group relative aspect-square overflow-hidden bg-surface-container shadow-xs hover:shadow-md transition-shadow" href="#">
+              <img class="w-full h-full object-cover transition-transform duration-600 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMy7s5EFXCM0o5tCZuRdha45sj9s-MkJWMGkzo8tEXUJsTs5ZqkLw6_ichJoMTegzAeWC9Ydz0YwDgOXMjBAjaECTrIH457a72F9hOVBbBNp3sEGgt_7eAXbg3ZrSf9QRa7XAvft67f_Y7ePcowLB8SukCOKRGpVx1Y9wW0Cek4Aiq5JMtvr8CdQywWMrLy44DHatRO_jHsZ3wniT2M9hhQl3FXDIxM-8_cPV2rJZJ83JiFkgBOKiY7w" alt="Influencer styling red suit"/>
+              <div class="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-[28px]">photo_camera</span>
+              </div>
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[9px] uppercase tracking-wider shadow-xs">@ananya_v</span>
+            </a>
+
+            <a class="group relative aspect-square overflow-hidden bg-surface-container shadow-xs hover:shadow-md transition-shadow" href="#">
+              <img class="w-full h-full object-cover transition-transform duration-600 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLjYSkeEi-tPH12uGyrxqTxIoXxlCO4w5YI1zFIramvYLAHBdA0uBmHVaM6-ZUmiA_J-dVt4V1fOJRgfsY2JgQeW2eQKanJi7c0NLmCS63Dbdl7PgjYdfmC_fsOYJcBY_2roMas6s0bne33qQXmqhf0JGTpb_-c2gHGJnE9-zfEnf2J6l_RGiSqweJZKNzn5IvVGr0zRtmOM4xAs-dzZBPU7dev1nc3pyNb9JrTlkkvyt52IySP3vrlw" alt="Unboxing Luxe"/>
+              <div class="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-[28px]">shopping_bag</span>
+              </div>
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[9px] uppercase tracking-wider shadow-xs">Unboxing Luxe</span>
+            </a>
+
+            <a class="group relative aspect-square overflow-hidden bg-surface-container shadow-xs hover:shadow-md transition-shadow" href="#">
+              <img class="w-full h-full object-cover transition-transform duration-600 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcfmhjavtt6C9lSqeDmxDgeSXMZHygHo28QPpPMTNa3uuOpun8sCBRpz-cqImWmyD5YqU1BzAk_1xlRkIT886n6oyLw5MBW9s5T2UnCsYer7aQ9Razp9YlcdeOrYMLLy148y0_OwiizvapgmhUF0c3hLDcYfFOrEjNEYrNG6A0SkwMYiJHWlaPjvAdS0Qt2upBcne7XMuzefnG4AUED-JUfRnNpCnaaD_dsQIomWYq5GV0B34Hg-Kpbw" alt="Destination wedding gown"/>
+              <div class="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-[28px]">favorite</span>
+              </div>
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[9px] uppercase tracking-wider shadow-xs">@meera.kapoor</span>
+            </a>
+
+            <a class="group relative aspect-square overflow-hidden bg-surface-container shadow-xs hover:shadow-md transition-shadow" href="#">
+              <img class="w-full h-full object-cover transition-transform duration-600 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqKHHPMvhodAqImNexY-ME2WgGITh3ZMGFVxOn_VanZVqQIgcurcRiLj263b23qe62pdcIjYhWXb77iMuVPZzEHERBr0n16lN5-iwkmtMYhv43htR9atlRGeR3EQAmBrJ63skfpj1lD5xiNPkkF8_OqTdk0u_hGNSdvyLMO0nR1zpPxxKjeeW_BhivmpOBRtPSiSXqdPwuT7L-o4BjQ1OiBM79HvMBjOAqe3oMstA0JV_e5mMXv0VpKw" alt="Studio rack"/>
+              <div class="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-[28px]">storefront</span>
+              </div>
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[9px] uppercase tracking-wider shadow-xs">Studio Rack</span>
+            </a>
+
+            <a class="group relative aspect-square overflow-hidden bg-surface-container shadow-xs hover:shadow-md transition-shadow col-span-2 md:col-span-1" href="#">
+              <img class="w-full h-full object-cover transition-transform duration-600 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKyFj3o7NKYiPLmyMHC2UBTqMSZNxGeRitBhhoI4FfZRkaNaWzswfB8Q_TclNxl1ZYSEf68UYhaW0o7WpD3z1UJF7foABStlzuf7TuDpJAUXKFoXObvaS05MoWxjkKqjpmrfky_ucDqac6dWRHNOKiFQtcKHF9NJ6qr8zLcbfhMu_4VHkFqiVxstNrabh5QwMR0wUJtrAfvLcOFGyQKyVj6NdSyLheyRmqQLrwseUUmpn8DVQql81NmQ" alt="Muse in kurta"/>
+              <div class="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-[28px]">photo_camera</span>
+              </div>
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[9px] uppercase tracking-wider shadow-xs">@tanya_drapes</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="w-full bg-surface-container-low border-t border-outline-variant/30">
+    <div class="max-w-360 mx-auto px-6 lg:px-12 pt-16 pb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
+        <div class="lg:col-span-4 flex flex-col gap-4">
+          <div class="flex items-center gap-3">
+            <img alt="Closet by Chili Logo" class="h-10 md:h-12 w-auto object-contain" src="/assets/brand/logo.png"/>
+          </div>
+          <p class="font-title-editorial text-title-editorial text-tertiary italic">Bold. Feminine. Timeless.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-sm leading-relaxed">Where style meets confidence. Contemporary silhouettes infused with bold craftsmanship and modern ethnic sensibilities for the discerning muse.</p>
+          <div class="flex items-center gap-3 pt-2">
+            <a aria-label="Social Channel" class="w-9 h-9 bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">share</span></a>
+            <a aria-label="Gallery" class="w-9 h-9 bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">photo_camera</span></a>
+            <a aria-label="Community" class="w-9 h-9 bg-surface border border-outline-variant/50 flex items-center justify-center text-on-surface hover:bg-primary hover:text-on-primary transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">public</span></a>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h3 class="font-label-caps text-label-caps tracking-widest text-on-surface uppercase font-semibold">Shop Categories</h3>
+          <nav class="flex flex-col gap-2.5 pt-1" data-active-classes="text-primary font-medium">
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="new-arrivals" href="#">New In</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="co-ord-sets" href="#">Co-ord Sets</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="kurtas-and-tunics" href="#">Kurtas &amp; Tunics</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="dresses" href="#">Dresses</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="festive-sets" href="#">Festive Edit</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="wholesale" href="#">Wholesale Inquiries</a>
+          </nav>
+        </div>
+
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h3 class="font-label-caps text-label-caps tracking-widest text-on-surface uppercase font-semibold">Customer Support</h3>
+          <nav class="flex flex-col gap-2.5 pt-1" data-active-classes="text-primary font-medium">
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="track-order" href="#">Track Order</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="shipping-and-delivery" href="#">Shipping &amp; Delivery</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="returns-and-exchanges" href="#">Returns &amp; Exchanges</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="size-guide" href="#">Size Guide</a>
+            <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="contact" href="#">Contact Us</a>
+          </nav>
+        </div>
+
+        <div class="lg:col-span-4 flex flex-col gap-4">
+          <h3 class="font-label-caps text-label-caps tracking-widest text-on-surface uppercase font-semibold">Stay In The Chilli Loop</h3>
+          <p class="font-body-md text-body-md text-on-surface-variant">Be the first to preview new collections, runway drops, and intimate festive promotions.</p>
+          <form class="flex flex-col sm:flex-row gap-2 pt-1" onsubmit="return false;">
+            <input class="bg-surface border border-outline-variant/60 px-4 py-3 text-body-md font-body-md text-on-surface placeholder:text-outline focus:outline-none flex-1" placeholder="Enter your email address" type="email"/>
+            <button class="bg-primary-container text-on-primary font-label-caps text-label-caps uppercase px-6 py-3 tracking-widest hover:bg-primary transition-colors shrink-0 font-semibold" type="submit">Subscribe</button>
+          </form>
+          <div class="flex items-center gap-4 pt-3">
+            <nav class="flex flex-wrap gap-x-4 gap-y-2" data-active-classes="text-primary font-medium">
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="our-story" href="#">Our Story</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="wholesale" href="#">Wholesale &amp; B2B</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="privacy-policy" href="#">Privacy Policy</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="terms-of-service" href="#">Terms of Service</a>
+              <a class="font-body-sm text-body-sm text-outline hover:text-on-surface transition-colors" data-path="sustainability" href="#">Sustainability</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-outline-variant/30 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <p class="font-body-sm text-body-sm text-on-surface-variant text-center md:text-left">© 2025 Closet by Chilli. All rights reserved. Crafted with timeless Indian craftsmanship.</p>
+        <div class="flex items-center gap-3 text-on-surface-variant font-label-caps text-label-caps">
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">UPI</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">VISA</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">MASTERCARD</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">RAZORPAY</span>
+          <span class="px-2 py-1 bg-surface border border-outline-variant/40">NET BANKING</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive script for Carousel and Wishlist buttons -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const carousel = document.getElementById('hero-carousel');
+      const slides = document.querySelectorAll('.hero-slide');
+      const dots = document.querySelectorAll('.carousel-dot');
+      const counter = document.getElementById('carousel-counter');
+      const prevBtn = document.querySelector('.carousel-prev');
+      const nextBtn = document.querySelector('.carousel-next');
+
+      let currentSlide = 0;
+      const totalSlides = slides.length;
+      let autoplayTimer = null;
+
+      function updateSlide(index) {
+        currentSlide = (index + totalSlides) % totalSlides;
+        slides.forEach((slide, idx) => {
+          if (idx === currentSlide) {
+            slide.classList.remove('opacity-0', 'pointer-events-none', 'z-0');
+            slide.classList.add('opacity-100', 'z-10');
+          } else {
+            slide.classList.remove('opacity-100', 'z-10');
+            slide.classList.add('opacity-0', 'pointer-events-none', 'z-0');
+          }
+        });
+        dots.forEach((dot, idx) => {
+          if (idx === currentSlide) {
+            dot.classList.remove('w-4', 'bg-outline-variant/60');
+            dot.classList.add('w-8', 'bg-primary');
+          } else {
+            dot.classList.remove('w-8', 'bg-primary');
+            dot.classList.add('w-4', 'bg-outline-variant/60');
+          }
+        });
+        if (counter) {
+          counter.textContent = `0${currentSlide + 1} / 0${totalSlides}`;
+        }
+      }
+
+      function nextSlide() { updateSlide(currentSlide + 1); }
+      function prevSlide() { updateSlide(currentSlide - 1); }
+      function startAutoplay() { stopAutoplay(); autoplayTimer = setInterval(nextSlide, 5000); }
+      function stopAutoplay() { if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; } }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => { e.preventDefault(); prevSlide(); startAutoplay(); });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => { e.preventDefault(); nextSlide(); startAutoplay(); });
+      }
+      dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+          const idx = parseInt(dot.getAttribute('data-dot-index'), 10);
+          updateSlide(idx);
+          startAutoplay();
+        });
+      });
+      if (carousel) {
+        carousel.addEventListener('mouseenter', stopAutoplay);
+        carousel.addEventListener('mouseleave', startAutoplay);
+      }
+      startAutoplay();
+
+      // Wishlist toggle
+      document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const icon = btn.querySelector('.material-symbols-outlined');
+          if (icon) {
+            const isFilled = icon.style.fontVariationSettings && icon.style.fontVariationSettings.includes("'FILL' 1");
+            if (isFilled) {
+              icon.style.fontVariationSettings = "'FILL' 0";
+              btn.classList.remove('text-primary');
+            } else {
+              icon.style.fontVariationSettings = "'FILL' 1";
+              btn.classList.add('text-primary');
+            }
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

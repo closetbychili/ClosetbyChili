@@ -137,11 +137,14 @@ export function mapProductToUi(
     PRODUCT_IMAGE_MAP[product.slug] ||
     undefined;
 
+  const originalPrice = parsedPrice > 0 ? Math.round(parsedPrice * 1.3) : undefined;
+
   return {
     id: product.id,
     name: product.name,
     detail: product.category ? product.category.name : 'Ethnic Wear',
     price: parsedPrice,
+    originalPrice,
     badge: resolvedBadge,
     image: resolvedImage,
     href: `/products/${product.slug}`,

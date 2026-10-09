@@ -3,7 +3,28 @@
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, CreditCard, Loader2, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import Image from "next/image";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  CreditCard,
+  Gift,
+  Headphones,
+  HelpCircle,
+  Loader2,
+  Lock,
+  MapPin,
+  Phone,
+  PlusCircle,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Tag,
+  Truck,
+  Verified,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -50,6 +71,14 @@ export default function CheckoutPage() {
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [order, setOrder] = useState<CheckoutOrder | null>(null);
 
+  // Luxury Concierge Extras
+  const [shippingTier, setShippingTier] = useState<"standard" | "atelier">("standard");
+  const [packInKeepsakeBox, setPackInKeepsakeBox] = useState(true);
+  const [includeWaxSealNote, setIncludeWaxSealNote] = useState(true);
+  const [giftMessage, setGiftMessage] = useState("");
+  const [deliveryPref, setDeliveryPref] = useState<string[]>(["Call Upon Arrival"]);
+  const [dispatchNote, setDispatchNote] = useState("");
+
   const idempotencyKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -84,8 +113,17 @@ export default function CheckoutPage() {
   }, [session?.access_token, user]);
 
   const itemTotal = useMemo(() => Number.parseFloat(subtotal) || 0, [subtotal]);
+  const shippingAmount = shippingTier === "atelier" ? 299 : 0;
+  const grandTotal = itemTotal + shippingAmount;
+
   // Only treat as having no items once we have a confirmed cart (not while loading).
   const hasItems = (cart?.items?.length ?? 0) > 0;
+
+  const toggleDeliveryPref = (pref: string) => {
+    setDeliveryPref((prev) =>
+      prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref]
+    );
+  };
 
   const handleSubmitAddress = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -106,6 +144,7 @@ export default function CheckoutPage() {
 
   const startPaymentFlow = async (targetOrder: CheckoutOrder) => {
     if (!session?.access_token) return;
+    if (targetOrder.payment_status === "PAID") return;
     setIsPaying(true);
     setPaymentNotice(null);
 
@@ -180,7 +219,9 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
 
       // Launch Razorpay standard checkout flow
-      void startPaymentFlow(created);
+      if (created.payment_status !== "PAID") {
+        void startPaymentFlow(created);
+      }
     } catch (error) {
       setIsSubmitting(false);
       setFormError(error instanceof Error ? error.message : "We could not place your order. Please try again.");
@@ -189,69 +230,79 @@ export default function CheckoutPage() {
 
   if (authLoading || !user) {
     return (
-      <main className="min-h-screen bg-ivory text-ink">
+      <main className="min-h-screen bg-background text-on-surface">
         <Header />
-        <div className="flex min-h-[60vh] items-center justify-center pt-32 text-sm text-ink/60">
-          <Loader2 className="mr-2 animate-spin" size={16} />
-          Preparing checkout…
+        <div className="flex min-h-[60vh] items-center justify-center pt-32 text-sm text-text-muted">
+          <Loader2 className="mr-2 animate-spin text-primary" size={16} />
+          Preparing private atelier checkout…
         </div>
         <Footer />
       </main>
     );
   }
 
+  // ── ORDER SUCCESS / CONFIRMATION STATE ─────────────────────
   if (order) {
     const isPaid = order.payment_status === "PAID";
     return (
-      <div className="min-h-screen bg-ivory">
+      <div className="min-h-screen bg-page-bg text-on-surface">
         <Header />
-        <main className="mx-auto max-w-3xl px-5 pb-20 pt-28 sm:pt-34">
+        <main className="mx-auto max-w-3xl px-4 sm:px-6 pb-20 pt-28 sm:pt-34">
           <div
-            className={`rounded-2xl border ${
-              isPaid ? "border-emerald-200" : "border-amber-200"
-            } bg-white p-8 shadow-sm`}
+            className={`bg-surface-card p-6 sm:p-10 shadow-sm border ${
+              isPaid ? "border-emerald-300" : "border-amber-300"
+            }`}
           >
-            <div className={`flex items-center gap-3 ${isPaid ? "text-emerald-700" : "text-amber-700"}`}>
+            <div className={`flex items-center gap-4 ${isPaid ? "text-emerald-800" : "text-amber-800"}`}>
               {isPaid ? (
-                <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+                </div>
               ) : (
-                <CreditCard className="h-10 w-10 text-amber-600" />
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                  <CreditCard className="h-7 w-7 text-amber-600" />
+                </div>
               )}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">
+                <p className="font-label-caps text-xs font-semibold uppercase tracking-widest">
                   {isPaid ? "Order placed & paid" : "Order placed — pending payment"}
                 </p>
-                <h1 className="font-display text-3xl text-ink">
+                <h1 className="font-headline-lg text-2xl sm:text-3xl text-on-surface mt-1">
                   Thank you for your order
                 </h1>
               </div>
             </div>
 
             {paymentNotice && (
-              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+              <div className="mt-5 rounded-none border border-amber-300 bg-amber-50/80 p-4 text-xs font-body text-amber-900">
                 {paymentNotice}
               </div>
             )}
 
-            <div className="mt-6 space-y-3 rounded-xl bg-[#f7f2ee] p-5 text-sm text-ink/80">
-              <p>
-                <span className="font-semibold text-ink">Order number:</span> {order.order_number}
+            <div className="mt-6 space-y-3 bg-surface-container-low p-6 text-sm font-body border border-outline-variant/30">
+              <p className="flex items-center justify-between">
+                <span className="font-semibold text-on-surface">Order number:</span>{" "}
+                <span className="font-mono text-primary font-bold">{order.order_number}</span>
               </p>
-              <p>
-                <span className="font-semibold text-ink">Status:</span> {order.status}
+              <p className="flex items-center justify-between">
+                <span className="font-semibold text-on-surface">Status:</span>{" "}
+                <span className="uppercase tracking-wider text-xs font-semibold">{order.status}</span>
               </p>
-              <p className="flex items-center gap-2">
-                <span className="font-semibold text-ink">Payment status:</span>
+              <p className="flex items-center justify-between">
+                <span className="font-semibold text-on-surface">Payment status:</span>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                  className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                     isPaid ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                   }`}
                 >
                   {order.payment_status}
                 </span>
               </p>
-              <p>
-                <span className="font-semibold text-ink">Total:</span> ₹{Number.parseFloat(order.total).toLocaleString("en-IN")}
+              <p className="flex items-center justify-between pt-2 border-t border-outline-variant/20">
+                <span className="font-semibold text-on-surface">Total:</span>{" "}
+                <span className="text-base font-price-regular font-bold text-primary">
+                  ₹{Number.parseFloat(order.total).toLocaleString("en-IN")}
+                </span>
               </p>
             </div>
 
@@ -261,7 +312,7 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={() => startPaymentFlow(order)}
                   disabled={isPaying}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 bg-primary px-6 py-3.5 font-label-caps text-xs font-semibold uppercase tracking-widest text-on-primary hover:bg-primary-container transition-colors disabled:opacity-60 shadow-sm"
                 >
                   {isPaying ? (
                     <>
@@ -278,13 +329,13 @@ export default function CheckoutPage() {
               )}
               <Link
                 href="/account"
-                className="inline-flex items-center justify-center rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory"
+                className="inline-flex items-center justify-center bg-inverse-surface px-6 py-3.5 font-label-caps text-xs font-semibold uppercase tracking-widest text-on-primary hover:bg-on-surface transition-colors shadow-sm"
               >
                 View Orders
               </Link>
               <Link
                 href="/products"
-                className="inline-flex items-center justify-center rounded-full border border-ink/15 bg-white px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink"
+                className="inline-flex items-center justify-center border border-outline-variant/50 bg-surface px-6 py-3.5 font-label-caps text-xs font-semibold uppercase tracking-widest text-on-surface hover:bg-surface-container transition-colors"
               >
                 Continue Shopping
               </Link>
@@ -296,13 +347,13 @@ export default function CheckoutPage() {
     );
   }
 
-
+  // ── CART LOADING SPINNER ───────────────────────────────────
   if (cartLoading) {
     return (
-      <main className="min-h-screen bg-ivory text-ink">
+      <main className="min-h-screen bg-background text-on-surface">
         <Header />
-        <div className="flex min-h-[60vh] items-center justify-center pt-32 text-sm text-ink/60">
-          <Loader2 className="mr-2 animate-spin" size={16} />
+        <div className="flex min-h-[60vh] items-center justify-center pt-32 text-sm text-text-muted">
+          <Loader2 className="mr-2 animate-spin text-primary" size={16} />
           Loading your bag…
         </div>
         <Footer />
@@ -310,18 +361,25 @@ export default function CheckoutPage() {
     );
   }
 
+  // ── EMPTY CART GATE ────────────────────────────────────────
   if (!hasItems) {
     return (
-      <div className="min-h-screen bg-ivory">
+      <div className="min-h-screen bg-page-bg text-on-surface">
         <Header />
-        <main className="mx-auto max-w-xl px-5 pb-20 pt-28 text-center sm:pt-36">
-          <div className="rounded-2xl border border-ink/10 bg-white p-10 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-chili">Checkout</p>
-            <h1 className="mt-3 font-display text-3xl text-ink">Your bag is empty</h1>
-            <p className="mt-3 text-sm text-ink/60">Add a few statement pieces before checking out.</p>
+        <main className="mx-auto max-w-xl px-4 sm:px-6 pb-20 pt-28 text-center sm:pt-36">
+          <div className="bg-surface-card p-8 sm:p-12 shadow-sm border border-outline-variant/30">
+            <span className="font-label-caps text-[10px] font-semibold uppercase tracking-widest text-primary">
+              Private Atelier Order
+            </span>
+            <h1 className="mt-2 font-headline-lg text-2xl sm:text-3xl text-on-surface">
+              Your bag is empty
+            </h1>
+            <p className="mt-3 text-sm text-text-muted font-body leading-relaxed">
+              Add a few handcrafted statement pieces from our collection before checking out.
+            </p>
             <Link
               href="/products"
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory"
+              className="mt-6 inline-flex items-center justify-center bg-primary px-7 py-3.5 font-label-caps text-xs font-semibold uppercase tracking-widest text-on-primary hover:bg-primary-container transition-all shadow-sm"
             >
               Shop now
             </Link>
@@ -333,265 +391,804 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ivory text-ink">
+    <div className="min-h-screen bg-page-bg text-on-surface font-body selection:bg-primary selection:text-on-primary">
+      {/* ── Global Header ─────────────────────────────────────── */}
       <Header />
-      <main className="mx-auto max-w-6xl px-5 pb-20 pt-28 sm:pt-34">
-        <div className="mb-8 flex items-center gap-3">
-          <Link href="/cart" className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-ink/60">
-            <ArrowLeft size={15} />
-            Back to bag
-          </Link>
-        </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="space-y-6">
-            <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-chili">Shipping</p>
-                  <h1 className="mt-2 font-display text-2xl text-ink">Delivery address</h1>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAddressFormOpen((current) => !current)}
-                  className="rounded-full border border-ink/15 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70"
-                >
-                  {isAddressFormOpen ? 'Cancel' : '+ Add new address'}
-                </button>
+      <main className="w-full pt-20">
+        {/* ── Top Luxury Checkout Utility Banner (Distraction-Free) ── */}
+        <section className="w-full bg-surface-container-low/80 py-3 px-4 sm:px-6 lg:px-12 border-b border-outline-variant/30">
+          <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant font-label-caps text-[11px] tracking-widest uppercase">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="text-primary" size={16} />
+              <span>256-Bit Bank-Grade SSL Encrypted Checkout</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <a
+                href="tel:+919820154321"
+                className="flex items-center gap-1.5 hover:text-primary transition-colors normal-case font-body text-xs tracking-normal"
+              >
+                <Headphones size={15} className="text-terracotta" />
+                <span>
+                  Atelier Concierge: <strong className="text-on-surface font-semibold">+91 98201 54321</strong>
+                </span>
+              </a>
+              <div className="hidden md:flex items-center gap-1.5 text-secondary">
+                <Sparkles size={14} />
+                <span>Authentic Handcrafted Couture Guarantee</span>
               </div>
+            </div>
+          </div>
+        </section>
 
-              {isAddressFormOpen && (
-                <form onSubmit={handleSubmitAddress} className="mt-6 grid gap-4 rounded-xl border border-ink/8 bg-[#fffaf9] p-4 sm:grid-cols-2">
-                  <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Full name
-                    <input
-                      required
-                      value={addressForm.full_name}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, full_name: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Phone
-                    <input
-                      required
-                      value={addressForm.phone}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Postal code
-                    <input
-                      required
-                      value={addressForm.postal_code}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, postal_code: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Address line 1
-                    <input
-                      required
-                      value={addressForm.address_line1}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, address_line1: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Address line 2
-                    <input
-                      value={addressForm.address_line2}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Landmark
-                    <input
-                      value={addressForm.landmark}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, landmark: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    City
-                    <input
-                      required
-                      value={addressForm.city}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    State
-                    <input
-                      required
-                      value={addressForm.state}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <label className="sm:col-span-2 text-xs font-medium uppercase tracking-[0.18em] text-ink/60">
-                    Country
-                    <input
-                      value={addressForm.country}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))}
-                      className="mt-2 w-full rounded-md border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-chili"
-                    />
-                  </label>
-                  <div className="sm:col-span-2">
-                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/60">Address type</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {(["HOME", "OFFICE", "OTHER"] as const).map((type) => (
-                        <button key={type} type="button" onClick={() => setAddressForm((c) => ({ ...c, address_type: type }))}
-                          className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] transition ${addressForm.address_type === type ? 'border-chili bg-[#fff5f5] text-chili' : 'border-ink/15 text-ink/60 hover:border-chili/40'}`}>
-                          {type.charAt(0) + type.slice(1).toLowerCase()}
-                        </button>
-                      ))}
+        {/* ── Stepper & Checkout Header Bar (Matched with Cart Page) ── */}
+        <section className="w-full bg-surface-container-low py-8 px-6 lg:px-12 border-b border-outline-variant/30">
+          <div className="max-w-[1440px] mx-auto flex flex-col gap-6">
+            {/* Stepper Navigation */}
+            <nav
+              aria-label="Checkout Progress"
+              className="flex items-center justify-between max-w-2xl mx-auto w-full"
+            >
+              {/* Step 1: Completed */}
+              <Link
+                href="/cart"
+                className="flex items-center gap-3 group transition-opacity"
+              >
+                <span className="w-7 h-7 flex items-center justify-center bg-primary text-on-primary font-label-caps text-label-caps rounded-full shadow-sm font-bold text-xs">
+                  <Check size={14} strokeWidth={2.5} />
+                </span>
+                <span className="font-label-caps text-label-caps tracking-widest text-primary uppercase font-bold group-hover:underline">
+                  Shopping Bag
+                </span>
+              </Link>
+              <div className="h-0.5 flex-1 mx-4 bg-outline-variant/50" />
+              {/* Step 2: Active */}
+              <div className="flex items-center gap-3">
+                <span className="w-7 h-7 flex items-center justify-center bg-primary text-on-primary font-label-caps text-label-caps rounded-full shadow-sm font-bold text-xs">
+                  2
+                </span>
+                <span className="font-label-caps text-label-caps tracking-widest text-primary uppercase font-bold">
+                  Delivery Address
+                </span>
+              </div>
+              <div className="h-0.5 flex-1 mx-4 bg-outline-variant/50" />
+              {/* Step 3: Upcoming */}
+              <div className="flex items-center gap-3 opacity-60">
+                <span className="w-7 h-7 flex items-center justify-center bg-surface-container-highest text-on-surface font-label-caps text-label-caps rounded-full text-xs">
+                  3
+                </span>
+                <span className="font-label-caps text-label-caps tracking-widest text-on-surface-variant uppercase">
+                  Payment
+                </span>
+              </div>
+            </nav>
+
+            {/* Headline + Item Count */}
+            <div className="flex flex-col md:flex-row md:items-baseline justify-between gap-2 pt-2">
+              <div className="flex items-baseline gap-3">
+                <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+                  Express Concierge Checkout
+                </h1>
+                <span className="font-title-editorial text-title-editorial text-tertiary italic">
+                  ({itemCount} {itemCount === 1 ? "Piece" : "Pieces"} in Bag)
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-surface px-3 py-1.5 border border-outline-variant/40 text-on-surface-variant font-label-caps text-xs">
+                  <Lock size={13} className="text-primary" />
+                  <span>
+                    Checkout ID:{" "}
+                    <strong className="font-mono text-on-surface font-semibold">
+                      CBL-9482-BOM
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Main Checkout Content Grid ──────────────────────── */}
+        <section className="w-full pb-20 px-4 sm:px-6 lg:px-12 bg-page-bg">
+          <div className="max-w-[1400px] mx-auto pt-8">
+            <div className="mb-6">
+              <Link
+                href="/cart"
+                className="inline-flex items-center gap-2 font-label-caps text-xs uppercase tracking-wider text-text-muted hover:text-primary transition-colors"
+              >
+                <ArrowLeft size={14} />
+                <span>Return to Shopping Bag</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+              {/* ── Left Column: Shipping & Preferences (7 of 12) ──── */}
+              <div className="lg:col-span-7 flex flex-col gap-8">
+                {/* SECTION 1: DELIVERY DESTINATION */}
+                <div className="bg-surface-card p-6 md:p-8 shadow-xs border border-outline-variant/30 relative">
+                  <div className="flex items-center justify-between pb-6 border-b border-outline-variant/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold font-label-caps text-xs">
+                        1
+                      </div>
+                      <div>
+                        <h2 className="font-headline-sm text-lg sm:text-xl text-on-surface font-semibold">
+                          Select Delivery Destination
+                        </h2>
+                        <p className="font-body text-xs text-text-muted mt-0.5">
+                          Deliver to your registered address or request bespoke boutique drop-off
+                        </p>
+                      </div>
+                    </div>
+                    {user?.email && (
+                      <span className="font-label-caps text-[11px] uppercase tracking-widest text-primary font-semibold hidden sm:inline-block">
+                        Logged in: {user.email.split("@")[0]}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Saved Addresses Cards */}
+                  <div className="pt-5">
+                    {isLoadingAddresses ? (
+                      <div className="p-6 text-center text-xs text-text-muted bg-surface-container-low border border-dashed border-outline-variant/40">
+                        <Loader2 size={16} className="animate-spin inline-block mr-2 text-primary" />
+                        Loading saved addresses…
+                      </div>
+                    ) : addresses.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-text-muted bg-surface-container-low border border-dashed border-outline-variant/40">
+                        No saved addresses found. Please add a delivery address below.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {addresses.map((addr) => {
+                          const isSelected = selectedAddressId === addr.id;
+                          return (
+                            <label
+                              key={addr.id}
+                              className={`cursor-pointer relative p-5 flex flex-col justify-between shadow-2xs transition-all border ${
+                                isSelected
+                                  ? "bg-surface ring-2 ring-primary border-primary shadow-xs"
+                                  : "bg-surface-container-low border-outline-variant/30 hover:bg-surface"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="shipping-address"
+                                checked={isSelected}
+                                onChange={() => setSelectedAddressId(addr.id)}
+                                className="sr-only"
+                              />
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                  <span
+                                    className={`font-label-caps text-[9px] px-2 py-0.5 tracking-wider uppercase font-semibold ${
+                                      addr.is_default
+                                        ? "bg-primary text-on-primary"
+                                        : "bg-surface-variant text-on-surface-variant"
+                                    }`}
+                                  >
+                                    {addr.is_default ? "DEFAULT RESIDENCE" : addr.address_type}
+                                  </span>
+                                  {isSelected ? (
+                                    <CheckCircle2 size={18} className="text-primary fill-primary/10" />
+                                  ) : (
+                                    <span className="w-4 h-4 rounded-full border border-outline-variant/60" />
+                                  )}
+                                </div>
+                                <h3 className="font-title-editorial text-sm sm:text-base text-on-surface pt-1 font-semibold">
+                                  {addr.full_name}
+                                </h3>
+                                <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                                  {addr.address_line1}
+                                  {addr.address_line2 ? `, ${addr.address_line2}` : ""}
+                                  <br />
+                                  {addr.city}, {addr.state} —{" "}
+                                  <strong className="text-on-surface font-semibold">
+                                    {addr.postal_code}
+                                  </strong>
+                                </p>
+                                <p className="font-body text-xs text-text-muted mt-1 flex items-center gap-1.5">
+                                  <Phone size={13} className="text-terracotta" />
+                                  <span>{addr.phone}</span>
+                                </p>
+                              </div>
+                              <div className="flex items-center justify-between pt-4 mt-2 border-t border-outline-variant/20">
+                                <span
+                                  className={`font-label-caps text-[10px] uppercase tracking-wider font-bold flex items-center gap-1 ${
+                                    isSelected ? "text-primary" : "text-text-muted"
+                                  }`}
+                                >
+                                  {isSelected ? "Deliver Here" : "Select Destination"}
+                                  <ArrowRight size={12} />
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add New Address Toggle & Form */}
+                  <div className="pt-6">
+                    <button
+                      type="button"
+                      id="toggle-new-address"
+                      onClick={() => setIsAddressFormOpen(!isAddressFormOpen)}
+                      className="w-full py-3 px-4 bg-surface-container-low text-on-surface hover:bg-surface-container transition-all flex items-center justify-center gap-2 font-label-caps text-xs uppercase tracking-wider font-semibold border border-outline-variant/40"
+                    >
+                      <PlusCircle size={16} className="text-primary" />
+                      <span>{isAddressFormOpen ? "Cancel New Address" : "Add new address"}</span>
+                    </button>
+
+                    {isAddressFormOpen && (
+                      <form
+                        onSubmit={handleSubmitAddress}
+                        className="mt-4 bg-surface p-6 shadow-xs border border-outline-variant/30"
+                      >
+                        <h4 className="font-headline-sm text-base text-on-surface mb-4 font-semibold">
+                          Add Bespoke Delivery Details
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <label className="block font-label-caps text-xs uppercase text-text-muted">
+                            <span>Full name</span>
+                            <input
+                              required
+                              type="text"
+                              value={addressForm.full_name}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, full_name: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="block font-label-caps text-xs uppercase text-text-muted">
+                            <span>Phone</span>
+                            <input
+                              required
+                              type="tel"
+                              value={addressForm.phone}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, phone: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="md:col-span-2 block font-label-caps text-xs uppercase text-text-muted">
+                            <span>Address line 1</span>
+                            <input
+                              required
+                              type="text"
+                              value={addressForm.address_line1}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, address_line1: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="md:col-span-2 block font-label-caps text-xs uppercase text-text-muted">
+                            <span>Address line 2</span>
+                            <input
+                              type="text"
+                              value={addressForm.address_line2}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, address_line2: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="block font-label-caps text-xs uppercase text-text-muted">
+                            <span>Postal code</span>
+                            <input
+                              required
+                              type="text"
+                              value={addressForm.postal_code}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, postal_code: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="block font-label-caps text-xs uppercase text-text-muted">
+                            <span>City</span>
+                            <input
+                              required
+                              type="text"
+                              value={addressForm.city}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, city: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="block font-label-caps text-xs uppercase text-text-muted">
+                            <span>State</span>
+                            <input
+                              required
+                              type="text"
+                              value={addressForm.state}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, state: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <label className="block font-label-caps text-xs uppercase text-text-muted">
+                            <span>Country</span>
+                            <input
+                              type="text"
+                              value={addressForm.country}
+                              onChange={(e) =>
+                                setAddressForm((c) => ({ ...c, country: e.target.value }))
+                              }
+                              className="w-full mt-1.5 bg-surface-container-low p-3 text-xs font-body text-on-surface focus:outline-none focus:bg-surface border border-outline-variant/40 focus:border-primary transition-colors"
+                            />
+                          </label>
+
+                          <div className="md:col-span-2 pt-1">
+                            <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-on-surface">
+                              <input
+                                type="checkbox"
+                                checked={addressForm.is_default}
+                                onChange={(e) =>
+                                  setAddressForm((c) => ({ ...c, is_default: e.target.checked }))
+                                }
+                                className="h-4 w-4 accent-primary"
+                              />
+                              <span>Set as default address</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-5 mt-4 border-t border-outline-variant/20">
+                          <button
+                            type="submit"
+                            className="bg-primary text-on-primary font-label-caps text-xs uppercase px-6 py-3 tracking-widest hover:bg-primary-container transition-colors shadow-xs font-semibold"
+                          >
+                            Save address
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsAddressFormOpen(false)}
+                            className="bg-transparent text-text-muted hover:text-on-surface font-label-caps text-xs uppercase px-4 py-3 tracking-wider"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+
+                  {/* Delivery Experience Tier Selection */}
+                  <div className="pt-6 mt-6 border-t border-outline-variant/20">
+                    <label className="font-label-caps text-xs uppercase tracking-wider text-text-muted block mb-3 font-semibold">
+                      Choose Delivery Experience
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Option A: Standard Express */}
+                      <label
+                        className={`cursor-pointer p-4 flex items-start gap-3.5 transition-all border ${
+                          shippingTier === "standard"
+                            ? "bg-surface ring-2 ring-primary border-primary shadow-xs"
+                            : "bg-surface-container-low border-outline-variant/30 hover:bg-surface"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shipping_tier"
+                          value="standard"
+                          checked={shippingTier === "standard"}
+                          onChange={() => setShippingTier("standard")}
+                          className="mt-1 accent-primary"
+                        />
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-label-ui text-xs font-bold text-on-surface">
+                              Standard Express Dispatch
+                            </span>
+                            <span className="bg-secondary text-on-secondary font-label-caps text-[9px] px-1.5 py-0.5 uppercase tracking-wider font-semibold">
+                              Free
+                            </span>
+                          </div>
+                          <p className="font-body text-xs text-text-muted mt-1 leading-snug">
+                            Express air dispatch across India within 24–48 hours via Bluedart.
+                          </p>
+                        </div>
+                      </label>
+
+                      {/* Option B: White-Glove Atelier Delivery */}
+                      <label
+                        className={`cursor-pointer p-4 flex items-start gap-3.5 transition-all border ${
+                          shippingTier === "atelier"
+                            ? "bg-surface ring-2 ring-primary border-primary shadow-xs"
+                            : "bg-surface-container-low border-outline-variant/30 hover:bg-surface"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shipping_tier"
+                          value="atelier"
+                          checked={shippingTier === "atelier"}
+                          onChange={() => setShippingTier("atelier")}
+                          className="mt-1 accent-primary"
+                        />
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-label-ui text-xs font-bold text-primary flex items-center gap-1">
+                              <Sparkles size={14} />
+                              Handcrafted Atelier Delivery
+                            </span>
+                            <span className="font-price-regular text-xs font-bold text-on-surface">
+                              ₹299
+                            </span>
+                          </div>
+                          <p className="font-body text-xs text-on-surface-variant mt-1 leading-snug">
+                            Keepsake garment bag, custom wooden hanger, and master tailor trial support.
+                          </p>
+                        </div>
+                      </label>
                     </div>
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-ink/70">
-                      <input type="checkbox" checked={addressForm.is_default} onChange={(e) => setAddressForm((c) => ({ ...c, is_default: e.target.checked }))} className="h-4 w-4 accent-chili rounded" />
-                      Set as default address
-                    </label>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <p className="text-[10px] text-ink/45 flex items-center gap-1">
-                      <MapPin size={10} />This address will also be saved to your profile for future checkouts.
-                    </p>
-                  </div>
-                  <div className="sm:col-span-2 flex justify-end">
-                    <button
-                      type="submit"
-                      className="rounded-full bg-chili px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-ivory"
-                    >
-                      Save address
-                    </button>
-                  </div>
-                </form>
-              )}
+                </div>
 
-              <div className="mt-6 space-y-3">
-                {isLoadingAddresses ? (
-                  <div className="rounded-xl border border-dashed border-ink/15 bg-[#fffaf9] p-4 text-sm text-ink/60">
-                    Loading saved addresses…
-                  </div>
-                ) : addresses.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-ink/15 bg-[#fffaf9] p-4 text-sm text-ink/60">
-                    No saved addresses yet. Add one to continue.
-                  </div>
-                ) : (
-                  addresses.map((address) => (
-                    <label
-                      key={address.id}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
-                        selectedAddressId === address.id
-                          ? 'border-chili bg-[#fff5f5]'
-                          : 'border-ink/10 bg-[#fffaf9]'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="shipping-address"
-                        checked={selectedAddressId === address.id}
-                        onChange={() => setSelectedAddressId(address.id)}
-                        className="mt-1 h-4 w-4 accent-chili"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-ink">{address.full_name}</p>
-                          {address.is_default && (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                              Default
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-2 text-sm text-ink/80">
-                          {address.address_line1}
-                          {address.address_line2 ? `, ${address.address_line2}` : ''}, {address.city}, {address.state}, {address.postal_code}
+                {/* SECTION 2: GIFT OPTIONS & PERSONAL MESSAGE CARD */}
+                <div className="bg-surface-card p-6 md:p-8 shadow-xs border border-outline-variant/30 relative">
+                  <div className="flex items-center justify-between pb-4 border-b border-outline-variant/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary font-bold">
+                        <Gift size={18} />
+                      </div>
+                      <div>
+                        <h2 className="font-headline-sm text-lg sm:text-xl text-on-surface font-semibold">
+                          Gift Options &amp; Personal Message
+                        </h2>
+                        <p className="font-body text-xs text-text-muted mt-0.5">
+                          Complimentary bespoke packaging with signature wax seal &amp; handwritten calligraphy note
                         </p>
-                        <p className="mt-1 text-xs text-ink/60">{address.phone}</p>
+                      </div>
+                    </div>
+                    <span className="bg-secondary/10 text-secondary font-label-caps text-[10px] px-2.5 py-1 tracking-wider uppercase font-semibold border border-secondary/20">
+                      Complimentary
+                    </span>
+                  </div>
+
+                  <div className="pt-5 flex flex-col gap-4">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={packInKeepsakeBox}
+                        onChange={(e) => setPackInKeepsakeBox(e.target.checked)}
+                        className="mt-1 accent-primary w-4 h-4 cursor-pointer"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-label-ui text-xs font-semibold text-on-surface group-hover:text-primary transition-colors">
+                          Pack in Signature Royal Keepsake Box
+                        </span>
+                        <p className="font-body text-xs text-text-muted">
+                          Rigid crimson keepsake archive box tied with gold satin sash ribbons.
+                        </p>
                       </div>
                     </label>
-                  ))
-                )}
-              </div>
-            </div>
 
-            <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-chili">
-                <Sparkles size={16} />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">Security</p>
-              </div>
-              <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#f7f2ee] p-4">
-                <ShieldCheck className="mt-0.5 text-emerald-700" size={18} />
-                <p className="text-sm leading-relaxed text-ink/70">
-                  Your order will be validated against your current cart and the selected delivery address before it is confirmed.
-                </p>
-              </div>
-            </div>
-          </section>
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={includeWaxSealNote}
+                        onChange={(e) => setIncludeWaxSealNote(e.target.checked)}
+                        className="mt-1 accent-primary w-4 h-4 cursor-pointer"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-label-ui text-xs font-semibold text-on-surface group-hover:text-primary transition-colors">
+                          Include Wax-Sealed Parchment Note
+                        </span>
+                        <p className="font-body text-xs text-text-muted">
+                          Hand-inscribed note prepared by our Jaipur studio calligraphy master.
+                        </p>
+                      </div>
+                    </label>
 
-          <aside className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
-            <h2 className="font-display text-xl text-ink">Order summary</h2>
-            <div className="mt-5 space-y-3">
-              {cart?.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 border-b border-ink/8 pb-3 last:border-b-0 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium text-ink">{item.variant.product.name}</p>
-                    <p className="text-xs text-ink/60">{item.variant.size} / {item.variant.color} · Qty {item.quantity}</p>
+                    <div className="pt-2">
+                      <label className="block font-label-caps text-xs uppercase text-text-muted mb-1.5 font-semibold">
+                        Personal Note / Gift Message (Optional)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={giftMessage}
+                        onChange={(e) => setGiftMessage(e.target.value)}
+                        placeholder="Write your special message here (e.g. Wishing you festive grace and radiance on your special celebration...)"
+                        className="w-full bg-surface-container-low p-3.5 text-xs font-body text-on-surface border border-outline-variant/40 focus:outline-none focus:bg-surface focus:border-primary transition-all resize-none"
+                      />
+                    </div>
                   </div>
-                  <p className="text-sm font-semibold text-ink">₹{(Number.parseFloat(item.line_total) || 0).toLocaleString('en-IN')}</p>
                 </div>
-              ))}
+
+                {/* SECTION 3: DELIVERY INSTRUCTIONS & SECURITY GATE */}
+                <div className="bg-surface-card p-6 md:p-8 shadow-xs border border-outline-variant/30 relative">
+                  <div className="flex items-center gap-3 pb-4 border-b border-outline-variant/20">
+                    <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary font-bold">
+                      <MapPin size={18} />
+                    </div>
+                    <div>
+                      <h2 className="font-headline-sm text-lg sm:text-xl text-on-surface font-semibold">
+                        Delivery Instructions &amp; Security Gate
+                      </h2>
+                      <p className="font-body text-xs text-text-muted mt-0.5">
+                        Guide our delivery concierge for effortless doorstep handover
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-5 flex flex-col gap-4">
+                    <label className="font-label-caps text-xs uppercase tracking-wider text-text-muted block font-semibold">
+                      Quick Preferences
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {["Leave at Reception / Gate", "Call Upon Arrival", "Ring Doorbell Directly"].map(
+                        (pref) => {
+                          const isChecked = deliveryPref.includes(pref);
+                          return (
+                            <label
+                              key={pref}
+                              onClick={() => toggleDeliveryPref(pref)}
+                              className={`flex items-center gap-2.5 p-3 border cursor-pointer transition-all ${
+                                isChecked
+                                  ? "bg-surface border-primary text-primary font-semibold"
+                                  : "bg-surface-container-low border-outline-variant/30 text-on-surface hover:bg-surface"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {}}
+                                className="accent-primary"
+                              />
+                              <span className="font-body text-xs font-medium">{pref}</span>
+                            </label>
+                          );
+                        }
+                      )}
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block font-label-caps text-xs uppercase text-text-muted mb-1.5 font-semibold">
+                        Specific Dispatch Note (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={dispatchNote}
+                        onChange={(e) => setDispatchNote(e.target.value)}
+                        placeholder="e.g. Please enter via Gate 2, Sea Pearl Apt, notify intercom 402"
+                        className="w-full bg-surface-container-low p-3 text-xs font-body text-on-surface border border-outline-variant/40 focus:outline-none focus:bg-surface focus:border-primary transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Right Column: Order Summary & Ledger (5 of 12 Sticky) ── */}
+              <div className="lg:col-span-5 sticky top-24 flex flex-col gap-6">
+                {/* Order Summary Card */}
+                <div className="bg-surface-card p-6 md:p-7 shadow-xs border border-outline-variant/30 relative">
+                  <div className="flex items-center justify-between pb-4 border-b border-outline-variant/20">
+                    <h2 className="font-headline-sm text-lg text-on-surface font-semibold">
+                      Private Cart Details
+                    </h2>
+                    <span className="font-label-caps text-xs uppercase text-text-muted font-semibold">
+                      {itemCount} {itemCount === 1 ? "Piece" : "Pieces"}
+                    </span>
+                  </div>
+
+                  {/* Line Items List */}
+                  <div className="flex flex-col gap-4 py-4 divide-y divide-outline-variant/20">
+                    {cart?.items.map((item) => {
+                      const unitPrice = Number.parseFloat(item.unit_price) || 0;
+                      const lineTotal = Number.parseFloat(item.line_total) || unitPrice * item.quantity;
+                      return (
+                        <div key={item.id} className="flex items-start gap-3.5 pt-3 first:pt-0">
+                          {/* Image Thumbnail or Brand Mark Fallback */}
+                          <div className="w-16 h-20 bg-surface-container flex items-center justify-center shrink-0 border border-outline-variant/30 overflow-hidden relative">
+                            {item.variant.product.category_slug ? (
+                              <div className="w-full h-full bg-[#8b000a]/10 flex flex-col items-center justify-center text-center p-1">
+                                <span className="font-headline-sm text-xs font-bold text-primary">CBC</span>
+                                <span className="text-[8px] uppercase tracking-tighter text-outline mt-0.5 line-clamp-1">
+                                  {item.variant.color}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-headline-sm text-xs font-bold text-primary">CBC</span>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <span className="font-label-caps text-[9px] uppercase tracking-widest text-primary font-bold">
+                              {item.variant.product.category_name || "Silhouettes"}
+                            </span>
+                            <h3 className="font-title-editorial text-sm text-on-surface truncate font-semibold">
+                              {item.variant.product.name}
+                            </h3>
+                            <p className="font-body text-xs text-text-muted mt-0.5">
+                              Size: <strong className="text-on-surface">{item.variant.size}</strong> | Color:{" "}
+                              <strong className="text-on-surface">{item.variant.color}</strong> | Qty:{" "}
+                              <strong className="text-on-surface">{item.quantity}</strong>
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="font-price-regular text-xs font-bold text-on-surface">
+                                ₹{lineTotal.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Applied Privilege Voucher */}
+                  <div className="py-3">
+                    <div className="bg-surface-container-low p-3.5 flex items-center justify-between border border-outline-variant/30">
+                      <div className="flex items-center gap-2.5">
+                        <Tag size={16} className="text-primary" />
+                        <div className="flex flex-col">
+                          <span className="font-label-caps text-xs uppercase tracking-wider text-on-surface font-bold">
+                            ATELIER PRIVILEGE ACTIVE
+                          </span>
+                          <span className="font-body text-[11px] text-primary">
+                            Complimentary shipping on orders above ₹2,999
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-label-caps text-[10px] uppercase text-secondary font-bold">
+                        VERIFIED
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Keepsake Packaging Highlight */}
+                  {packInKeepsakeBox && (
+                    <div className="py-2.5 bg-surface p-3 flex items-start gap-3 my-1 border border-outline-variant/30">
+                      <Gift size={18} className="text-terracotta shrink-0 mt-0.5" />
+                      <div className="flex flex-col">
+                        <span className="font-label-ui text-xs font-semibold text-on-surface">
+                          Complimentary Royal Keepsake Box
+                        </span>
+                        <p className="font-body text-[11px] text-text-muted leading-relaxed">
+                          Crimson rigid archive box, gold satin sash ribbons, and wax-sealed note.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Price Breakdown Ledger */}
+                  <div className="flex flex-col gap-2.5 pt-4 border-t border-outline-variant/20 text-xs font-body">
+                    <div className="flex justify-between items-center text-on-surface-variant">
+                      <span>Cart Subtotal (MRP)</span>
+                      <span className="font-price-regular text-on-surface font-semibold">
+                        ₹{itemTotal.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-on-surface-variant">
+                      <span>Delivery Experience</span>
+                      <span className="font-price-regular text-secondary font-bold uppercase text-[11px]">
+                        {shippingTier === "atelier" ? "₹299" : "FREE (COMPLIMENTARY)"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-text-muted text-[11px]">
+                      <span>Integrated GST (12%)</span>
+                      <span>Included in price</span>
+                    </div>
+
+                    {/* Grand Total */}
+                    <div className="flex justify-between items-baseline pt-4 mt-2 border-t border-outline-variant/30">
+                      <div className="flex flex-col">
+                        <span className="font-headline-sm text-base text-on-surface font-bold">
+                          Total Amount
+                        </span>
+                        <span className="font-label-caps text-[10px] uppercase text-text-muted">
+                          Inclusive of all taxes
+                        </span>
+                      </div>
+                      <span className="font-display-hero-mobile text-2xl sm:text-3xl font-bold text-primary">
+                        ₹{grandTotal.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Inline Error Surface */}
+                  {formError && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 text-xs font-body text-red-700 flex items-start gap-2">
+                      <ShieldAlert size={16} className="text-red-600 shrink-0 mt-0.5" />
+                      <span>{formError}</span>
+                    </div>
+                  )}
+
+                  {/* Primary CTA: Place order & Proceed to Payment */}
+                  <div className="pt-5">
+                    <button
+                      type="button"
+                      aria-label="Place order"
+                      id="btn-confirm-checkout"
+                      onClick={handlePlaceOrder}
+                      disabled={isSubmitting || isPaying || !selectedAddressId}
+                      className="w-full bg-primary hover:bg-primary-container text-on-primary font-label-caps text-xs uppercase tracking-[0.16em] py-4 px-6 font-bold shadow-md transition-all flex items-center justify-center gap-2 group active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {isSubmitting || isPaying ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span>Routing to Secure Gateway…</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Proceed to Payment</span>
+                          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                    <p className="font-body text-[11px] text-text-muted text-center mt-2.5 flex items-center justify-center gap-1">
+                      <Verified size={13} className="text-secondary" />
+                      <span>Instant SMS &amp; WhatsApp confirmation with live tracking link</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Trust & Guarantee Badges */}
+                <div className="bg-surface-card p-5 shadow-xs border border-outline-variant/30 flex flex-col gap-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0 border border-primary/20">
+                      <ShieldCheck size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-label-ui text-xs font-bold text-on-surface">
+                        Handloom Silk Authenticity
+                      </h4>
+                      <p className="font-body text-[11px] text-text-muted">
+                        Certified Mulberry Silk weaving and ethical artisan payroll.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary shrink-0 border border-secondary/20">
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-label-ui text-xs font-bold text-on-surface">
+                        7-Day Doorstep Fit Alterations
+                      </h4>
+                      <p className="font-body text-[11px] text-text-muted">
+                        Complimentary master tailor pickup &amp; custom sleeve/hem refits.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0 border border-primary/20">
+                      <Lock size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-label-ui text-xs font-bold text-on-surface">
+                        Escrow Buyer Protection
+                      </h4>
+                      <p className="font-body text-[11px] text-text-muted">
+                        Zero fraud liability with PCI-DSS 3.2.1 Level 1 certification.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <div className="mt-6 space-y-2 border-t border-ink/8 pt-4 text-sm text-ink/70">
-              <div className="flex items-center justify-between">
-                <span>Bag subtotal</span>
-                <span className="font-semibold text-ink">₹{itemTotal.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Shipping</span>
-                <span className="font-medium text-emerald-700">Complimentary</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Estimated total</span>
-                <span className="text-base font-display font-bold text-chili">₹{itemTotal.toLocaleString('en-IN')}</span>
-              </div>
-            </div>
-
-            {formError && (
-              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                {formError}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handlePlaceOrder}
-              disabled={isSubmitting || cartLoading || !selectedAddressId}
-              className="mt-6 w-full rounded-full bg-chili px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ivory disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? (
-                <span className="inline-flex items-center justify-center gap-2">
-                  <Loader2 size={14} className="animate-spin" />
-                  Placing order…
-                </span>
-              ) : (
-                'Place order'
-              )}
-            </button>
-
-            <p className="mt-4 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-ink/50">
-              <MapPin size={12} />
-              {itemCount} {itemCount === 1 ? 'item' : 'items'} ready for delivery
-            </p>
-          </aside>
-        </div>
+          </div>
+        </section>
       </main>
+
+      {/* ── Global Footer ─────────────────────────────────────── */}
       <Footer />
     </div>
   );

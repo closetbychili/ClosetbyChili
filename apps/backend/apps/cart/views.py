@@ -63,6 +63,10 @@ def _get_cart(request: Request, must_exist: bool = False) -> Cart | None:
             .filter(user=request.user, is_active=True)
             .first()
         )
+        if cart and cart.orders.exists() and cart.items.count() == 0:
+            cart.is_active = False
+            cart.save(update_fields=["is_active", "updated_at"])
+            cart = None
         if not cart and must_exist:
             raise CartSessionExpiredError("User cart does not exist or has expired.")
         return cart
@@ -97,6 +101,10 @@ def _get_or_create_cart(request: Request) -> tuple[Cart, bool]:
     """
     if getattr(request, "user", None) and request.user.is_authenticated:
         cart = Cart.objects.filter(user=request.user, is_active=True).first()
+        if cart and cart.orders.exists() and cart.items.count() == 0:
+            cart.is_active = False
+            cart.save(update_fields=["is_active", "updated_at"])
+            cart = None
         if cart:
             return cart, False
         cart, created = Cart.objects.get_or_create(

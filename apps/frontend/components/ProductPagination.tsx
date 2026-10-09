@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductPaginationProps {
   totalCount: number;
@@ -36,69 +35,87 @@ export default function ProductPagination({
   };
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const currentCount = Math.min(totalCount, currentPage * pageSize);
+  const progressPercent = Math.min(100, Math.round((currentCount / totalCount) * 100));
 
   return (
     <nav
       aria-label="Pagination Navigation"
-      className="mt-14 sm:mt-16 flex items-center justify-center gap-1 sm:gap-2"
+      className="flex flex-col items-center justify-center gap-4 pt-12 pb-6 w-full"
     >
-      {/* Previous Button */}
-      {currentPage > 1 ? (
-        <Link
-          href={createPageUrl(currentPage - 1)}
-          className="inline-flex items-center justify-center w-9 h-9 border border-[#111111]/15 bg-white text-ink hover:bg-ink hover:text-[#fff8f7] transition-colors"
-          aria-label="Previous page"
-        >
-          <ChevronLeft size={16} />
-        </Link>
-      ) : (
-        <span
-          className="inline-flex items-center justify-center w-9 h-9 border border-[#111111]/8 bg-[#f5efe9]/50 text-ink/25 cursor-not-allowed"
-          aria-disabled="true"
-        >
-          <ChevronLeft size={16} />
+      {/* Editorial Progress Bar Indicator */}
+      <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+        <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+          Showing {currentCount} of {totalCount} Silhouettes
         </span>
-      )}
+        <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+          <div
+            className="bg-primary h-full rounded-full transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
 
-      {/* Page Numbers */}
-      {pages.map((pageNum) => {
-        const isCurrent = pageNum === currentPage;
-        return isCurrent ? (
-          <span
-            key={pageNum}
-            aria-current="page"
-            className="inline-flex items-center justify-center w-9 h-9 bg-ink text-[#fff8f7] text-xs font-semibold"
-          >
-            {pageNum}
-          </span>
-        ) : (
+      {/* Page Controls */}
+      <div className="flex items-center gap-1 font-label-ui text-label-ui mt-2">
+        {/* Previous Button */}
+        {currentPage > 1 ? (
           <Link
-            key={pageNum}
-            href={createPageUrl(pageNum)}
-            className="inline-flex items-center justify-center w-9 h-9 border border-[#111111]/15 bg-white text-ink text-xs font-semibold hover:border-ink transition-colors"
+            href={createPageUrl(currentPage - 1)}
+            className="w-9 h-9 bg-surface text-on-surface hover:bg-surface-container-high transition-colors flex items-center justify-center border border-outline-variant/40"
+            aria-label="Previous page"
           >
-            {pageNum}
+            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
           </Link>
-        );
-      })}
+        ) : (
+          <span
+            className="w-9 h-9 bg-surface text-on-surface/30 flex items-center justify-center border border-outline-variant/20 cursor-not-allowed"
+            aria-disabled="true"
+          >
+            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+          </span>
+        )}
 
-      {/* Next Button */}
-      {currentPage < totalPages ? (
-        <Link
-          href={createPageUrl(currentPage + 1)}
-          className="inline-flex items-center justify-center w-9 h-9 border border-[#111111]/15 bg-white text-ink hover:bg-ink hover:text-[#fff8f7] transition-colors"
-          aria-label="Next page"
-        >
-          <ChevronRight size={16} />
-        </Link>
-      ) : (
-        <span
-          className="inline-flex items-center justify-center w-9 h-9 border border-[#111111]/8 bg-[#f5efe9]/50 text-ink/25 cursor-not-allowed"
-          aria-disabled="true"
-        >
-          <ChevronRight size={16} />
-        </span>
-      )}
+        {/* Page Numbers */}
+        {pages.map((pageNum) => {
+          const isCurrent = pageNum === currentPage;
+          return isCurrent ? (
+            <span
+              key={pageNum}
+              aria-current="page"
+              className="w-9 h-9 bg-primary text-on-primary font-bold shadow-sm flex items-center justify-center"
+            >
+              {pageNum}
+            </span>
+          ) : (
+            <Link
+              key={pageNum}
+              href={createPageUrl(pageNum)}
+              className="w-9 h-9 bg-surface text-on-surface hover:bg-surface-container-high transition-colors flex items-center justify-center border border-outline-variant/40"
+            >
+              {pageNum}
+            </Link>
+          );
+        })}
+
+        {/* Next Button */}
+        {currentPage < totalPages ? (
+          <Link
+            href={createPageUrl(currentPage + 1)}
+            className="w-9 h-9 bg-surface text-on-surface hover:bg-surface-container-high transition-colors flex items-center justify-center border border-outline-variant/40"
+            aria-label="Next page"
+          >
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          </Link>
+        ) : (
+          <span
+            className="w-9 h-9 bg-surface text-on-surface/30 flex items-center justify-center border border-outline-variant/20 cursor-not-allowed"
+            aria-disabled="true"
+          >
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          </span>
+        )}
+      </div>
     </nav>
   );
 }

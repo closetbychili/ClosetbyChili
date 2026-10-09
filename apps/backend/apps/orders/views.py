@@ -104,12 +104,45 @@ class CheckoutView(APIView):
         if cart:
             order_by_cart = self._get_order_for_cart(str(request.user.id), str(cart.id))
             if order_by_cart:
-                return Response(
-                    OrderDetailSerializer(order_by_cart).data,
-                    status=status.HTTP_200_OK,
+                if cart.items.count() == 0:
+                    return Response(
+                        OrderDetailSerializer(order_by_cart).data,
+                        status=status.HTTP_200_OK,
+                    )
+                # The cart has items but was tied to a past order — migrate to fresh cart
+                cart.is_active = False
+                cart.save(update_fields=["is_active", "updated_at"])
+                new_cart = Cart.objects.create(user=request.user, is_active=True)
+                cart.items.update(cart=new_cart)
+                cart = (
+                    Cart.objects.filter(id=new_cart.id)
+                    .prefetch_related("items__variant__product")
+                    .first()
                 )
 
         if not cart or cart.items.count() == 0:
+            if idempotency_key:
+                order_by_key = self._get_order_for_key(str(request.user.id), idempotency_key)
+                if order_by_key:
+                    return Response(
+                        OrderDetailSerializer(order_by_key).data,
+                        status=status.HTTP_200_OK,
+                    )
+            # Duplicate checkout without key: check for recent pending order
+            recent_pending = (
+                Order.objects.filter(
+                    user=request.user,
+                    status=Order.Status.PENDING,
+                    payment_status=Order.PaymentStatus.PENDING,
+                )
+                .order_by("-created_at")
+                .first()
+            )
+            if recent_pending:
+                return Response(
+                    OrderDetailSerializer(recent_pending).data,
+                    status=status.HTTP_200_OK,
+                )
             raise DRFValidationError({"cart": "Your cart is empty."})
 
         shipping_address = Address.objects.filter(
@@ -128,14 +161,25 @@ class CheckoutView(APIView):
                 .prefetch_related("items__variant__product")
                 .first()
             )
-            if not cart:
+            if not cart or cart.items.count() == 0:
                 raise DRFValidationError({"cart": "Your cart is empty."})
 
             order_by_cart = self._get_order_for_cart(str(request.user.id), str(cart.id))
             if order_by_cart:
-                return Response(
-                    OrderDetailSerializer(order_by_cart).data,
-                    status=status.HTTP_200_OK,
+                if cart.items.count() == 0:
+                    return Response(
+                        OrderDetailSerializer(order_by_cart).data,
+                        status=status.HTTP_200_OK,
+                    )
+                cart.is_active = False
+                cart.save(update_fields=["is_active", "updated_at"])
+                new_cart = Cart.objects.create(user=request.user, is_active=True)
+                cart.items.update(cart=new_cart)
+                cart = (
+                    Cart.objects.select_for_update()
+                    .filter(id=new_cart.id)
+                    .prefetch_related("items__variant__product")
+                    .first()
                 )
 
             if idempotency_key:
@@ -146,7 +190,7 @@ class CheckoutView(APIView):
                         status=status.HTTP_200_OK,
                     )
 
-            if cart.items.count() == 0:
+            if not cart or cart.items.count() == 0:
                 raise DRFValidationError({"cart": "Your cart is empty."})
 
             variant_ids = [item.variant_id for item in cart.items.all()]
@@ -252,8 +296,9 @@ class CheckoutView(APIView):
                     line_total=line["line_total"],
                 )
 
+            cart.is_active = False
             cart.items.all().delete()
-            cart.save(update_fields=["updated_at"])
+            cart.save(update_fields=["is_active", "updated_at"])
 
             try:
                 cache.set(
