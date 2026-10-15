@@ -139,7 +139,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
 
   return (
     <main className="w-full pt-24 sm:pt-28 pb-16 bg-background">
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-12">
+      <div className="w-full max-w-340 mx-auto px-4 sm:px-6 lg:px-12">
         {/* Back navigation action */}
         <div className="mb-6 flex items-center justify-between">
           <button
@@ -157,7 +157,7 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
         </div>
 
         {/* ── Main Two-Column Luxury Architecture ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[760px] shadow-xl shadow-on-surface/5 bg-surface-container-lowest border border-outline-variant/30">
+        <div className="grid grid-cols-1 lg:grid-cols-12 min-h-190 shadow-xl shadow-on-surface/5 bg-surface-container-lowest border border-outline-variant/30">
           
           {/* ── Left Column: Editorial Imagery & Brand Philosophy (5 Cols) ── */}
           <div className="lg:col-span-5 relative flex flex-col justify-between p-8 sm:p-12 lg:p-14 overflow-hidden bg-inverse-surface text-inverse-on-surface">

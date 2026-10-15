@@ -37,6 +37,14 @@ class User(models.Model):
     def is_anonymous(self) -> bool:
         return False
 
+    @property
+    def is_staff(self) -> bool:
+        return bool(self.is_active and self.role in {self.Role.STAFF, self.Role.ADMIN})
+
+    @property
+    def is_admin(self) -> bool:
+        return bool(self.is_active and self.role == self.Role.ADMIN)
+
     def __str__(self) -> str:
         return self.email or str(self.supabase_user_id)
 

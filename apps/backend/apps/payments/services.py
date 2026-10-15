@@ -14,7 +14,7 @@ from apps.payments.exceptions import PaymentError
 logger = logging.getLogger(__name__)
 
 
-def get_razorpay_client() -> razorpay.Client:
+def get_razorpay_client() -> Any:
     """Return an authenticated Razorpay client using project settings."""
     key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
     key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
@@ -34,7 +34,7 @@ def convert_inr_to_paise(amount: Decimal) -> int:
     return int((amount * Decimal("100")).quantize(Decimal("1")))
 
 
-def create_razorpay_order(order: Order, client: Optional[razorpay.Client] = None) -> Dict[str, Any]:
+def create_razorpay_order(order: Order, client: Optional[Any] = None) -> Dict[str, Any]:
     """
     Create a Razorpay order for a given internal Order.
 
@@ -70,11 +70,10 @@ def create_razorpay_order(order: Order, client: Optional[razorpay.Client] = None
             "order_number": order.order_number,
         }
 
-    if client is None:
-        client = get_razorpay_client()
+    active_client: Any = client or get_razorpay_client()
 
     try:
-        rzp_order = client.order.create(
+        rzp_order = active_client.order.create(
             data={
                 "amount": amount_in_paise,
                 "currency": order.currency,
@@ -130,7 +129,7 @@ def verify_razorpay_payment(
     razorpay_payment_id: str,
     razorpay_signature: str,
     user: Optional[Any] = None,
-    client: Optional[razorpay.Client] = None,
+    client: Optional[Any] = None,
 ) -> Order:
     """
     Verify payment details and transition Order payment_status to PAID.
@@ -197,11 +196,10 @@ def verify_razorpay_payment(
             )
 
         # 4. Fetch and verify payment record from Razorpay gateway
-        if client is None:
-            client = get_razorpay_client()
+        active_client: Any = client or get_razorpay_client()
 
         try:
-            payment = client.payment.fetch(razorpay_payment_id)
+            payment = active_client.payment.fetch(razorpay_payment_id)
         except Exception as exc:
             logger.exception("Failed to fetch payment %s from Razorpay: %s", razorpay_payment_id, exc)
             raise PaymentError(

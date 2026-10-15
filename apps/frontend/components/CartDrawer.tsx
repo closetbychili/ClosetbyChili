@@ -88,7 +88,7 @@ export default function CartDrawer() {
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex justify-end">
+    <div className="fixed inset-0 z-150 flex justify-end">
       {/* ── Fixed Backdrop Overlay ────────────────────────────── */}
       <div
         id="drawer-backdrop"
@@ -104,7 +104,7 @@ export default function CartDrawer() {
         role="dialog"
         aria-label="Shopping Bag Drawer"
         aria-modal="true"
-        className="relative z-10 w-full sm:w-[470px] md:w-[490px] max-w-full h-full bg-surface-card text-on-surface shadow-2xl flex flex-col justify-between overflow-hidden animate-slide-in-right border-l border-outline-variant/30"
+        className="relative z-10 w-full sm:w-117.5 md:w-122.5 max-w-full h-full bg-surface-card text-on-surface shadow-2xl flex flex-col justify-between overflow-hidden animate-slide-in-right border-l border-outline-variant/30"
       >
         {/* ── 1. DRAWER HEADER ───────────────────────────────── */}
         <div className="shrink-0 bg-surface-card px-6 pt-5 pb-4 shadow-sm z-10 border-b border-outline-variant/30">
@@ -166,7 +166,7 @@ export default function CartDrawer() {
             {/* Progress Bar Track */}
             <div className="w-full h-1.5 bg-surface-container-highest overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-terracotta via-primary-container to-secondary-fixed-dim transition-all duration-700 ease-in-out"
+                className="h-full bg-linear-to-r from-terracotta via-primary-container to-secondary-fixed-dim transition-all duration-700 ease-in-out"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
