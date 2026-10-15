@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Diamond, Loader2, LogIn, ShieldAlert } from "lucide-react";
@@ -14,6 +14,32 @@ interface AdminGuardProps {
 
 type AuthStatus = "checking" | "authorized" | "unauthorized" | "unauthenticated";
 
+export interface AdminContextValue {
+  adminUser: AdminUser;
+  signOut: () => Promise<void>;
+}
+
+export const AdminContext = createContext<AdminContextValue | null>(null);
+
+export function useAdminContext(): AdminContextValue {
+  const context = useContext(AdminContext);
+  if (!context) {
+    return {
+      adminUser: {
+        id: "",
+        email: "",
+        role: "admin",
+        is_admin: true,
+        is_staff: true,
+        is_active: true,
+        created_at: "",
+      },
+      signOut: async () => {},
+    };
+  }
+  return context;
+}
+
 export default function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,6 +47,12 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   const [status, setStatus] = useState<AuthStatus>("checking");
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.replace("/admin/login");
+    router.refresh();
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -141,7 +173,11 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   }
 
   if (status === "authorized" && adminUser) {
-    return <>{children}</>;
+    return (
+      <AdminContext.Provider value={{ adminUser, signOut: handleSignOut }}>
+        {children}
+      </AdminContext.Provider>
+    );
   }
 
   return null;

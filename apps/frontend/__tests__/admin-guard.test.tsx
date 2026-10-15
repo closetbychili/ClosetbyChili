@@ -4,12 +4,14 @@ import AdminGuard from "@/components/admin/AdminGuard";
 import * as adminApi from "@/lib/api/admin";
 
 const replaceMock = vi.fn();
+const pushMock = vi.fn();
+const mockRouter = {
+  replace: replaceMock,
+  push: pushMock,
+};
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    replace: replaceMock,
-    push: vi.fn(),
-  }),
+  useRouter: () => mockRouter,
   usePathname: () => "/admin/orders",
 }));
 
@@ -57,7 +59,7 @@ describe("AdminGuard Route Protection", () => {
 
     const error403 = new Error("Forbidden");
     (error403 as unknown as { status: number }).status = 403;
-    vi.mocked(adminApi.verifyAdminAuth).mockRejectedValueOnce(error403);
+    vi.mocked(adminApi.verifyAdminAuth).mockRejectedValue(error403);
 
     render(
       <AdminGuard>
@@ -78,7 +80,7 @@ describe("AdminGuard Route Protection", () => {
   it("renders protected child content for verified administrators", async () => {
     mockSession = { access_token: "admin-token-valid" };
 
-    vi.mocked(adminApi.verifyAdminAuth).mockResolvedValueOnce({
+    vi.mocked(adminApi.verifyAdminAuth).mockResolvedValue({
       id: "admin-1",
       email: "admin@closetbychilli.com",
       role: "admin",
