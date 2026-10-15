@@ -25,3 +25,33 @@ class AdminVerifyAuthView(APIView):
     def get(self, request: Request) -> Response:
         serializer = AdminUserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminDashboardOverviewView(APIView):
+    """
+    GET /api/v1/admin/dashboard/overview/
+
+    Aggregated administrative dashboard metrics, including:
+    - Total orders & status breakdown
+    - Gross revenue & average order value (PAID, non-cancelled orders only)
+    - Low-stock inventory ledger count and alerts
+    - Historical period comparison (when mathematically valid)
+    - Daily sales time-series overview
+    - Recent orders
+    - Top-selling products
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request) -> Response:
+        from apps.accounts.admin_dashboard import get_admin_dashboard_overview
+
+        period = request.query_params.get("period", "30d")
+        low_stock_threshold = request.query_params.get("low_stock_threshold", 5)
+
+        data = get_admin_dashboard_overview(
+            period=period,
+            low_stock_threshold=low_stock_threshold,
+        )
+        return Response(data, status=status.HTTP_200_OK)
+

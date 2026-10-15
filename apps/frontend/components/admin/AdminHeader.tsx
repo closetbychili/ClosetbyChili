@@ -106,7 +106,7 @@ export default function AdminHeader({ onOpenMobileNav }: AdminHeaderProps) {
               {adminUser.email ? adminUser.email.charAt(0).toUpperCase() : "A"}
             </div>
             <div className="hidden sm:flex flex-col min-w-0">
-              <span className="text-xs font-medium text-[#1F1B17] truncate max-w-[140px]">
+              <span className="text-xs font-medium text-[#1F1B17] truncate max-w-35">
                 {adminUser.email}
               </span>
               <span className="text-[10px] text-[#059669] font-medium leading-none">

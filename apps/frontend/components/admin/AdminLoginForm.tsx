@@ -103,7 +103,7 @@ export default function AdminLoginForm() {
 
   return (
     <main className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-8 bg-[#F7F1E8] antialiased selection:bg-[#6D1826] selection:text-white">
-      <div className="w-full max-w-[440px] flex flex-col items-center">
+      <div className="w-full max-w-110 flex flex-col items-center">
         <div className="w-full bg-white rounded-2xl shadow-[0_10px_35px_-4px_rgba(79,0,18,0.06),0_2px_10px_-2px_rgba(79,0,18,0.03)] border border-[#EBE2D8] p-8 sm:p-10">
           
           {/* Brand & Context Header */}

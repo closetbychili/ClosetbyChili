@@ -132,7 +132,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   if (status === "unauthorized") {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-[#F7F1E8] antialiased">
-        <div className="w-full max-w-[460px] bg-white rounded-2xl shadow-[0_10px_35px_-4px_rgba(79,0,18,0.06)] border border-[#EBE2D8] p-8 sm:p-10 text-center">
+        <div className="w-full max-w-115 bg-white rounded-2xl shadow-[0_10px_35px_-4px_rgba(79,0,18,0.06)] border border-[#EBE2D8] p-8 sm:p-10 text-center">
           <div className="w-12 h-12 mx-auto rounded-full bg-[#FFF2F2] border border-[#FAD2D2] flex items-center justify-center mb-4 text-[#93000A]">
             <ShieldAlert className="w-6 h-6" />
           </div>
