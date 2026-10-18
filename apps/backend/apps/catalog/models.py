@@ -324,3 +324,40 @@ class ProductImage(models.Model):
     def __str__(self) -> str:
         flag = " [primary]" if self.is_primary else ""
         return f"{self.product} — image {self.ordering}{flag}"
+
+
+class MediaAsset(models.Model):
+    """
+    Persisted media asset metadata for Central Admin Media Library (Sprint A3.1).
+
+    Stores metadata for images uploaded through the admin console or synced from
+    the product/category catalogs.
+    Tracks Cloudinary public_id, secure_url, dimensions, format, file size,
+    and descriptive metadata.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    image_url = models.CharField(max_length=2048)
+    public_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    original_filename = models.CharField(max_length=255, blank=True, default="")
+    alt_text = models.CharField(max_length=512, blank=True, default="")
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+    format = models.CharField(max_length=32, blank=True, default="")
+    resource_type = models.CharField(max_length=32, blank=True, default="image")
+    bytes = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "catalog_media_assets"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["public_id"], name="idx_media_asset_public_id"),
+            models.Index(fields=["created_at"], name="idx_media_asset_created"),
+        ]
+
+    def __str__(self) -> str:
+        name = self.original_filename or self.public_id or str(self.id)
+        return f"MediaAsset: {name}"
+

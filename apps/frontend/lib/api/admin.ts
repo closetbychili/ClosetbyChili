@@ -171,6 +171,12 @@ export interface AdminProductListItem {
   max_price: string | null;
   variant_count: number;
   stock_summary: AdminProductStockSummary;
+  readiness?: {
+    is_ready: boolean;
+    can_publish: boolean;
+    total_errors: number;
+    total_warnings: number;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -261,14 +267,47 @@ export interface AdminProductVariant {
   updated_at?: string;
 }
 
+export interface ProductValidationError {
+  code: string;
+  section: "basic" | "images" | "variants" | "inventory";
+  field: string;
+  message: string;
+  item_id?: string | null;
+}
+
+export interface ProductReadinessSection {
+  is_valid: boolean;
+  errors: ProductValidationError[];
+  warnings: ProductValidationError[];
+}
+
 export interface ProductReadiness {
-  is_ready_for_publish: boolean;
-  has_title: boolean;
-  has_category: boolean;
-  has_active_variants: boolean;
-  has_prices: boolean;
-  has_images: boolean;
-  issues: string[];
+  is_ready?: boolean;
+  can_publish?: boolean;
+  summary?: {
+    total_errors: number;
+    total_warnings: number;
+  };
+  sections?: {
+    basic: ProductReadinessSection;
+    images: ProductReadinessSection;
+    variants: ProductReadinessSection;
+    inventory: ProductReadinessSection;
+  };
+  errors?: ProductValidationError[];
+  warnings?: ProductValidationError[];
+  // Backwards compatibility aliases
+  is_ready_for_publish?: boolean;
+  has_title?: boolean;
+  has_name?: boolean;
+  has_category?: boolean;
+  has_active_variants?: boolean;
+  has_variants?: boolean;
+  has_prices?: boolean;
+  has_price?: boolean;
+  has_images?: boolean;
+  issues?: string[];
+  missing_requirements?: string[];
 }
 
 export interface AdminProductDetail {
@@ -369,11 +408,88 @@ export async function updateAdminProduct(
   });
 }
 
+/**
+ * Validate a product silhouette against storefront catalog publication rules.
+ */
+export async function validateAdminProduct(
+  id: string,
+  token?: string
+): Promise<ProductReadiness> {
+  const accessToken = await resolveAccessToken(token);
+
+  return apiFetch<ProductReadiness>(`/admin/products/${encodeURIComponent(id)}/validate/`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Publish a product silhouette to the public catalog after verifying readiness.
+ */
+export async function publishAdminProduct(
+  id: string,
+  token?: string
+): Promise<{ message: string; product: AdminProductDetail; validation: ProductReadiness }> {
+  const accessToken = await resolveAccessToken(token);
+
+  return apiFetch<{ message: string; product: AdminProductDetail; validation: ProductReadiness }>(
+    `/admin/products/${encodeURIComponent(id)}/publish/`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+}
+
+/**
+ * Archive a product silhouette, hiding it from storefront listings.
+ */
+export async function archiveAdminProduct(
+  id: string,
+  token?: string
+): Promise<{ message: string; product: AdminProductDetail }> {
+  const accessToken = await resolveAccessToken(token);
+
+  return apiFetch<{ message: string; product: AdminProductDetail }>(
+    `/admin/products/${encodeURIComponent(id)}/archive/`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+}
+
+/**
+ * Restore an archived or active product silhouette to draft status.
+ */
+export async function draftAdminProduct(
+  id: string,
+  token?: string
+): Promise<{ message: string; product: AdminProductDetail }> {
+  const accessToken = await resolveAccessToken(token);
+
+  return apiFetch<{ message: string; product: AdminProductDetail }>(
+    `/admin/products/${encodeURIComponent(id)}/draft/`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+}
+
 // =============================================================================
 // Media & Gallery API
 // =============================================================================
 
 export interface MediaUploadResponse {
+  id?: string;
   image_url: string;
   secure_url?: string;
   public_id?: string;
@@ -384,6 +500,139 @@ export interface MediaUploadResponse {
   format?: string;
   resource_type?: string;
   bytes?: number;
+  alt_text?: string;
+  created_at?: string;
+}
+
+export interface AdminMediaUsageProduct {
+  id: string;
+  name: string;
+  slug: string;
+  status?: string;
+  is_primary?: boolean;
+}
+
+export interface AdminMediaUsageCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface AdminMediaItem {
+  id: string;
+  image_url: string;
+  public_id: string;
+  original_filename: string;
+  alt_text: string;
+  width?: number | null;
+  height?: number | null;
+  format?: string;
+  resource_type?: string;
+  bytes?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  products: AdminMediaUsageProduct[];
+  categories: AdminMediaUsageCategory[];
+  usage_type: "product" | "category" | "mixed" | "unassigned";
+  is_used: boolean;
+}
+
+export interface AdminMediaQueryParams {
+  search?: string;
+  usage_type?: "all" | "product" | "category" | "unassigned";
+  ordering?: "-created_at" | "created_at" | "original_filename" | "-original_filename";
+  page?: number;
+  page_size?: number;
+}
+
+export interface AdminMediaListResponse {
+  count: number;
+  total_pages: number;
+  current_page: number;
+  page_size: number;
+  results: AdminMediaItem[];
+}
+
+/**
+ * Fetch paginated media assets from the central media library.
+ */
+export async function fetchAdminMedia(
+  params?: AdminMediaQueryParams,
+  token?: string
+): Promise<AdminMediaListResponse> {
+  const accessToken = await resolveAccessToken(token);
+  const searchParams = new URLSearchParams();
+
+  if (params?.search) searchParams.set("search", params.search);
+  if (params?.usage_type && params.usage_type !== "all") {
+    searchParams.set("usage_type", params.usage_type);
+  }
+  if (params?.ordering) searchParams.set("ordering", params.ordering);
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.page_size) searchParams.set("page_size", String(params.page_size));
+
+  const qs = searchParams.toString();
+  const endpoint = `/admin/media/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<AdminMediaListResponse>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Fetch single media asset details with complete usage relationships.
+ */
+export async function fetchAdminMediaDetail(
+  id: string,
+  token?: string
+): Promise<AdminMediaItem> {
+  const accessToken = await resolveAccessToken(token);
+
+  return apiFetch<AdminMediaItem>(`/admin/media/${encodeURIComponent(id)}/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Update media asset alt_text and synchronize across all catalog references.
+ */
+export async function updateAdminMediaAltText(
+  id: string,
+  altText: string,
+  token?: string
+): Promise<AdminMediaItem> {
+  const accessToken = await resolveAccessToken(token);
+
+  return apiFetch<AdminMediaItem>(`/admin/media/${encodeURIComponent(id)}/`, {
+    method: "PATCH",
+    body: JSON.stringify({ alt_text: altText }),
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Safely delete an unassigned media asset from Cloudinary and DB.
+ */
+export async function deleteAdminMedia(
+  id: string,
+  token?: string
+): Promise<void> {
+  const accessToken = await resolveAccessToken(token);
+
+  await apiFetch<void>(`/admin/media/${encodeURIComponent(id)}/`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
 }
 
 /**
@@ -391,11 +640,15 @@ export interface MediaUploadResponse {
  */
 export async function uploadAdminMedia(
   file: File,
+  altText?: string,
   token?: string
 ): Promise<MediaUploadResponse> {
   const accessToken = await resolveAccessToken(token);
   const formData = new FormData();
   formData.append("file", file);
+  if (altText) {
+    formData.append("alt_text", altText);
+  }
 
   return apiFetch<MediaUploadResponse>("/admin/media/upload/", {
     method: "POST",

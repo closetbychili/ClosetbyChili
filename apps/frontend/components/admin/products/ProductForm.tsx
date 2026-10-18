@@ -16,12 +16,16 @@ import {
   Archive,
   Send,
   FileEdit,
+  RefreshCw,
 } from "lucide-react";
-import type {
-  AdminProductDetail,
-  CreateProductPayload,
-  AdminProductImage,
-  AdminProductVariant,
+import {
+  type AdminProductDetail,
+  type CreateProductPayload,
+  type AdminProductImage,
+  type AdminProductVariant,
+  type ProductReadiness,
+  validateAdminProduct,
+  draftAdminProduct,
 } from "@/lib/api/admin";
 import type { CategorySummary, CollectionSummary } from "@/lib/api/types";
 import { ApiClientError } from "@/lib/api/client";
@@ -82,7 +86,10 @@ export default function ProductForm({
   // Images & Variants state for edit mode
   const [images, setImages] = useState<AdminProductImage[]>(initialData?.images || []);
   const [variants, setVariants] = useState<AdminProductVariant[]>(initialData?.variants || []);
-  const [, setReadiness] = useState(initialData?.readiness);
+  const [serverReadiness, setServerReadiness] = useState<ProductReadiness | null>(
+    initialData?.readiness || null
+  );
+  const [isValidating, setIsValidating] = useState<boolean>(false);
 
   // Real-time computed publication readiness
   const currentReadiness = useMemo(() => {
@@ -105,6 +112,7 @@ export default function ProductForm({
     if (!hasImages) issues.push("At least one product gallery image");
 
     return {
+      is_ready: isComplete,
       is_ready_for_publish: isComplete,
       can_publish: isComplete,
       has_title: hasTitle,
@@ -266,7 +274,7 @@ export default function ProductForm({
         setStatus(overrideStatus);
       }
       if (result.readiness) {
-        setReadiness(result.readiness);
+        setServerReadiness(result.readiness);
       }
       if (result.images) {
         setImages(result.images);
@@ -293,8 +301,13 @@ export default function ProductForm({
           }
         });
 
+        // Store structured validation payload if provided by backend validator
+        if (details.validation && typeof details.validation === "object") {
+          setServerReadiness(details.validation as ProductReadiness);
+        }
+
         setFieldErrors(mappedErrors);
-        setGeneralError(err.message || "Please resolve the field errors below.");
+        setGeneralError(err.message || "Please resolve the validation errors below.");
       } else if (err instanceof Error) {
         setGeneralError(err.message || "An unexpected error occurred while saving.");
       } else {
@@ -308,6 +321,54 @@ export default function ProductForm({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     executeSave();
+  };
+
+  const handleValidateProduct = async () => {
+    if (!initialData?.id) return;
+    setIsValidating(true);
+    setGeneralError(null);
+    setSuccessMessage(null);
+    try {
+      const res = await validateAdminProduct(initialData.id);
+      setServerReadiness(res);
+      if (res.is_ready) {
+        setSuccessMessage("Product passed all publication validation checks and is ready to publish!");
+      } else {
+        const count = res.summary?.total_errors ?? res.errors?.length ?? 0;
+        setGeneralError(`Product has ${count} blocking validation issue(s). Resolve them before publishing.`);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setGeneralError(err.message);
+      }
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleRestoreToDraft = async () => {
+    if (initialData?.id) {
+      setSubmitting(true);
+      setGeneralError(null);
+      setSuccessMessage(null);
+      try {
+        const res = await draftAdminProduct(initialData.id);
+        setStatus("draft");
+        setIsActive(true);
+        if (res.product.readiness) {
+          setServerReadiness(res.product.readiness);
+        }
+        setSuccessMessage(`Product restored to Draft successfully.`);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setGeneralError(err.message);
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      executeSave("draft");
+    }
   };
 
   const handlePublish = () => {
@@ -377,8 +438,37 @@ export default function ProductForm({
 
         {/* Action Buttons */}
         <div className="flex items-center flex-wrap gap-2">
+          {/* Validate Product */}
+          {isEdit && (
+            <button
+              type="button"
+              disabled={submitting || isValidating}
+              onClick={handleValidateProduct}
+              data-testid="form-validate-product-btn"
+              className="px-3 py-2 rounded-xl border border-[#D5C7B8] bg-white hover:bg-[#FAF6F2] text-xs font-medium text-[#1F1B17] transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-2xs"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isValidating ? "animate-spin text-[#4F0012]" : "text-[#786967]"}`}
+              />
+              <span>{isValidating ? "Validating..." : "Validate"}</span>
+            </button>
+          )}
+
+          {/* Restore to Draft for Archived Products */}
+          {isEdit && status === "archived" && (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleRestoreToDraft}
+              data-testid="form-restore-draft-btn"
+              className="px-3 py-2 rounded-xl border border-[#D5C7B8] hover:bg-[#FAF6F2] text-xs font-medium text-[#1F1B17] transition-colors disabled:opacity-50"
+            >
+              Restore to Draft
+            </button>
+          )}
+
           {/* Save Draft */}
-          {status !== "draft" && (
+          {status !== "draft" && status !== "archived" && (
             <button
               type="button"
               disabled={submitting}
@@ -408,6 +498,7 @@ export default function ProductForm({
               type="button"
               disabled={submitting}
               onClick={handlePublish}
+              data-testid="form-publish-product-btn"
               className="px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-white text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
@@ -442,9 +533,25 @@ export default function ProductForm({
       {/* Storefront Publication Readiness Card */}
       {isEdit && (
         <ProductReadinessCard
-          readiness={currentReadiness}
+          readiness={serverReadiness || currentReadiness}
           status={status}
           onPublishClick={handlePublish}
+          onValidateClick={handleValidateProduct}
+          onNavigateSection={(section, field) => {
+            setActiveTab(section);
+            if (field) {
+              setTimeout(() => {
+                const el =
+                  document.getElementById(`field-${field}`) ||
+                  document.querySelector(`[name="${field}"]`);
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  (el as HTMLElement).focus?.();
+                }
+              }, 100);
+            }
+          }}
+          isValidating={isValidating}
         />
       )}
 

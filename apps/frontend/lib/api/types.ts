@@ -112,6 +112,8 @@ export interface ProductVariantSummary {
   retail_price: string;
   sale_price?: string | null;
   is_active: boolean;
+  is_in_stock?: boolean;
+  stock_status?: "in_stock" | "low_stock" | "out_of_stock" | string;
 }
 
 // =============================================================================

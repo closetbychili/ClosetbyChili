@@ -13,6 +13,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+import math
+
 from apps.accounts.permissions import IsAdminUser
 from apps.catalog.cloudinary_service import (
     CloudinaryConfigurationError,
@@ -20,9 +22,20 @@ from apps.catalog.cloudinary_service import (
     delete_product_media,
     upload_product_media,
 )
+from apps.catalog.media_service import (
+    CloudinaryDeletionFailedError,
+    MediaInUseError,
+    delete_media_asset_safely,
+    get_asset_usage,
+    populate_batch_asset_usage,
+    register_media_asset,
+    sync_catalog_media_assets,
+    update_media_asset_alt_text,
+)
 from apps.catalog.models import (
     Category,
     Collection,
+    MediaAsset,
     Product,
     ProductCollection,
     ProductImage,
@@ -32,6 +45,8 @@ from apps.catalog.serializers import (
     AdminCategorySerializer,
     AdminCollectionProductSerializer,
     AdminCollectionSerializer,
+    AdminMediaItemSerializer,
+    AdminMediaUpdateAltSerializer,
     AdminProductImageSerializer,
     AdminProductListSerializer,
     AdminProductVariantSerializer,
@@ -164,6 +179,126 @@ class AdminProductDetailView(generics.RetrieveUpdateAPIView):
     )
 
 
+class AdminProductValidateView(APIView):
+    """
+    GET /api/v1/admin/products/{id}/validate/
+
+    Performs full, server-authoritative storefront publication readiness evaluation.
+    Restricted to verified administrators (IsAdminUser).
+    Returns structured results with section-level groupings and actionable error codes.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, pk: uuid.UUID) -> Response:
+        product = get_object_or_404(
+            Product.objects.select_related("category").prefetch_related(
+                "variants__inventory",
+                "images",
+                "collections",
+            ),
+            pk=pk,
+        )
+        from apps.catalog.publishing import validate_product_readiness
+
+        validation_result = validate_product_readiness(product)
+        return Response(validation_result, status=status.HTTP_200_OK)
+
+
+class AdminProductPublishView(APIView):
+    """
+    POST /api/v1/admin/products/{id}/publish/
+
+    Publishes an atelier product silhouette to the public catalog.
+    Enforces server-side readiness validation atomically.
+    Fails with 400 Bad Request and structured error details if criteria are not met.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, pk: uuid.UUID) -> Response:
+        product = get_object_or_404(
+            Product.objects.select_related("category").prefetch_related(
+                "variants__inventory",
+                "images",
+                "collections",
+            ),
+            pk=pk,
+        )
+        from apps.catalog.publishing import publish_product
+
+        success, updated_product, validation_result = publish_product(product)
+        if not success:
+            return Response(
+                {
+                    "error": {
+                        "code": "PUBLICATION_VALIDATION_FAILED",
+                        "message": "Product cannot be published because it does not meet storefront publication criteria.",
+                        "details": validation_result["errors"],
+                        "validation": validation_result,
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "message": f"Product '{updated_product.name}' published successfully.",
+                "product": AdminProductWriteSerializer(updated_product).data,
+                "validation": validation_result,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminProductArchiveView(APIView):
+    """
+    POST /api/v1/admin/products/{id}/archive/
+
+    Archives an active or draft product silhouette.
+    Archived products remain hidden from public catalog endpoints.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, pk: uuid.UUID) -> Response:
+        product = get_object_or_404(Product, pk=pk)
+        from apps.catalog.publishing import archive_product
+
+        archived = archive_product(product)
+        return Response(
+            {
+                "message": f"Product '{archived.name}' has been archived.",
+                "product": AdminProductWriteSerializer(archived).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminProductDraftView(APIView):
+    """
+    POST /api/v1/admin/products/{id}/draft/
+
+    Returns an active or archived product to DRAFT status.
+    Draft products remain hidden from public catalog endpoints.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, pk: uuid.UUID) -> Response:
+        product = get_object_or_404(Product, pk=pk)
+        from apps.catalog.publishing import draft_product
+
+        drafted = draft_product(product)
+        return Response(
+            {
+                "message": f"Product '{drafted.name}' has been returned to draft.",
+                "product": AdminProductWriteSerializer(drafted).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class AdminMediaUploadView(APIView):
     """
     POST /api/v1/admin/media/upload/
@@ -252,8 +387,31 @@ class AdminMediaUploadView(APIView):
 
         try:
             upload_res = upload_product_media(file_obj)
+
+            uploaded_public_id = upload_res.get("public_id")
+            base_name, _ = os.path.splitext(file_obj.name)
+            default_alt = base_name.replace("_", " ").replace("-", " ").strip()
+            alt_text = request.data.get("alt_text", "").strip() or default_alt
+
+            try:
+                media_asset = register_media_asset(
+                    image_url=upload_res["secure_url"],
+                    public_id=uploaded_public_id or "",
+                    original_filename=file_obj.name,
+                    alt_text=alt_text,
+                    width=upload_res.get("width"),
+                    height=upload_res.get("height"),
+                    format=upload_res.get("format") or "",
+                    resource_type=upload_res.get("resource_type") or "image",
+                    bytes_size=upload_res.get("bytes") or file_obj.size,
+                )
+            except Exception:
+                cleanup_orphaned_asset(uploaded_public_id)
+                raise
+
             return Response(
                 {
+                    "id": str(media_asset.id),
                     "image_url": upload_res["secure_url"],
                     "secure_url": upload_res["secure_url"],
                     "public_id": upload_res["public_id"],
@@ -264,6 +422,12 @@ class AdminMediaUploadView(APIView):
                     "format": upload_res.get("format"),
                     "resource_type": upload_res.get("resource_type"),
                     "bytes": upload_res.get("bytes"),
+                    "alt_text": media_asset.alt_text,
+                    "created_at": (
+                        media_asset.created_at.isoformat()
+                        if media_asset.created_at
+                        else None
+                    ),
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -287,6 +451,194 @@ class AdminMediaUploadView(APIView):
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+
+
+class AdminMediaListView(APIView):
+    """
+    GET /api/v1/admin/media/
+    POST /api/v1/admin/media/
+
+    Central administrative media listing and management endpoint (Sprint A3.1).
+    - GET: Paginated media assets with real usage relationships, search, filtering, and sorting.
+    - POST: Direct multipart upload or JSON metadata persistence.
+    """
+
+    permission_classes = [IsAdminUser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request: Request) -> Response:
+        # Ensure legacy/seeded catalog media assets are synced
+        sync_catalog_media_assets()
+
+        search = request.query_params.get("search", "").strip()
+        usage_type = request.query_params.get("usage_type", "all").strip().lower()
+        ordering = request.query_params.get("ordering", "-created_at").strip()
+
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+        except (ValueError, TypeError):
+            page = 1
+
+        try:
+            page_size = min(100, max(1, int(request.query_params.get("page_size", 24))))
+        except (ValueError, TypeError):
+            page_size = 24
+
+        queryset = MediaAsset.objects.all()
+
+        # 1. Search filter
+        if search:
+            queryset = queryset.filter(
+                Q(alt_text__icontains=search)
+                | Q(original_filename__icontains=search)
+                | Q(public_id__icontains=search)
+                | Q(image_url__icontains=search)
+            )
+
+        # 2. Usage type filter
+        if usage_type in ("product", "category", "unassigned"):
+            prod_pids = set(
+                ProductImage.objects.exclude(public_id="").values_list("public_id", flat=True)
+            )
+            prod_urls = set(ProductImage.objects.values_list("image_url", flat=True))
+            cat_pids = set(
+                Category.objects.exclude(image_public_id="").values_list(
+                    "image_public_id", flat=True
+                )
+            )
+            cat_urls = set(
+                Category.objects.exclude(image_url="").values_list("image_url", flat=True)
+            )
+
+            if usage_type == "product":
+                prod_q = Q()
+                if prod_pids:
+                    prod_q |= Q(public_id__in=prod_pids)
+                if prod_urls:
+                    prod_q |= Q(image_url__in=prod_urls)
+                queryset = queryset.filter(prod_q) if (prod_pids or prod_urls) else queryset.none()
+            elif usage_type == "category":
+                cat_q = Q()
+                if cat_pids:
+                    cat_q |= Q(public_id__in=cat_pids)
+                if cat_urls:
+                    cat_q |= Q(image_url__in=cat_urls)
+                queryset = queryset.filter(cat_q) if (cat_pids or cat_urls) else queryset.none()
+            elif usage_type == "unassigned":
+                all_pids = prod_pids | cat_pids
+                all_urls = prod_urls | cat_urls
+                if all_pids:
+                    queryset = queryset.exclude(public_id__in=all_pids)
+                if all_urls:
+                    queryset = queryset.exclude(image_url__in=all_urls)
+
+        # 3. Sorting
+        valid_orderings = {
+            "-created_at": "-created_at",
+            "created_at": "created_at",
+            "original_filename": "original_filename",
+            "-original_filename": "-original_filename",
+        }
+        order_field = valid_orderings.get(ordering, "-created_at")
+        queryset = queryset.order_by(order_field)
+
+        # 4. Pagination
+        total_count = queryset.count()
+        total_pages = math.ceil(total_count / page_size) if total_count > 0 else 1
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        page_assets = list(queryset[start:end])
+        results = populate_batch_asset_usage(page_assets)
+
+        return Response(
+            {
+                "count": total_count,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "results": results,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request: Request) -> Response:
+        """Upload an asset directly into the Media Library."""
+        return AdminMediaUploadView().post(request)
+
+
+class AdminMediaDetailView(APIView):
+    """
+    GET /api/v1/admin/media/<uuid:pk>/
+    PATCH /api/v1/admin/media/<uuid:pk>/
+    DELETE /api/v1/admin/media/<uuid:pk>/
+
+    Inspect, edit alt text, and safely delete individual media assets.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, pk: uuid.UUID) -> Response:
+        asset = get_object_or_404(MediaAsset, pk=pk)
+        data_list = populate_batch_asset_usage([asset])
+        return Response(data_list[0], status=status.HTTP_200_OK)
+
+    def patch(self, request: Request, pk: uuid.UUID) -> Response:
+        asset = get_object_or_404(MediaAsset, pk=pk)
+        serializer = AdminMediaUpdateAltSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"error": {"code": "VALIDATION_ERROR", "details": serializer.errors}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated_asset = update_media_asset_alt_text(
+            asset, serializer.validated_data["alt_text"]
+        )
+        data_list = populate_batch_asset_usage([updated_asset])
+        return Response(data_list[0], status=status.HTTP_200_OK)
+
+    def delete(self, request: Request, pk: uuid.UUID) -> Response:
+        asset = get_object_or_404(MediaAsset, pk=pk)
+        try:
+            delete_media_asset_safely(asset)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except MediaInUseError as in_use_err:
+            return Response(
+                {
+                    "error": {
+                        "code": "ASSET_IN_USE",
+                        "message": str(in_use_err),
+                        "details": {
+                            "products": in_use_err.products,
+                            "categories": in_use_err.categories,
+                        },
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        except CloudinaryDeletionFailedError as cld_err:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLOUDINARY_DELETION_FAILED",
+                        "message": str(cld_err),
+                        "details": {"retryable": True},
+                    }
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except Exception as exc:
+            return Response(
+                {
+                    "error": {
+                        "code": "DELETION_FAILED",
+                        "message": f"Failed to delete media asset: {str(exc)}",
+                    }
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 
 class AdminProductImageListView(APIView):
@@ -444,6 +796,17 @@ class AdminProductImageListView(APIView):
                         raise ValueError(f"Serializer error: {serializer.errors}")
 
                     image = serializer.save()
+                    register_media_asset(
+                        image_url=image.image_url,
+                        public_id=image.public_id,
+                        original_filename=file_obj.name,
+                        alt_text=image.alt_text,
+                        width=image.width,
+                        height=image.height,
+                        format=image.format,
+                        resource_type=image.resource_type,
+                        bytes_size=image.bytes,
+                    )
             except Exception as db_err:
                 # Cleanup orphaned asset from Cloudinary
                 cleanup_orphaned_asset(uploaded_public_id)
@@ -471,6 +834,16 @@ class AdminProductImageListView(APIView):
             )
 
         image = serializer.save()
+        register_media_asset(
+            image_url=image.image_url,
+            public_id=image.public_id,
+            alt_text=image.alt_text,
+            width=image.width,
+            height=image.height,
+            format=image.format,
+            resource_type=image.resource_type,
+            bytes_size=image.bytes,
+        )
         return Response(ProductImageSerializer(image).data, status=status.HTTP_201_CREATED)
 
 
@@ -1059,6 +1432,13 @@ class AdminCategoryImageUploadView(APIView):
                 category.image_public_id = uploaded_public_id or ""
                 category.image_alt = alt_text
                 category.save(update_fields=["image_url", "image_public_id", "image_alt", "updated_at"])
+
+                register_media_asset(
+                    image_url=category.image_url,
+                    public_id=category.image_public_id,
+                    original_filename=file_obj.name,
+                    alt_text=category.image_alt,
+                )
         except Exception as db_err:
             cleanup_orphaned_asset(uploaded_public_id)
             return Response(

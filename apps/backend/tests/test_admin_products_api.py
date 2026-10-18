@@ -42,6 +42,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models import CustomerProfile, User
+from apps.catalog import admin_views
 from apps.catalog.models import (
     Category,
     Collection,
@@ -478,6 +479,10 @@ class AdminProductCreateUpdateApiTests(TestCase):
             retail_price=Decimal("1999.00"),
             is_active=True,
         )
+        InventoryItem.objects.create(
+            variant=self.variant,
+            quantity_available=10,
+        )
         self.image = ProductImage.objects.create(
             product=self.product,
             image_url="/assets/products/kurti-1.jpg",
@@ -778,7 +783,7 @@ class AdminMediaAndImagesApiTests(TestCase):
         self.assertEqual(res_huge.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("file", res_huge.json()["error"]["details"])
 
-    @patch("apps.catalog.admin_views.upload_product_media")
+    @patch.object(admin_views, "upload_product_media")
     def test_media_upload_success(self, mock_upload):
         mock_upload.return_value = {
             "secure_url": "https://res.cloudinary.com/test_cloud/image/upload/v12345/closet-by-chilli/products/front_look.webp",
@@ -1103,11 +1108,15 @@ class AdminPublicationReadinessTests(TestCase):
         self.product.category = self.category
         self.product.save()
 
-        ProductVariant.objects.create(
+        variant = ProductVariant.objects.create(
             product=self.product,
             sku="LEH-VAR-READY",
             retail_price=Decimal("4999.00"),
             is_active=True,
+        )
+        InventoryItem.objects.create(
+            variant=variant,
+            quantity_available=10,
         )
         ProductImage.objects.create(
             product=self.product,

@@ -24,6 +24,7 @@ from rest_framework import serializers
 from apps.catalog.models import (
     Category,
     Collection,
+    MediaAsset,
     Product,
     ProductCollection,
     ProductImage,
@@ -492,6 +493,9 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
+    is_in_stock = serializers.SerializerMethodField()
+    stock_status = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductVariant
         fields = [
@@ -502,8 +506,22 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
             "retail_price",
             "sale_price",
             "is_active",
+            "is_in_stock",
+            "stock_status",
         ]
         read_only_fields = fields
+
+    def get_is_in_stock(self, obj: ProductVariant) -> bool:
+        inv = getattr(obj, "inventory", None)
+        return bool(inv and inv.quantity_available > 0)
+
+    def get_stock_status(self, obj: ProductVariant) -> str:
+        inv = getattr(obj, "inventory", None)
+        if not inv or inv.quantity_available <= 0:
+            return "out_of_stock"
+        if inv.quantity_available <= 5:
+            return "low_stock"
+        return "in_stock"
 
 
 # ==============================================================================
@@ -701,6 +719,7 @@ class AdminProductListSerializer(serializers.ModelSerializer):
     max_price = serializers.SerializerMethodField()
     variant_count = serializers.SerializerMethodField()
     stock_summary = serializers.SerializerMethodField()
+    readiness = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -720,10 +739,23 @@ class AdminProductListSerializer(serializers.ModelSerializer):
             "max_price",
             "variant_count",
             "stock_summary",
+            "readiness",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
+
+    def get_readiness(self, obj: Product) -> dict[str, Any]:
+        """Return server-authoritative publication readiness summary."""
+        from apps.catalog.publishing import validate_product_readiness
+
+        res = validate_product_readiness(obj, check_uniqueness=False)
+        return {
+            "is_ready": res["is_ready"],
+            "can_publish": res["can_publish"],
+            "total_errors": res["summary"]["total_errors"],
+            "total_warnings": res["summary"]["total_warnings"],
+        }
 
     def get_primary_image(self, obj: Product) -> Any:
         """Return the primary image for listing thumbnail."""
@@ -1143,19 +1175,24 @@ class AdminProductWriteSerializer(serializers.ModelSerializer):
                     "category": "A product must have an assigned category before it can be published."
                 })
             if self.instance:
-                active_variants = self.instance.variants.filter(is_active=True)
-                if not active_variants.exists():
-                    raise serializers.ValidationError({
-                        "status": "Cannot publish product: at least one active variant is required."
-                    })
-                if not active_variants.filter(retail_price__gt=0).exists():
-                    raise serializers.ValidationError({
-                        "status": "Cannot publish product: at least one active variant must have a retail price greater than ₹0."
-                    })
-                if not self.instance.images.exists():
-                    raise serializers.ValidationError({
-                        "status": "Cannot publish product: at least one product image is required before publication."
-                    })
+                from apps.catalog.publishing import validate_product_readiness
+
+                result = validate_product_readiness(
+                    self.instance,
+                    name_override=attrs.get("name"),
+                    slug_override=attrs.get("slug"),
+                    category_id_override=category.id if category else None,
+                )
+                if not result["is_ready"]:
+                    err_dict: dict[str, Any] = {}
+                    for err in result["errors"]:
+                        field = err.get("field", "status")
+                        if field not in err_dict:
+                            err_dict[field] = err["message"]
+                    status_issues = [e["message"] for e in result["errors"]]
+                    err_dict["status"] = f"Cannot publish product: {'; '.join(status_issues)}"
+                    err_dict["validation"] = result
+                    raise serializers.ValidationError(err_dict)
         return attrs
 
     @transaction.atomic
@@ -1211,39 +1248,9 @@ class AdminProductWriteSerializer(serializers.ModelSerializer):
             AdminProductVariantSerializer(v).data
             for v in instance.variants.all().select_related("inventory").order_by("sku")
         ]
-        has_name = bool(instance.name)
-        has_category = bool(instance.category_id)
-        active_vars = [v for v in variants if v.get("is_active")]
-        has_variants = len(active_vars) > 0
-        has_price = any(float(v["retail_price"]) > 0 for v in active_vars)
-        has_images = len(images) > 0
+        from apps.catalog.publishing import validate_product_readiness
 
-        req_list = [
-            req
-            for req, met in [
-                ("Product name is required", has_name),
-                ("Category must be assigned", has_category),
-                ("At least one active variant configured", has_variants),
-                ("Valid selling price on at least one variant", has_price),
-                ("At least one product gallery image", has_images),
-            ]
-            if not met
-        ]
-
-        readiness = {
-            "can_publish": has_name and has_category and has_variants and has_price and has_images,
-            "is_ready_for_publish": has_name and has_category and has_variants and has_price and has_images,
-            "has_name": has_name,
-            "has_title": has_name,
-            "has_category": has_category,
-            "has_variants": has_variants,
-            "has_active_variants": has_variants,
-            "has_price": has_price,
-            "has_prices": has_price,
-            "has_images": has_images,
-            "missing_requirements": req_list,
-            "issues": req_list,
-        }
+        readiness = validate_product_readiness(instance)
 
         return {
             "id": str(instance.id),
@@ -1268,5 +1275,53 @@ class AdminProductWriteSerializer(serializers.ModelSerializer):
             "created_at": instance.created_at.isoformat(),
             "updated_at": instance.updated_at.isoformat(),
         }
+
+
+# ==============================================================================
+# Admin Media Library Serializers (Sprint A3.1)
+# ==============================================================================
+
+
+class AdminMediaUsageProductSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    slug = serializers.CharField()
+    status = serializers.CharField(required=False)
+    is_primary = serializers.BooleanField(default=False)
+
+
+class AdminMediaUsageCategorySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    slug = serializers.CharField()
+
+
+class AdminMediaItemSerializer(serializers.Serializer):
+    """
+    Unified representation of an administrative media asset with real database
+    usage relationships across products and categories.
+    """
+
+    id = serializers.CharField()
+    image_url = serializers.CharField()
+    public_id = serializers.CharField(allow_blank=True, default="")
+    original_filename = serializers.CharField(allow_blank=True, default="")
+    alt_text = serializers.CharField(allow_blank=True, default="")
+    width = serializers.IntegerField(allow_null=True, required=False)
+    height = serializers.IntegerField(allow_null=True, required=False)
+    format = serializers.CharField(allow_blank=True, default="")
+    resource_type = serializers.CharField(default="image")
+    bytes = serializers.IntegerField(allow_null=True, required=False)
+    created_at = serializers.CharField(allow_null=True, required=False)
+    updated_at = serializers.CharField(allow_null=True, required=False)
+    products = AdminMediaUsageProductSerializer(many=True, default=list)
+    categories = AdminMediaUsageCategorySerializer(many=True, default=list)
+    usage_type = serializers.CharField()
+    is_used = serializers.BooleanField()
+
+
+class AdminMediaUpdateAltSerializer(serializers.Serializer):
+    alt_text = serializers.CharField(max_length=512, allow_blank=True, required=True)
+
 
 

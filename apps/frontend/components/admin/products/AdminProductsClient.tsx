@@ -255,6 +255,7 @@ export default function AdminProductsClient() {
         loading={loading}
         error={error}
         onRetry={() => fetchProducts()}
+        onRefresh={() => fetchProducts(true)}
         isFiltered={isFiltered}
         onResetFilters={handleResetFilters}
       />

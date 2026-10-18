@@ -12,7 +12,7 @@ Endpoints defined in 07-api-architecture.md §32-37 and 22-cart-checkout-archite
 """
 
 import secrets
-from typing import Any
+from typing import Any, Literal, overload
 
 from django.db import transaction
 from rest_framework import status
@@ -47,6 +47,14 @@ def _extract_session_key(request: Request) -> str | None:
     if session_key:
         return session_key.strip()
     return None
+
+
+@overload
+def _get_cart(request: Request, must_exist: Literal[True]) -> Cart: ...
+
+
+@overload
+def _get_cart(request: Request, must_exist: Literal[False] = False) -> Cart | None: ...
 
 
 def _get_cart(request: Request, must_exist: bool = False) -> Cart | None:
@@ -340,9 +348,11 @@ class CartItemDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         new_quantity = serializer.validated_data["quantity"]
 
-        with transaction.atomic():
-            cart = _get_cart(request, must_exist=True)
+        cart = _get_cart(request, must_exist=True)
+        if not cart:
+            raise CartSessionExpiredError("Cart does not exist or has expired.")
 
+        with transaction.atomic():
             cart_item = (
                 cart.items.select_for_update()
                 .select_related("variant__product")
@@ -354,7 +364,11 @@ class CartItemDetailView(APIView):
 
             # Revalidate variant and stock
             variant = cart_item.variant
-            if not variant.is_active or not variant.product.is_active:
+            if (
+                not variant.is_active
+                or not variant.product.is_active
+                or variant.product.status != Product.Status.ACTIVE
+            ):
                 raise InactiveVariantError(
                     "The selected product variant is no longer active."
                 )
@@ -388,6 +402,8 @@ class CartItemDetailView(APIView):
     ) -> Response:
         """Idempotently removes an item from the cart."""
         cart = _get_cart(request, must_exist=True)
+        if not cart:
+            raise CartSessionExpiredError("Cart does not exist or has expired.")
 
         with transaction.atomic():
             cart.items.filter(id=item_id).delete()
