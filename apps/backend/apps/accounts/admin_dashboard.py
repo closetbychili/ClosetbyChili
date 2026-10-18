@@ -106,7 +106,8 @@ def get_admin_dashboard_overview(
         payment_status=Order.PaymentStatus.PAID
     ).exclude(status=Order.Status.CANCELLED)
 
-    gross_revenue = paid_orders_qs.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+    raw_rev = paid_orders_qs.aggregate(total=Sum("total"))["total"]
+    gross_revenue = Decimal(str(raw_rev)).quantize(Decimal("0.01")) if raw_rev is not None else Decimal("0.00")
     paid_orders_count = paid_orders_qs.count()
 
     # Average Order Value rule: gross_revenue / paid_orders_count
@@ -131,7 +132,8 @@ def get_admin_dashboard_overview(
             payment_status=Order.PaymentStatus.PAID
         ).exclude(status=Order.Status.CANCELLED)
 
-        prev_gross_revenue = prev_paid_qs.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+        raw_prev_rev = prev_paid_qs.aggregate(total=Sum("total"))["total"]
+        prev_gross_revenue = Decimal(str(raw_prev_rev)).quantize(Decimal("0.01")) if raw_prev_rev is not None else Decimal("0.00")
         prev_paid_count = prev_paid_qs.count()
         if prev_paid_count > 0:
             prev_aov = (prev_gross_revenue / Decimal(prev_paid_count)).quantize(Decimal("0.01"))
@@ -242,7 +244,7 @@ def get_admin_dashboard_overview(
             "product_id": str(row["product_id"]) if row["product_id"] else None,
             "product_name": row["product_name"],
             "units_sold": row["units_sold"] or 0,
-            "revenue": str(row["revenue"] or Decimal("0.00")),
+            "revenue": str(Decimal(str(row["revenue"] or "0.00")).quantize(Decimal("0.01"))),
         }
         for row in top_items_qs
     ]

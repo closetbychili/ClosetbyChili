@@ -89,7 +89,7 @@ export default function CompleteTheLook({ mainProductPrice = 6499 }: CompleteThe
   const discountedBundlePrice = Math.round(totalBundlePrice * 0.68);
 
   return (
-    <section className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-12 py-14">
+    <section className="max-w-360 mx-auto w-full px-4 sm:px-6 lg:px-12 py-14">
       <div className="flex flex-col md:flex-row items-baseline justify-between mb-8 gap-3">
         <div>
           <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">
@@ -116,7 +116,7 @@ export default function CompleteTheLook({ mainProductPrice = 6499 }: CompleteThe
               className="bg-surface p-4 shadow-sm flex flex-col justify-between group border border-outline-variant/30 hover:border-primary/40 transition-colors"
             >
               <div>
-                <div className="relative aspect-[4/5] bg-surface-container overflow-hidden mb-4">
+                <div className="relative aspect-4/5 bg-surface-container overflow-hidden mb-4">
                   <Image
                     src={item.image}
                     alt={item.title}

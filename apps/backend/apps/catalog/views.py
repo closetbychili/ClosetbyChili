@@ -56,15 +56,22 @@ class CategoryViewSet(
     serializer_class = CategorySerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "slug", "description"]
-    ordering_fields = ["name", "created_at"]
-    ordering = ["name"]
+    ordering_fields = ["name", "ordering", "created_at"]
+    ordering = ["ordering", "name"]
 
     def get_queryset(self):
-        return (
+        qs = (
             Category.objects.filter(is_active=True)
             .select_related("parent")
             .prefetch_related("children")
         )
+        storefront_param = self.request.query_params.get("storefront")
+        if storefront_param is not None:
+            if storefront_param.lower() in ("true", "1"):
+                qs = qs.filter(is_visible_on_storefront=True)
+            elif storefront_param.lower() in ("false", "0"):
+                qs = qs.filter(is_visible_on_storefront=False)
+        return qs
 
 
 class CollectionViewSet(

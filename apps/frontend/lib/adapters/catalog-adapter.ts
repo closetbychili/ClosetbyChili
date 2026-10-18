@@ -159,10 +159,16 @@ export function mapCategoryToUi(category: Category): CategoryItem {
     id: category.id,
     name: category.name,
     subtitle:
+      category.short_description ||
       CATEGORY_SUBTITLE_MAP[category.slug] ||
       category.description ||
       undefined,
-    image: CATEGORY_IMAGE_MAP[category.slug] || undefined,
+    image:
+      category.image_url ||
+      category.image ||
+      CATEGORY_IMAGE_MAP[category.slug] ||
+      undefined,
+    imageAlt: category.image_alt || category.name,
     href: `/products?category=${category.slug}`,
   };
 }

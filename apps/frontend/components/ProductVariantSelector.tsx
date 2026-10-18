@@ -43,7 +43,12 @@ export default function ProductVariantSelector({
   const availableSizes = useMemo(() => {
     const sizes = new Set<string>();
     activeVariants.forEach((v) => {
-      if (v.size) sizes.add(v.size);
+      if (v.size) {
+        v.size.split(/[,/]+/).forEach((s) => {
+          const clean = s.trim().toUpperCase();
+          if (clean) sizes.add(clean);
+        });
+      }
     });
     return Array.from(sizes);
   }, [activeVariants]);
@@ -82,12 +87,23 @@ export default function ProductVariantSelector({
   // Standard Indian fit sizing matrix
   const standardSizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
+  // Helper to test if a variant matches a requested size (exact match or comma-separated e.g. "S,M,L")
+  const variantMatchesSize = (variantSize: string | undefined | null, targetSize: string) => {
+    if (!variantSize || !targetSize) return false;
+    const vTrim = variantSize.trim().toUpperCase();
+    const tTrim = targetSize.trim().toUpperCase();
+    if (vTrim === tTrim) return true;
+    const parts = vTrim.split(/[,/]+/).map((s) => s.trim().toUpperCase());
+    return parts.includes(tTrim);
+  };
+
   // Resolve matching active variant based on current color & size selections
   const currentVariant = useMemo(() => {
     return (
       activeVariants.find((v) => {
-        const matchesColor = !selectedColor || v.color === selectedColor;
-        const matchesSize = !selectedSize || v.size === selectedSize;
+        const matchesColor =
+          !selectedColor || v.color?.trim().toLowerCase() === selectedColor.trim().toLowerCase();
+        const matchesSize = !selectedSize || variantMatchesSize(v.size, selectedSize);
         return matchesColor && matchesSize;
       }) || null
     );
@@ -96,7 +112,9 @@ export default function ProductVariantSelector({
   // Check if a specific size is available
   const isSizeAvailable = (size: string) => {
     return activeVariants.some(
-      (v) => v.size === size && (!selectedColor || v.color === selectedColor)
+      (v) =>
+        variantMatchesSize(v.size, size) &&
+        (!selectedColor || v.color?.trim().toLowerCase() === selectedColor.trim().toLowerCase())
     );
   };
 

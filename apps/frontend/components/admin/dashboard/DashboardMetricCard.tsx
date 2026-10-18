@@ -6,7 +6,7 @@ import type { MetricCardData } from "@/lib/api/admin";
 
 interface DashboardMetricCardProps {
   title: string;
-  metric: MetricCardData<any>;
+  metric: MetricCardData<number | string>;
   icon: LucideIcon;
   isCurrency?: boolean;
   thresholdLabel?: string;

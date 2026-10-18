@@ -164,6 +164,15 @@ export default function Header() {
                     >
                       Co-ord Sets
                     </Link>
+                    <Link
+                      href="/categories"
+                      data-path="all-categories"
+                      onClick={() => setShopOpen(false)}
+                      className="px-4 py-2 text-body-sm font-semibold border-t border-outline-variant/30 text-primary hover:bg-surface-container transition-colors flex items-center justify-between"
+                    >
+                      <span>All Categories</span>
+                      <span className="material-symbols-outlined text-[14px]">east</span>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -400,6 +409,15 @@ export default function Header() {
                     className="py-1 hover:text-primary"
                   >
                     Co-ord Sets
+                  </Link>
+                  <Link
+                    href="/categories"
+                    data-path="all-categories"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-1 font-semibold text-primary hover:text-primary flex items-center justify-between"
+                  >
+                    <span>All Categories</span>
+                    <span className="material-symbols-outlined text-[14px]">east</span>
                   </Link>
                 </div>
               </div>

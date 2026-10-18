@@ -25,6 +25,7 @@ export interface CategoryItem {
   name: string;
   subtitle?: string;
   image?: string;
+  imageAlt?: string;
   href: string;
 }
 

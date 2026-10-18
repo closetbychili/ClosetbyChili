@@ -22,9 +22,12 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 # ============================================================
 ALLOWED_HOSTS = [
     h.strip()
-    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
     if h.strip()
 ]
+for _dev_host in ["localhost", "127.0.0.1", "testserver"]:
+    if _dev_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_dev_host)
 
 # ============================================================
 # CORS — permissive for local development

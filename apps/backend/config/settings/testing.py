@@ -58,3 +58,11 @@ CELERY_TASK_EAGER_PROPAGATES = True
 RAZORPAY_KEY_ID = "rzp_test_mock_key_12345"
 RAZORPAY_KEY_SECRET = "mock_secret_key_abcdef123456"
 RAZORPAY_WEBHOOK_SECRET = "mock_webhook_secret_abcdef123456"
+
+# ============================================================
+# Cloudinary — Test / Mock Keys (Sprint A2.4)
+# ============================================================
+CLOUDINARY_CLOUD_NAME = "test_cloud"
+CLOUDINARY_API_KEY = "test_api_key"
+CLOUDINARY_API_SECRET = "test_api_secret"
+CLOUDINARY_FOLDER = "closet-by-chilli/products"
