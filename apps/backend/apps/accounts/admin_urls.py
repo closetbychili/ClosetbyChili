@@ -36,6 +36,7 @@ from apps.catalog.admin_views import (
     AdminProductVariantListView,
     AdminVariantStockAdjustmentView,
 )
+from apps.orders.admin_views import AdminOrderListView
 
 urlpatterns = [
     path("auth/verify/", AdminVerifyAuthView.as_view(), name="admin-auth-verify"),
@@ -44,6 +45,7 @@ urlpatterns = [
         AdminDashboardOverviewView.as_view(),
         name="admin-dashboard-overview",
     ),
+    path("orders/", AdminOrderListView.as_view(), name="admin-orders-list"),
     path("inventory/", AdminInventoryListView.as_view(), name="admin-inventory-list"),
     path(
         "inventory/alerts/low-stock/",

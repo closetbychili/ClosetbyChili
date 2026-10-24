@@ -1638,8 +1638,97 @@ export async function acknowledgeInventoryAlert(
   });
 }
 
+// =============================================================================
+// Admin Orders Listing API (Sprint A4.1)
+// =============================================================================
 
+export interface AdminOrderCustomer {
+  id: string;
+  email: string;
+  display_name: string;
+  phone: string;
+}
 
+export interface AdminOrderListItem {
+  id: string;
+  order_number: string;
+  status: string;
+  status_display: string;
+  payment_status: string;
+  payment_status_display: string;
+  currency: string;
+  subtotal: string;
+  total: string;
+  item_count: number;
+  customer: AdminOrderCustomer;
+  created_at: string;
+  updated_at: string;
+}
 
+export interface AdminOrdersQueryParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  status?: string;
+  payment_status?: string;
+  created_after?: string;
+  created_before?: string;
+  customer_id?: string;
+  ordering?: string;
+}
 
+/**
+ * Fetch paginated administrative orders listing.
+ */
+export async function getAdminOrders(
+  params?: AdminOrdersQueryParams,
+  token?: string
+): Promise<PaginatedResponse<AdminOrderListItem>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
 
+  if (params) {
+    if (params.page !== undefined && params.page > 0) {
+      query.set("page", String(params.page));
+    }
+    if (params.page_size !== undefined && params.page_size > 0) {
+      query.set("page_size", String(params.page_size));
+    }
+    if (params.search && params.search.trim()) {
+      query.set("search", params.search.trim());
+    }
+    if (params.status && params.status !== "all" && params.status !== "ALL") {
+      query.set("status", params.status);
+    }
+    if (
+      params.payment_status &&
+      params.payment_status !== "all" &&
+      params.payment_status !== "ALL"
+    ) {
+      query.set("payment_status", params.payment_status);
+    }
+    if (params.created_after && params.created_after.trim()) {
+      query.set("created_after", params.created_after.trim());
+    }
+    if (params.created_before && params.created_before.trim()) {
+      query.set("created_before", params.created_before.trim());
+    }
+    if (params.customer_id && params.customer_id.trim()) {
+      query.set("customer_id", params.customer_id.trim());
+    }
+    if (params.ordering && params.ordering.trim()) {
+      query.set("ordering", params.ordering.trim());
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/orders/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminOrderListItem>>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
