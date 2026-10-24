@@ -347,9 +347,10 @@ class RazorpayPaymentsApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["payment_status"], Order.PaymentStatus.PAID)
-        self.assertEqual(data["status"], Order.Status.PENDING)  # Must remain PENDING in sprint 1.4
+        self.assertEqual(data["status"], Order.Status.CONFIRMED)
 
         self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.CONFIRMED)
         self.assertEqual(self.order.payment_status, Order.PaymentStatus.PAID)
         self.assertEqual(self.order.razorpay_payment_id, "pay_success_123")
         self.assertEqual(self.order.razorpay_signature, sig)

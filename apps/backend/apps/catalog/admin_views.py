@@ -41,6 +41,7 @@ from apps.catalog.models import (
     ProductImage,
     ProductVariant,
 )
+from apps.inventory.services import adjust_variant_stock
 from apps.catalog.serializers import (
     AdminCategorySerializer,
     AdminCollectionProductSerializer,
@@ -1055,7 +1056,6 @@ class AdminVariantStockAdjustmentView(APIView):
 
     permission_classes = [IsAdminUser]
 
-    @transaction.atomic
     def post(self, request: Request, variant_id: uuid.UUID) -> Response:
         variant = get_object_or_404(ProductVariant, pk=variant_id)
         serializer = AdminStockAdjustmentSerializer(data=request.data)
@@ -1070,63 +1070,24 @@ class AdminVariantStockAdjustmentView(APIView):
         reason = serializer.validated_data.get("reason", "manual_adjustment")
         reference = serializer.validated_data.get("reference", "")
 
-        # Select for update to lock the inventory item
-        item = InventoryItem.objects.select_for_update().filter(variant=variant).first()
-        if not item:
-            item = InventoryItem.objects.create(
-                variant=variant, quantity_available=0, quantity_reserved=0
-            )
-
-        current_avail = item.quantity_available
-        if adj_type == "set":
-            new_avail = qty
-            change_delta = new_avail - current_avail
-        else:
-            change_delta = qty
-            new_avail = current_avail + change_delta
-
-        if new_avail < 0:
-            return Response(
-                {
-                    "error": {
-                        "code": "VALIDATION_ERROR",
-                        "details": {
-                            "quantity": [
-                                f"Adjustment would result in negative available inventory ({new_avail}). Minimum is 0."
-                            ]
-                        },
-                    }
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        item.quantity_available = new_avail
-        item.save(update_fields=["quantity_available", "updated_at"])
-
-        if change_delta != 0:
-            InventoryMovement.objects.create(
-                inventory_item=item,
-                movement_type=reason,
-                quantity_change=change_delta,
-                reference=reference or "Admin manual adjustment",
-            )
-
-        if new_avail <= 0:
-            stock_status = "out_of_stock"
-        elif new_avail <= 5:
-            stock_status = "low_stock"
-        else:
-            stock_status = "in_stock"
+        result = adjust_variant_stock(
+            variant_id=variant.id,
+            adjustment_type=adj_type,
+            quantity=qty,
+            reason_code=reason,
+            actor=request.user,
+            reference=reference or "Admin manual adjustment",
+        )
 
         return Response(
             {
                 "variant_id": str(variant.id),
                 "sku": variant.sku,
-                "quantity_available": item.quantity_available,
-                "quantity_reserved": item.quantity_reserved,
-                "stock_status": stock_status,
-                "change_delta": change_delta,
-                "message": f"Inventory for SKU {variant.sku} adjusted to {new_avail} ({stock_status.replace('_', ' ')}).",
+                "quantity_available": result["quantity_available"],
+                "quantity_reserved": result["quantity_reserved"],
+                "stock_status": result["stock_status"],
+                "change_delta": result["change_delta"],
+                "message": f"Inventory for SKU {variant.sku} adjusted to {result['quantity_available']} ({result['stock_status'].replace('_', ' ')}).",
             },
             status=status.HTTP_200_OK,
         )

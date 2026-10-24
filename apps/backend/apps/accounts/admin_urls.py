@@ -1,6 +1,17 @@
 from django.urls import path
 
 from apps.accounts.admin_views import AdminDashboardOverviewView, AdminVerifyAuthView
+from apps.inventory.admin_views import (
+    AdminInventoryAdjustView,
+    AdminInventoryAlertAcknowledgeView,
+    AdminInventoryDetailView,
+    AdminInventoryListView,
+    AdminInventoryMovementsListView,
+    AdminInventorySummaryView,
+    AdminInventoryThresholdUpdateView,
+    AdminLowStockAlertsListView,
+    AdminOutOfStockAlertsListView,
+)
 from apps.catalog.admin_views import (
     AdminCategoryDetailView,
     AdminCategoryImageUploadView,
@@ -32,6 +43,52 @@ urlpatterns = [
         "dashboard/overview/",
         AdminDashboardOverviewView.as_view(),
         name="admin-dashboard-overview",
+    ),
+    path("inventory/", AdminInventoryListView.as_view(), name="admin-inventory-list"),
+    path(
+        "inventory/alerts/low-stock/",
+        AdminLowStockAlertsListView.as_view(),
+        name="admin-inventory-alerts-low-stock",
+    ),
+    path(
+        "inventory/alerts/out-of-stock/",
+        AdminOutOfStockAlertsListView.as_view(),
+        name="admin-inventory-alerts-out-of-stock",
+    ),
+    path(
+        "inventory/summary/",
+        AdminInventorySummaryView.as_view(),
+        name="admin-inventory-summary",
+    ),
+    path(
+        "inventory/metrics/",
+        AdminInventorySummaryView.as_view(),
+        name="admin-inventory-metrics",
+    ),
+    path(
+        "inventory/<uuid:variant_id>/",
+        AdminInventoryDetailView.as_view(),
+        name="admin-inventory-detail",
+    ),
+    path(
+        "inventory/<uuid:variant_id>/threshold/",
+        AdminInventoryThresholdUpdateView.as_view(),
+        name="admin-inventory-threshold",
+    ),
+    path(
+        "inventory/<uuid:variant_id>/acknowledge/",
+        AdminInventoryAlertAcknowledgeView.as_view(),
+        name="admin-inventory-acknowledge",
+    ),
+    path(
+        "inventory/<uuid:variant_id>/adjust/",
+        AdminInventoryAdjustView.as_view(),
+        name="admin-inventory-adjust",
+    ),
+    path(
+        "inventory/<uuid:variant_id>/movements/",
+        AdminInventoryMovementsListView.as_view(),
+        name="admin-inventory-movements",
     ),
     path("media/", AdminMediaListView.as_view(), name="admin-media-list"),
     path("media/upload/", AdminMediaUploadView.as_view(), name="admin-media-upload"),

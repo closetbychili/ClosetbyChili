@@ -232,18 +232,23 @@ def verify_razorpay_payment(
                 code="MISMATCHED_AMOUNT",
             )
 
-        # 5. Transition payment_status to PAID
+        # 5. Transition payment_status to PAID and status to CONFIRMED
         order.payment_status = Order.PaymentStatus.PAID
+        order.status = Order.Status.CONFIRMED
         order.razorpay_payment_id = razorpay_payment_id
         order.razorpay_signature = razorpay_signature
         order.save(
             update_fields=[
+                "status",
                 "payment_status",
                 "razorpay_payment_id",
                 "razorpay_signature",
                 "updated_at",
             ]
         )
+
+        from apps.inventory.services import finalize_order_inventory
+        finalize_order_inventory(order=order, actor=order.user)
 
         return order
 
@@ -274,7 +279,7 @@ def process_razorpay_webhook(
 ) -> Dict[str, Any]:
     """
     Process incoming Razorpay webhook event idempotently.
-    Supports 'payment.captured' and 'order.paid' events.
+    Supports 'payment.captured', 'order.paid', and 'payment.failed' events.
     """
     if not verify_razorpay_webhook_signature(body, signature):
         raise PaymentError("Invalid webhook signature.", code="INVALID_WEBHOOK_SIGNATURE")
@@ -291,6 +296,8 @@ def process_razorpay_webhook(
 
     logger.info("Processing Razorpay webhook event: %s", event)
 
+    from apps.inventory.services import finalize_order_inventory, release_order_reservations
+
     if event in ("payment.captured", "order.paid"):
         payment_entity = payload.get("payment", {}).get("entity", {})
         razorpay_order_id = payment_entity.get("order_id")
@@ -305,6 +312,8 @@ def process_razorpay_webhook(
                 )
                 if order:
                     if order.payment_status == Order.PaymentStatus.PAID:
+                        # Ensure inventory was finalized idempotently
+                        finalize_order_inventory(order=order)
                         return {"status": "already_processed", "order_number": order.order_number}
 
                     # Verify amount and currency
@@ -314,8 +323,28 @@ def process_razorpay_webhook(
                         and payment_entity.get("currency") == order.currency
                     ):
                         order.payment_status = Order.PaymentStatus.PAID
+                        order.status = Order.Status.CONFIRMED
                         order.razorpay_payment_id = razorpay_payment_id
-                        order.save(update_fields=["payment_status", "razorpay_payment_id", "updated_at"])
+                        order.save(update_fields=["status", "payment_status", "razorpay_payment_id", "updated_at"])
+                        finalize_order_inventory(order=order)
                         return {"status": "paid", "order_number": order.order_number}
 
+    elif event == "payment.failed":
+        payment_entity = payload.get("payment", {}).get("entity", {})
+        razorpay_order_id = payment_entity.get("order_id")
+        if razorpay_order_id:
+            with transaction.atomic():
+                order = (
+                    Order.objects.select_for_update()
+                    .filter(razorpay_order_id=razorpay_order_id)
+                    .first()
+                )
+                if order and order.payment_status != Order.PaymentStatus.PAID:
+                    order.payment_status = Order.PaymentStatus.FAILED
+                    order.status = Order.Status.CANCELLED
+                    order.save(update_fields=["status", "payment_status", "updated_at"])
+                    release_order_reservations(order=order, reason="payment_failed")
+                    return {"status": "payment_failed", "order_number": order.order_number}
+
     return {"status": "ignored", "event": event}
+

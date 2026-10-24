@@ -875,18 +875,29 @@ export async function deleteProductVariant(
 }
 
 export interface StockAdjustmentPayload {
-  adjustment_type: "delta" | "set";
+  adjustment_type: "delta" | "set" | "increase" | "decrease";
   quantity: number;
   reason?: string;
+  reason_code?: string;
   reference?: string;
+  note?: string;
+  idempotency_key?: string;
 }
 
 export interface StockAdjustmentResponse {
   message: string;
   variant_id: string;
+  sku?: string;
   quantity_available: number;
   quantity_reserved: number;
+  quantity_on_hand?: number;
   stock_status: "in_stock" | "low_stock" | "out_of_stock";
+  stock_status_label?: string;
+  low_stock_threshold?: number;
+  change_delta?: number;
+  resulting_quantity?: number;
+  movement_id?: string;
+  idempotent_replay?: boolean;
 }
 
 /**
@@ -1323,6 +1334,311 @@ export async function removeProductFromCollection(
     }
   );
 }
+
+// =============================================================================
+// Inventory Domain Interfaces & API Calls (Sprint A3.2)
+// =============================================================================
+
+export interface AdminInventoryMovement {
+  id: string;
+  movement_type: string;
+  movement_type_display: string;
+  is_manual?: boolean;
+  quantity_change: number;
+  reason_code?: string;
+  reason_display?: string;
+  note?: string;
+  resulting_quantity?: number | null;
+  actor_email?: string;
+  reference: string;
+  idempotency_key?: string;
+  created_at: string;
+}
+
+export interface AdminInventoryDetailImage {
+  id: string;
+  image_url: string;
+  alt_text?: string;
+  is_primary: boolean;
+  ordering: number;
+}
+
+export interface AdminInventoryDetail extends AdminInventoryItem {
+  low_stock_threshold: number;
+  images: AdminInventoryDetailImage[];
+  recent_movements: AdminInventoryMovement[];
+}
+
+
+export interface AdminInventoryItem {
+  id: string;
+  variant_id: string;
+  product_id: string;
+  product_name: string;
+  product_slug: string;
+  product_status: "draft" | "active" | "archived";
+  product_is_active: boolean;
+  category_name: string | null;
+  category_id: string | null;
+  thumbnail_url: string | null;
+  sku: string;
+  size: string;
+  color: string;
+  variant_title: string;
+  retail_price: string;
+  sale_price: string | null;
+  is_active: boolean;
+  quantity_on_hand: number;
+  quantity_reserved: number;
+  quantity_available: number;
+  stock_status: "in_stock" | "low_stock" | "out_of_stock";
+  stock_status_label: "In Stock" | "Low Stock" | "Out of Stock";
+  low_stock_threshold: number;
+  is_low_stock: boolean;
+  is_out_of_stock: boolean;
+  is_alert_acknowledged: boolean;
+  alert_acknowledged_at: string | null;
+  last_movement_at: string | null;
+  last_movement: AdminInventoryMovement | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminInventorySummary {
+  active_variants_tracked: number;
+  total_on_hand: number;
+  total_reserved: number;
+  total_available: number;
+  out_of_stock_variants: number;
+  low_stock_variants: number;
+  in_stock_variants: number;
+  unacknowledged_alerts?: number;
+  low_stock_threshold: number;
+}
+
+export interface AdminInventoryQueryParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  stock_status?: "in_stock" | "low_stock" | "out_of_stock" | "all";
+  category?: string;
+  is_active?: boolean;
+  acknowledged?: boolean;
+  ordering?: string;
+  low_stock_threshold?: number;
+}
+
+/**
+ * Fetch paginated inventory list for admin console.
+ */
+export async function getAdminInventory(
+  params?: AdminInventoryQueryParams,
+  token?: string
+): Promise<PaginatedResponse<AdminInventoryItem>> {
+  const accessToken = await resolveAccessToken(token);
+
+  const queryParams = new URLSearchParams();
+  if (params?.page) queryParams.set("page", String(params.page));
+  if (params?.page_size) queryParams.set("page_size", String(params.page_size));
+  if (params?.search) queryParams.set("search", params.search);
+  if (params?.stock_status && params.stock_status !== "all") {
+    queryParams.set("stock_status", params.stock_status);
+  }
+  if (params?.category && params.category !== "all") {
+    queryParams.set("category", params.category);
+  }
+  if (params?.is_active !== undefined) {
+    queryParams.set("is_active", String(params.is_active));
+  }
+  if (params?.acknowledged !== undefined) {
+    queryParams.set("acknowledged", String(params.acknowledged));
+  }
+  if (params?.ordering) queryParams.set("ordering", params.ordering);
+  if (params?.low_stock_threshold) {
+    queryParams.set("low_stock_threshold", String(params.low_stock_threshold));
+  }
+
+  const qs = queryParams.toString();
+  const endpoint = `/admin/inventory/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminInventoryItem>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Fetch aggregated inventory summary metrics.
+ */
+export async function getAdminInventorySummary(
+  params?: { low_stock_threshold?: number; category?: string },
+  token?: string
+): Promise<AdminInventorySummary> {
+  const accessToken = await resolveAccessToken(token);
+
+  const queryParams = new URLSearchParams();
+  if (params?.low_stock_threshold) {
+    queryParams.set("low_stock_threshold", String(params.low_stock_threshold));
+  }
+  if (params?.category && params.category !== "all") {
+    queryParams.set("category", params.category);
+  }
+
+  const qs = queryParams.toString();
+  const endpoint = `/admin/inventory/summary/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<AdminInventorySummary>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Fetch authoritative inventory detail for a variant.
+ */
+export async function getAdminInventoryDetail(
+  variantId: string,
+  params?: { low_stock_threshold?: number },
+  token?: string
+): Promise<AdminInventoryDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const queryParams = new URLSearchParams();
+  if (params?.low_stock_threshold) {
+    queryParams.set("low_stock_threshold", String(params.low_stock_threshold));
+  }
+  const qs = queryParams.toString();
+  const endpoint = `/admin/inventory/${variantId}/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<AdminInventoryDetail>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+/**
+ * Adjust stock for a variant via authoritative inventory service.
+ */
+export async function adjustInventoryStock(
+  variantId: string,
+  payload: StockAdjustmentPayload,
+  token?: string
+): Promise<StockAdjustmentResponse> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/inventory/${variantId}/adjust/`;
+
+  return apiFetch<StockAdjustmentResponse>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Fetch paginated movement history for a variant.
+ */
+export async function getAdminInventoryMovements(
+  variantId: string,
+  params?: {
+    page?: number;
+    page_size?: number;
+    movement_type?: string;
+    reason_code?: string;
+    is_manual?: boolean;
+  },
+  token?: string
+): Promise<PaginatedResponse<AdminInventoryMovement>> {
+  const accessToken = await resolveAccessToken(token);
+  const queryParams = new URLSearchParams();
+  if (params?.page) queryParams.set("page", String(params.page));
+  if (params?.page_size) queryParams.set("page_size", String(params.page_size));
+  if (params?.movement_type && params.movement_type !== "all") {
+    queryParams.set("movement_type", params.movement_type);
+  }
+  if (params?.reason_code && params.reason_code !== "all") {
+    queryParams.set("reason_code", params.reason_code);
+  }
+  if (params?.is_manual !== undefined) {
+    queryParams.set("is_manual", String(params.is_manual));
+  }
+
+  const qs = queryParams.toString();
+  const endpoint = `/admin/inventory/${variantId}/movements/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminInventoryMovement>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export interface UpdateThresholdResponse {
+  variant_id: string;
+  low_stock_threshold: number;
+  stock_status: "in_stock" | "low_stock" | "out_of_stock";
+  stock_status_label: "In Stock" | "Low Stock" | "Out of Stock";
+  quantity_available: number;
+  is_alert_acknowledged: boolean;
+  message: string;
+}
+
+export interface AcknowledgeAlertResponse {
+  variant_id: string;
+  is_alert_acknowledged: boolean;
+  alert_acknowledged_at: string | null;
+  stock_status: "in_stock" | "low_stock" | "out_of_stock";
+  stock_status_label: "In Stock" | "Low Stock" | "Out of Stock";
+  message: string;
+}
+
+/**
+ * Configure low-stock threshold for a variant.
+ */
+export async function updateInventoryThreshold(
+  variantId: string,
+  threshold: number,
+  token?: string
+): Promise<UpdateThresholdResponse> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/inventory/${variantId}/threshold/`;
+
+  return apiFetch<UpdateThresholdResponse>(endpoint, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ low_stock_threshold: threshold }),
+  });
+}
+
+/**
+ * Acknowledge or dismiss an inventory alert for a variant.
+ */
+export async function acknowledgeInventoryAlert(
+  variantId: string,
+  acknowledged: boolean = true,
+  token?: string
+): Promise<AcknowledgeAlertResponse> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/inventory/${variantId}/acknowledge/`;
+
+  return apiFetch<AcknowledgeAlertResponse>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ acknowledged }),
+  });
+}
+
+
 
 
 
