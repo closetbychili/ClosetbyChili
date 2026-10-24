@@ -269,3 +269,49 @@ class OrderItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product_name} x {self.quantity} ({self.order.order_number})"
+
+
+class OrderAuditLog(models.Model):
+    """
+    Durable, append-only audit record for privileged order operations.
+    Tracks status changes, cancellations, actor identity, timestamps, and operational notes.
+    """
+
+    class OperationType(models.TextChoices):
+        STATUS_TRANSITION = "status_transition", "Status Transition"
+        CANCELLATION = "cancellation", "Order Cancellation"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+    )
+    from_status = models.CharField(max_length=32)
+    to_status = models.CharField(max_length=32)
+    operation_type = models.CharField(
+        max_length=32,
+        choices=OperationType.choices,
+        default=OperationType.STATUS_TRANSITION,
+    )
+    actor = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_audit_logs",
+    )
+    actor_email = models.CharField(max_length=255, blank=True, default="")
+    note = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "orders_audit_logs"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["order", "created_at"], name="idx_order_audit_created"),
+            models.Index(fields=["operation_type"], name="idx_order_audit_op_type"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.order.order_number}: {self.from_status} -> {self.to_status} ({self.operation_type})"

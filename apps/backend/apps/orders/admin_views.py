@@ -12,17 +12,27 @@ import datetime
 import uuid
 from typing import Any
 
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.db.models.functions import Coalesce
 from django.utils import dateparse, timezone
-from rest_framework import filters, generics
-from rest_framework.exceptions import ValidationError
+from rest_framework import filters, generics, status
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdminUser
 from apps.common.pagination import StandardResultsSetPagination
-from apps.orders.admin_serializers import AdminOrderListSerializer
-from apps.orders.models import Order
+from apps.inventory.models import InventoryReservation
+from apps.orders.admin_serializers import (
+    AdminOrderAuditLogSerializer,
+    AdminOrderCancelSerializer,
+    AdminOrderDetailSerializer,
+    AdminOrderListSerializer,
+    AdminOrderStatusTransitionSerializer,
+)
+from apps.orders.models import Order, OrderAuditLog, OrderItem
+from apps.orders.services import cancel_order_admin, transition_order_status
 
 ALLOWED_ORDERING_FIELDS = {
     "created_at",
@@ -220,4 +230,148 @@ class AdminOrderListView(generics.ListAPIView):
             .annotate(annotated_item_count=Coalesce(Count("items", distinct=True), 0))
             .all()
         )
+
+
+def resolve_order(order_id_param: str) -> Order:
+    """
+    Look up an order by UUID or order_number and prefetch all relationships needed
+    for authoritative admin inspection, status transitions, and history logs.
+    """
+    cleaned = (order_id_param or "").strip()
+    if not cleaned:
+        raise NotFound("Order not found.")
+
+    order_uuid = None
+    try:
+        order_uuid = uuid.UUID(cleaned)
+    except (ValueError, AttributeError):
+        order_uuid = None
+
+    queryset = Order.objects.select_related(
+        "user",
+        "user__profile",
+    ).prefetch_related(
+        Prefetch(
+            "items",
+            queryset=OrderItem.objects.select_related("product", "variant").prefetch_related("product__images"),
+        ),
+        Prefetch(
+            "inventory_reservations",
+            queryset=InventoryReservation.objects.select_related(
+                "inventory_item__variant__product",
+                "inventory_item__variant",
+            ).order_by("-created_at"),
+        ),
+        Prefetch(
+            "audit_logs",
+            queryset=OrderAuditLog.objects.select_related("actor").order_by("-created_at"),
+        ),
+    )
+
+    if order_uuid:
+        order = queryset.filter(id=order_uuid).first()
+    else:
+        order = queryset.filter(order_number=cleaned).first()
+
+    if not order:
+        raise NotFound(f"Order '{cleaned}' not found.")
+
+    return order
+
+
+class AdminOrderDetailView(generics.RetrieveAPIView):
+    """
+    GET /api/v1/admin/orders/<order_id>/
+
+    Detailed inspection endpoint for an individual customer order.
+    Enforces administrator permissions.
+    Fetches items with prefetched images, customer profile,
+    authoritative snapshots, payment records, inventory history, and audit logs.
+    """
+
+    permission_classes = [IsAdminUser]
+    serializer_class = AdminOrderDetailSerializer
+
+    def get_object(self) -> Order:
+        return resolve_order(self.kwargs.get("order_id", ""))
+
+
+class AdminOrderTransitionView(APIView):
+    """
+    POST /api/v1/admin/orders/<order_id>/transition/
+
+    Admin-only status transition endpoint enforcing strict state machine transitions.
+    Rechecks payment and inventory prerequisites within a row-locked transaction.
+    Writes an immutable OrderAuditLog record atomically upon success.
+    Returns the refreshed order detail payload.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, order_id: str) -> Response:
+        order = resolve_order(order_id)
+        serializer = AdminOrderStatusTransitionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_status = serializer.validated_data["target_status"]
+        note = serializer.validated_data.get("note", "")
+
+        updated_order, _ = transition_order_status(
+            order=order,
+            target_status=target_status,
+            actor=request.user,
+            note=note,
+        )
+
+        refreshed = resolve_order(str(updated_order.id))
+        response_serializer = AdminOrderDetailSerializer(refreshed)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminOrderCancelView(APIView):
+    """
+    POST /api/v1/admin/orders/<order_id>/cancel/
+
+    Admin-only order cancellation endpoint for eligible unpaid/pending orders.
+    Releases active inventory reservations atomically and records audit history.
+    Returns the refreshed order detail payload.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, order_id: str) -> Response:
+        order = resolve_order(order_id)
+        serializer = AdminOrderCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        reason = serializer.validated_data.get("reason", "")
+        note = serializer.validated_data.get("note", "")
+
+        cancelled_order, _ = cancel_order_admin(
+            order=order,
+            actor=request.user,
+            reason=reason,
+            note=note,
+        )
+
+        refreshed = resolve_order(str(cancelled_order.id))
+        response_serializer = AdminOrderDetailSerializer(refreshed)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminOrderHistoryView(APIView):
+    """
+    GET /api/v1/admin/orders/<order_id>/history/
+
+    Admin-only read-only history of privileged order operations and status transitions.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, order_id: str) -> Response:
+        order = resolve_order(order_id)
+        history = order.audit_logs.all().order_by("-created_at")
+        serializer = AdminOrderAuditLogSerializer(history, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 

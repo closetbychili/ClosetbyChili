@@ -36,7 +36,13 @@ from apps.catalog.admin_views import (
     AdminProductVariantListView,
     AdminVariantStockAdjustmentView,
 )
-from apps.orders.admin_views import AdminOrderListView
+from apps.orders.admin_views import (
+    AdminOrderCancelView,
+    AdminOrderDetailView,
+    AdminOrderHistoryView,
+    AdminOrderListView,
+    AdminOrderTransitionView,
+)
 
 urlpatterns = [
     path("auth/verify/", AdminVerifyAuthView.as_view(), name="admin-auth-verify"),
@@ -46,6 +52,10 @@ urlpatterns = [
         name="admin-dashboard-overview",
     ),
     path("orders/", AdminOrderListView.as_view(), name="admin-orders-list"),
+    path("orders/<str:order_id>/transition/", AdminOrderTransitionView.as_view(), name="admin-orders-transition"),
+    path("orders/<str:order_id>/cancel/", AdminOrderCancelView.as_view(), name="admin-orders-cancel"),
+    path("orders/<str:order_id>/history/", AdminOrderHistoryView.as_view(), name="admin-orders-history"),
+    path("orders/<str:order_id>/", AdminOrderDetailView.as_view(), name="admin-orders-detail"),
     path("inventory/", AdminInventoryListView.as_view(), name="admin-inventory-list"),
     path(
         "inventory/alerts/low-stock/",

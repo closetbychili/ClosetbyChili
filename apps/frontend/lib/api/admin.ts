@@ -1732,3 +1732,209 @@ export async function getAdminOrders(
     },
   });
 }
+
+// =============================================================================
+// Admin Order Detail API (Sprint A4.2)
+// =============================================================================
+
+export interface AdminOrderAddressSnapshot {
+  full_name?: string;
+  phone?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  [key: string]: unknown;
+}
+
+export interface AdminOrderItemDetail {
+  id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  product_name: string;
+  variant_name: string;
+  sku: string;
+  unit_price: string;
+  quantity: number;
+  line_total: string;
+  image_url: string | null;
+}
+
+export interface AdminOrderPaymentRecord {
+  provider: string;
+  status: string;
+  status_display: string;
+  amount: string;
+  currency: string;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminOrderReservation {
+  id: string;
+  inventory_item_id: string;
+  quantity: number;
+  status: "active" | "released" | "finalized" | string;
+  status_display: string;
+  sku: string;
+  product_name: string;
+  variant_label: string;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminOrderMovement {
+  id: string;
+  inventory_item_id: string;
+  movement_type: string;
+  movement_type_display: string;
+  quantity_change: number;
+  resulting_quantity: number | null;
+  reference: string;
+  reason_code: string;
+  note: string;
+  actor_email: string;
+  sku: string;
+  product_name: string;
+  created_at: string;
+}
+
+export interface AdminOrderInventoryLifecycle {
+  reservations: AdminOrderReservation[];
+  movements: AdminOrderMovement[];
+}
+
+export interface AdminOrderAuditLogItem {
+  id: string;
+  from_status: string;
+  to_status: string;
+  operation_type: string;
+  operation_type_display: string;
+  actor_email: string;
+  note: string;
+  created_at: string;
+}
+
+export interface AdminOrderStatusTransitionPayload {
+  target_status: string;
+  note?: string;
+}
+
+export interface AdminOrderCancelPayload {
+  reason?: string;
+  note?: string;
+}
+
+export interface AdminOrderDetail {
+  id: string;
+  order_number: string;
+  idempotency_key: string | null;
+  status: string;
+  status_display: string;
+  payment_status: string;
+  payment_status_display: string;
+  currency: string;
+  subtotal: string;
+  discount: string;
+  shipping_amount: string;
+  tax_amount: string;
+  total: string;
+  item_count: number;
+  total_units: number;
+  customer: AdminOrderCustomer;
+  shipping_address: AdminOrderAddressSnapshot;
+  billing_address: AdminOrderAddressSnapshot;
+  items: AdminOrderItemDetail[];
+  payments: AdminOrderPaymentRecord[];
+  payment: AdminOrderPaymentRecord | null;
+  inventory: AdminOrderInventoryLifecycle;
+  audit_logs: AdminOrderAuditLogItem[];
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Fetch detailed administrative order information by order ID or order number.
+ */
+export async function getAdminOrderDetail(
+  orderId: string,
+  token?: string
+): Promise<AdminOrderDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/orders/${encodeURIComponent(orderId)}/`;
+
+  return apiFetch<AdminOrderDetail>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+/**
+ * Transition order status following strict state machine rules.
+ */
+export async function transitionAdminOrderStatus(
+  orderId: string,
+  payload: AdminOrderStatusTransitionPayload,
+  token?: string
+): Promise<AdminOrderDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/orders/${encodeURIComponent(orderId)}/transition/`;
+
+  return apiFetch<AdminOrderDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Cancel an unpaid pending order and release stock reservations.
+ */
+export async function cancelAdminOrder(
+  orderId: string,
+  payload: AdminOrderCancelPayload,
+  token?: string
+): Promise<AdminOrderDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/orders/${encodeURIComponent(orderId)}/cancel/`;
+
+  return apiFetch<AdminOrderDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Fetch privileged order audit history timeline.
+ */
+export async function getAdminOrderHistory(
+  orderId: string,
+  token?: string
+): Promise<AdminOrderAuditLogItem[]> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/orders/${encodeURIComponent(orderId)}/history/`;
+
+  return apiFetch<AdminOrderAuditLogItem[]>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
