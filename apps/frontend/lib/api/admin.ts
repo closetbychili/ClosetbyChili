@@ -1852,6 +1852,7 @@ export interface AdminOrderDetail {
   items: AdminOrderItemDetail[];
   payments: AdminOrderPaymentRecord[];
   payment: AdminOrderPaymentRecord | null;
+  shipments?: AdminShipmentSummary[];
   inventory: AdminOrderInventoryLifecycle;
   audit_logs: AdminOrderAuditLogItem[];
   created_at: string;
@@ -1937,4 +1938,662 @@ export async function getAdminOrderHistory(
     },
   });
 }
+
+// ============================================================================
+// Sprint A4.4 — Admin Payment Operations & Reconciliation
+// ============================================================================
+
+export type PaymentDiscrepancyStatus =
+  | "MATCHED"
+  | "AMOUNT_MISMATCH"
+  | "CURRENCY_MISMATCH"
+  | "STATUS_CONFLICT"
+  | "DUPLICATE_ATTEMPT"
+  | "NEEDS_REVIEW";
+
+export interface AdminPaymentCustomer {
+  id: string;
+  email: string;
+  display_name: string;
+}
+
+export interface AdminPaymentRecord {
+  id: string;
+  order_id: string;
+  order_number: string;
+  customer: AdminPaymentCustomer;
+  provider: string;
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  amount: string;
+  currency: string;
+  payment_status: string;
+  payment_status_display: string;
+  order_status: string;
+  order_status_display: string;
+  discrepancy_status: PaymentDiscrepancyStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminPaymentDetail extends AdminPaymentRecord {
+  subtotal: string;
+  discount: string;
+  shipping_amount: string;
+  tax_amount: string;
+  discrepancy_details: string[];
+  is_reconciled: boolean;
+  reconciled_at: string | null;
+  audit_logs: AdminOrderAuditLogItem[];
+}
+
+export interface AdminPaymentQueryParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  payment_status?: string;
+  provider?: string;
+  discrepancy_status?: PaymentDiscrepancyStatus | string;
+  date_from?: string;
+  date_to?: string;
+  ordering?: string;
+}
+
+export interface AdminPaymentReconcileResult {
+  detail: string;
+  outcome: "RECONCILED" | "ALREADY_PAID" | "UNPAID_ON_GATEWAY";
+  payment_status: string;
+  order_status: string;
+  order_number: string;
+  provider: string;
+  reconciled_payment_id: string | null;
+  reconciled_at: string;
+}
+
+/**
+ * Fetch paginated administrative payment records with search and filtering.
+ */
+export async function getAdminPayments(
+  params: AdminPaymentQueryParams = {},
+  token?: string
+): Promise<PaginatedResponse<AdminPaymentRecord>> {
+  const accessToken = await resolveAccessToken(token);
+  const searchParams = new URLSearchParams();
+
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.page_size) searchParams.set("page_size", String(params.page_size));
+  if (params.search?.trim()) searchParams.set("search", params.search.trim());
+  if (params.payment_status?.trim()) searchParams.set("payment_status", params.payment_status.trim());
+  if (params.provider?.trim()) searchParams.set("provider", params.provider.trim());
+  if (params.discrepancy_status?.trim()) searchParams.set("discrepancy_status", params.discrepancy_status.trim());
+  if (params.date_from?.trim()) searchParams.set("date_from", params.date_from.trim());
+  if (params.date_to?.trim()) searchParams.set("date_to", params.date_to.trim());
+  if (params.ordering?.trim()) searchParams.set("ordering", params.ordering.trim());
+
+  const qs = searchParams.toString();
+  const endpoint = `/admin/payments/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminPaymentRecord>>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+/**
+ * Fetch detailed payment inspection record including discrepancy evidence and audit trail.
+ */
+export async function getAdminPaymentDetail(
+  paymentId: string,
+  token?: string
+): Promise<AdminPaymentDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/payments/${encodeURIComponent(paymentId)}/`;
+
+  return apiFetch<AdminPaymentDetail>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+/**
+ * Execute server-side live reconciliation for an eligible payment with Razorpay gateway.
+ */
+export async function reconcileAdminPayment(
+  paymentId: string,
+  token?: string
+): Promise<AdminPaymentReconcileResult> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/payments/${encodeURIComponent(paymentId)}/reconcile/`;
+
+  return apiFetch<AdminPaymentReconcileResult>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+// =============================================================================
+// Sprint A4.5 — Admin Shipment & Fulfillment Management
+// =============================================================================
+
+export type AdminShipmentStatus =
+  | "PENDING"
+  | "READY_TO_SHIP"
+  | "SHIPPED"
+  | "IN_TRANSIT"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "FAILED"
+  | "RETURNED";
+
+export interface AdminShipmentSummary {
+  id: string;
+  status: AdminShipmentStatus;
+  status_display: string;
+  carrier: string;
+  tracking_number: string;
+  tracking_url: string;
+  internal_note: string;
+  dispatched_at: string | null;
+  dispatched_by_email: string;
+  delivered_at: string | null;
+  delivered_by_email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminShipmentListItem {
+  id: string;
+  order_id: string;
+  order_number: string;
+  order_status: string;
+  order_status_display: string;
+  order_payment_status: string;
+  order_payment_status_display: string;
+  status: AdminShipmentStatus;
+  status_display: string;
+  carrier: string;
+  tracking_number: string;
+  tracking_url: string;
+  internal_note: string;
+  dispatched_at: string | null;
+  dispatched_by_email: string;
+  delivered_at: string | null;
+  delivered_by_email: string;
+  customer_email: string;
+  customer_name: string;
+  item_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminShipmentAuditLogItem {
+  id: string;
+  from_status: string;
+  to_status: string;
+  event_type: string;
+  event_type_display: string;
+  actor_email: string;
+  note: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdminShipmentDetailOrder {
+  id: string;
+  order_number: string;
+  status: string;
+  status_display: string;
+  payment_status: string;
+  payment_status_display: string;
+  currency: string;
+  total: string;
+  customer: AdminOrderCustomer;
+  shipping_address: AdminOrderAddressSnapshot;
+  items: AdminOrderItemDetail[];
+  created_at: string;
+}
+
+export interface AdminShipmentDetail {
+  id: string;
+  status: AdminShipmentStatus;
+  status_display: string;
+  carrier: string;
+  tracking_number: string;
+  tracking_url: string;
+  internal_note: string;
+  dispatched_at: string | null;
+  dispatched_by_email: string;
+  delivered_at: string | null;
+  delivered_by_email: string;
+  created_by_email: string;
+  created_at: string;
+  updated_at: string;
+  order: AdminShipmentDetailOrder;
+  audit_logs: AdminShipmentAuditLogItem[];
+}
+
+export interface AdminShipmentListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  status?: string;
+  carrier?: string;
+  order_id?: string;
+  order_number?: string;
+  created_after?: string;
+  created_before?: string;
+  dispatched_after?: string;
+  dispatched_before?: string;
+  delivered_after?: string;
+  delivered_before?: string;
+  ordering?: string;
+}
+
+export interface AdminCreateShipmentPayload {
+  carrier?: string;
+  tracking_number?: string;
+  tracking_url?: string;
+  status?: "PENDING" | "READY_TO_SHIP";
+  internal_note?: string;
+}
+
+export interface AdminUpdateShipmentTrackingPayload {
+  carrier?: string;
+  tracking_number?: string;
+  tracking_url?: string;
+  internal_note?: string;
+}
+
+export interface AdminShipmentDispatchPayload {
+  carrier?: string;
+  tracking_number?: string;
+  tracking_url?: string;
+  note?: string;
+}
+
+export interface AdminShipmentTransitionPayload {
+  target_status: AdminShipmentStatus;
+  note?: string;
+}
+
+/**
+ * Fetch paginated list of shipments with search, status/carrier filters, and sorting.
+ */
+export async function getAdminShipments(
+  params?: AdminShipmentListParams,
+  token?: string
+): Promise<PaginatedResponse<AdminShipmentListItem>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.search && params.search.trim()) query.set("search", params.search.trim());
+    if (params.status && params.status.trim() && params.status !== "ALL") {
+      query.set("status", params.status.trim());
+    }
+    if (params.carrier && params.carrier.trim() && params.carrier !== "ALL") {
+      query.set("carrier", params.carrier.trim());
+    }
+    if (params.order_id && params.order_id.trim()) query.set("order_id", params.order_id.trim());
+    if (params.order_number && params.order_number.trim()) {
+      query.set("order_number", params.order_number.trim());
+    }
+    if (params.created_after && params.created_after.trim()) {
+      query.set("created_after", params.created_after.trim());
+    }
+    if (params.created_before && params.created_before.trim()) {
+      query.set("created_before", params.created_before.trim());
+    }
+    if (params.dispatched_after && params.dispatched_after.trim()) {
+      query.set("dispatched_after", params.dispatched_after.trim());
+    }
+    if (params.dispatched_before && params.dispatched_before.trim()) {
+      query.set("dispatched_before", params.dispatched_before.trim());
+    }
+    if (params.delivered_after && params.delivered_after.trim()) {
+      query.set("delivered_after", params.delivered_after.trim());
+    }
+    if (params.delivered_before && params.delivered_before.trim()) {
+      query.set("delivered_before", params.delivered_before.trim());
+    }
+    if (params.ordering && params.ordering.trim()) query.set("ordering", params.ordering.trim());
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/shipments/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminShipmentListItem>>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+/**
+ * Fetch detailed single shipment record with order details, addresses, and audit logs.
+ */
+export async function getAdminShipmentDetail(
+  shipmentId: string,
+  token?: string
+): Promise<AdminShipmentDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/shipments/${encodeURIComponent(shipmentId)}/`;
+
+  return apiFetch<AdminShipmentDetail>(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+/**
+ * Create a new shipment for an eligible customer order.
+ */
+export async function createAdminOrderShipment(
+  orderId: string,
+  payload: AdminCreateShipmentPayload,
+  token?: string
+): Promise<AdminShipmentDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/orders/${encodeURIComponent(orderId)}/shipments/`;
+
+  return apiFetch<AdminShipmentDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Update carrier and tracking information without mutating shipment status.
+ */
+export async function updateAdminShipmentTracking(
+  shipmentId: string,
+  payload: AdminUpdateShipmentTrackingPayload,
+  token?: string
+): Promise<AdminShipmentDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/shipments/${encodeURIComponent(shipmentId)}/tracking/`;
+
+  return apiFetch<AdminShipmentDetail>(endpoint, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Dispatch an eligible shipment, setting dispatched timestamp and synchronizing order status.
+ */
+export async function dispatchAdminShipment(
+  shipmentId: string,
+  payload?: AdminShipmentDispatchPayload,
+  token?: string
+): Promise<AdminShipmentDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/shipments/${encodeURIComponent(shipmentId)}/dispatch/`;
+
+  return apiFetch<AdminShipmentDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload || {}),
+  });
+}
+
+/**
+ * Transition shipment status (IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED, RETURNED).
+ */
+export async function transitionAdminShipmentStatus(
+  shipmentId: string,
+  payload: AdminShipmentTransitionPayload,
+  token?: string
+): Promise<AdminShipmentDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/shipments/${encodeURIComponent(shipmentId)}/transition/`;
+
+  return apiFetch<AdminShipmentDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+// =============================================================================
+// Admin Coupon Management (Sprint A5.1)
+// =============================================================================
+
+export type AdminCouponDiscountType = "PERCENTAGE" | "FIXED_AMOUNT";
+
+export type AdminCouponLifecycleStatus =
+  | "SCHEDULED"
+  | "CURRENTLY_VALID"
+  | "EXPIRED"
+  | "INACTIVE";
+
+export interface AdminCouponAuditLogItem {
+  id: string;
+  event_type: "CREATED" | "UPDATED" | "ACTIVATED" | "DEACTIVATED";
+  actor_id?: string | null;
+  actor_email: string | null;
+  notes: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdminCoupon {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  discount_type: AdminCouponDiscountType;
+  discount_value: string;
+  currency: string;
+  min_order_subtotal: string | null;
+  max_discount_amount: string | null;
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+  lifecycle_status: AdminCouponLifecycleStatus;
+  usage_limit: number | null;
+  per_customer_limit: number | null;
+  is_first_order_only: boolean;
+  usage_count: number | null;
+  created_at: string;
+  updated_at: string;
+  created_by_email?: string | null;
+  updated_by_email?: string | null;
+}
+
+export interface AdminCouponDetail extends AdminCoupon {
+  audit_logs: AdminCouponAuditLogItem[];
+}
+
+export interface AdminCouponQueryParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  is_active?: string | boolean;
+  discount_type?: AdminCouponDiscountType | string;
+  lifecycle?: "scheduled" | "currently_valid" | "expired" | "inactive" | string;
+  ordering?: string;
+}
+
+export interface AdminCreateCouponPayload {
+  code: string;
+  name: string;
+  description?: string;
+  discount_type: AdminCouponDiscountType;
+  discount_value: string | number;
+  currency?: string;
+  min_order_subtotal?: string | number | null;
+  max_discount_amount?: string | number | null;
+  start_date: string;
+  end_date?: string | null;
+  is_active?: boolean;
+  usage_limit?: number | null;
+  per_customer_limit?: number | null;
+  is_first_order_only?: boolean;
+}
+
+export interface AdminUpdateCouponPayload {
+  code?: string;
+  name?: string;
+  description?: string;
+  discount_type?: AdminCouponDiscountType;
+  discount_value?: string | number;
+  currency?: string;
+  min_order_subtotal?: string | number | null;
+  max_discount_amount?: string | number | null;
+  start_date?: string;
+  end_date?: string | null;
+  is_active?: boolean;
+  usage_limit?: number | null;
+  per_customer_limit?: number | null;
+  is_first_order_only?: boolean;
+}
+
+export async function getAdminCoupons(
+  params?: AdminCouponQueryParams,
+  token?: string
+): Promise<PaginatedResponse<AdminCoupon>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.search && params.search.trim()) query.set("search", params.search.trim());
+    if (params.is_active !== undefined && params.is_active !== "" && params.is_active !== "all") {
+      query.set("is_active", String(params.is_active));
+    }
+    if (params.discount_type && params.discount_type !== "ALL" && params.discount_type !== "all") {
+      query.set("discount_type", params.discount_type);
+    }
+    if (params.lifecycle && params.lifecycle !== "ALL" && params.lifecycle !== "all") {
+      query.set("lifecycle", params.lifecycle);
+    }
+    if (params.ordering && params.ordering.trim()) {
+      query.set("ordering", params.ordering.trim());
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/coupons/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCoupon>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function getAdminCouponDetail(
+  couponId: string,
+  token?: string
+): Promise<AdminCouponDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/coupons/${encodeURIComponent(couponId)}/`;
+
+  return apiFetch<AdminCouponDetail>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function createAdminCoupon(
+  payload: AdminCreateCouponPayload,
+  token?: string
+): Promise<AdminCouponDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/coupons/`;
+
+  return apiFetch<AdminCouponDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminCoupon(
+  couponId: string,
+  payload: AdminUpdateCouponPayload,
+  token?: string
+): Promise<AdminCouponDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/coupons/${encodeURIComponent(couponId)}/`;
+
+  return apiFetch<AdminCouponDetail>(endpoint, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function activateAdminCoupon(
+  couponId: string,
+  token?: string
+): Promise<AdminCouponDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/coupons/${encodeURIComponent(couponId)}/activate/`;
+
+  return apiFetch<AdminCouponDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+export async function deactivateAdminCoupon(
+  couponId: string,
+  token?: string
+): Promise<AdminCouponDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/coupons/${encodeURIComponent(couponId)}/deactivate/`;
+
+  return apiFetch<AdminCouponDetail>(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+
 

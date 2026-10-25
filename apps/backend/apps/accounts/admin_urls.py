@@ -41,7 +41,24 @@ from apps.orders.admin_views import (
     AdminOrderDetailView,
     AdminOrderHistoryView,
     AdminOrderListView,
+    AdminOrderShipmentCreateView,
     AdminOrderTransitionView,
+    AdminShipmentDetailView,
+    AdminShipmentDispatchView,
+    AdminShipmentListView,
+    AdminShipmentTrackingUpdateView,
+    AdminShipmentTransitionView,
+)
+from apps.orders.coupon_views import (
+    AdminCouponActivateView,
+    AdminCouponDeactivateView,
+    AdminCouponDetailView,
+    AdminCouponListCreateView,
+)
+from apps.payments.admin_views import (
+    AdminPaymentDetailView,
+    AdminPaymentListView,
+    AdminPaymentReconcileView,
 )
 
 urlpatterns = [
@@ -51,11 +68,25 @@ urlpatterns = [
         AdminDashboardOverviewView.as_view(),
         name="admin-dashboard-overview",
     ),
+    path("coupons/", AdminCouponListCreateView.as_view(), name="admin-coupons-list-create"),
+    path("coupons/<uuid:pk>/activate/", AdminCouponActivateView.as_view(), name="admin-coupons-activate"),
+    path("coupons/<uuid:pk>/deactivate/", AdminCouponDeactivateView.as_view(), name="admin-coupons-deactivate"),
+    path("coupons/<uuid:pk>/", AdminCouponDetailView.as_view(), name="admin-coupons-detail"),
+    path("shipments/", AdminShipmentListView.as_view(), name="admin-shipments-list"),
+    path("shipments/<str:shipment_id>/tracking/", AdminShipmentTrackingUpdateView.as_view(), name="admin-shipments-tracking"),
+    path("shipments/<str:shipment_id>/dispatch/", AdminShipmentDispatchView.as_view(), name="admin-shipments-dispatch"),
+    path("shipments/<str:shipment_id>/transition/", AdminShipmentTransitionView.as_view(), name="admin-shipments-transition"),
+    path("shipments/<str:shipment_id>/status/", AdminShipmentTransitionView.as_view(), name="admin-shipments-status"),
+    path("shipments/<str:shipment_id>/", AdminShipmentDetailView.as_view(), name="admin-shipments-detail"),
     path("orders/", AdminOrderListView.as_view(), name="admin-orders-list"),
+    path("orders/<str:order_id>/shipments/", AdminOrderShipmentCreateView.as_view(), name="admin-orders-shipments-create"),
     path("orders/<str:order_id>/transition/", AdminOrderTransitionView.as_view(), name="admin-orders-transition"),
     path("orders/<str:order_id>/cancel/", AdminOrderCancelView.as_view(), name="admin-orders-cancel"),
     path("orders/<str:order_id>/history/", AdminOrderHistoryView.as_view(), name="admin-orders-history"),
     path("orders/<str:order_id>/", AdminOrderDetailView.as_view(), name="admin-orders-detail"),
+    path("payments/", AdminPaymentListView.as_view(), name="admin-payments-list"),
+    path("payments/<str:payment_id>/reconcile/", AdminPaymentReconcileView.as_view(), name="admin-payments-reconcile"),
+    path("payments/<str:payment_id>/", AdminPaymentDetailView.as_view(), name="admin-payments-detail"),
     path("inventory/", AdminInventoryListView.as_view(), name="admin-inventory-list"),
     path(
         "inventory/alerts/low-stock/",

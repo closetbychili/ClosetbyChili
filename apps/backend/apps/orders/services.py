@@ -15,6 +15,7 @@ import logging
 from typing import Any, Optional
 
 from django.db import transaction
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
 from apps.inventory.services import release_order_reservations
@@ -106,6 +107,89 @@ def transition_order_status(
             actor_email=actor_email,
             note=note.strip(),
         )
+
+        # Synchronize shipment state if order transitions to SHIPPED or DELIVERED
+        if target in (Order.Status.SHIPPED, Order.Status.DELIVERED):
+            from django.utils import timezone
+            from apps.orders.models import Shipment, ShipmentAuditLog
+
+            now = timezone.now()
+            active_shipment = locked_order.shipments.filter(
+                ~Q(status__in=[Shipment.Status.FAILED, Shipment.Status.RETURNED])
+            ).first()
+
+            if target == Order.Status.SHIPPED:
+                if not active_shipment:
+                    active_shipment = Shipment.objects.create(
+                        order=locked_order,
+                        status=Shipment.Status.SHIPPED,
+                        carrier="Standard Logistics",
+                        tracking_number=f"TRK-{locked_order.order_number}",
+                        dispatched_at=now,
+                        dispatched_by=actor_user,
+                        created_by=actor_user,
+                    )
+                    ShipmentAuditLog.objects.create(
+                        shipment=active_shipment,
+                        from_status=Shipment.Status.PENDING,
+                        to_status=Shipment.Status.SHIPPED,
+                        event_type=ShipmentAuditLog.EventType.DISPATCHED,
+                        actor=actor_user,
+                        actor_email=actor_email,
+                        note="Synchronized from order transition to Shipped.",
+                    )
+                elif active_shipment.status in (Shipment.Status.PENDING, Shipment.Status.READY_TO_SHIP):
+                    from_st = active_shipment.status
+                    active_shipment.status = Shipment.Status.SHIPPED
+                    active_shipment.dispatched_at = now
+                    active_shipment.dispatched_by = actor_user
+                    active_shipment.save(update_fields=["status", "dispatched_at", "dispatched_by", "updated_at"])
+                    ShipmentAuditLog.objects.create(
+                        shipment=active_shipment,
+                        from_status=from_st,
+                        to_status=Shipment.Status.SHIPPED,
+                        event_type=ShipmentAuditLog.EventType.DISPATCHED,
+                        actor=actor_user,
+                        actor_email=actor_email,
+                        note="Synchronized from order transition to Shipped.",
+                    )
+            elif target == Order.Status.DELIVERED:
+                if not active_shipment:
+                    active_shipment = Shipment.objects.create(
+                        order=locked_order,
+                        status=Shipment.Status.DELIVERED,
+                        carrier="Standard Logistics",
+                        tracking_number=f"TRK-{locked_order.order_number}",
+                        dispatched_at=now,
+                        dispatched_by=actor_user,
+                        delivered_at=now,
+                        delivered_by=actor_user,
+                        created_by=actor_user,
+                    )
+                    ShipmentAuditLog.objects.create(
+                        shipment=active_shipment,
+                        from_status=Shipment.Status.PENDING,
+                        to_status=Shipment.Status.DELIVERED,
+                        event_type=ShipmentAuditLog.EventType.STATUS_TRANSITION,
+                        actor=actor_user,
+                        actor_email=actor_email,
+                        note="Synchronized from order transition to Delivered.",
+                    )
+                elif active_shipment.status != Shipment.Status.DELIVERED:
+                    from_st = active_shipment.status
+                    active_shipment.status = Shipment.Status.DELIVERED
+                    active_shipment.delivered_at = now
+                    active_shipment.delivered_by = actor_user
+                    active_shipment.save(update_fields=["status", "delivered_at", "delivered_by", "updated_at"])
+                    ShipmentAuditLog.objects.create(
+                        shipment=active_shipment,
+                        from_status=from_st,
+                        to_status=Shipment.Status.DELIVERED,
+                        event_type=ShipmentAuditLog.EventType.STATUS_TRANSITION,
+                        actor=actor_user,
+                        actor_email=actor_email,
+                        note="Synchronized from order transition to Delivered.",
+                    )
 
         logger.info(
             "Order %s transitioned from %s to %s by %s",

@@ -27,6 +27,7 @@ import {
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   cancelAdminOrder,
+  createAdminOrderShipment,
   getAdminOrderDetail,
   transitionAdminOrderStatus,
   type AdminOrderDetail,
@@ -136,6 +137,71 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
   const [submittingAction, setSubmittingAction] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // Create Shipment Modal State
+  const [createShipmentModalOpen, setCreateShipmentModalOpen] = useState<boolean>(false);
+  const [shipmentCarrier, setShipmentCarrier] = useState<string>("Blue Dart");
+  const [shipmentTrackingNumber, setShipmentTrackingNumber] = useState<string>("");
+  const [shipmentTrackingUrl, setShipmentTrackingUrl] = useState<string>("");
+  const [shipmentInitialStatus, setShipmentInitialStatus] = useState<"PENDING" | "READY_TO_SHIP">("READY_TO_SHIP");
+  const [shipmentInternalNote, setShipmentInternalNote] = useState<string>("");
+  const [submittingShipment, setSubmittingShipment] = useState<boolean>(false);
+  const [shipmentError, setShipmentError] = useState<string | null>(null);
+
+  const handleOpenCreateShipment = () => {
+    setShipmentError(null);
+    setShipmentCarrier("Blue Dart");
+    setShipmentTrackingNumber("");
+    setShipmentTrackingUrl("");
+    setShipmentInitialStatus("READY_TO_SHIP");
+    setShipmentInternalNote("");
+    setCreateShipmentModalOpen(true);
+  };
+
+  const handleCloseCreateShipment = () => {
+    if (submittingShipment) return;
+    setCreateShipmentModalOpen(false);
+    setShipmentError(null);
+  };
+
+  const handleCreateShipment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+
+    if (shipmentTrackingUrl.trim()) {
+      try {
+        const parsed = new URL(shipmentTrackingUrl.trim());
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          setShipmentError("Tracking URL must use http or https scheme.");
+          return;
+        }
+      } catch {
+        setShipmentError("Please enter a valid tracking URL starting with http:// or https://");
+        return;
+      }
+    }
+
+    try {
+      setSubmittingShipment(true);
+      setShipmentError(null);
+
+      await createAdminOrderShipment(order.id, {
+        carrier: shipmentCarrier.trim() || undefined,
+        tracking_number: shipmentTrackingNumber.trim() || undefined,
+        tracking_url: shipmentTrackingUrl.trim() || undefined,
+        status: shipmentInitialStatus,
+        internal_note: shipmentInternalNote.trim() || undefined,
+      });
+
+      await fetchOrder(true);
+      setCreateShipmentModalOpen(false);
+      setActionSuccess("Shipment record created successfully.");
+    } catch (err: unknown) {
+      setShipmentError(getErrorMessage(err));
+    } finally {
+      setSubmittingShipment(false);
+    }
+  };
 
   const fetchOrder = useCallback(
     async (isRefresh = false) => {
@@ -366,6 +432,53 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
     );
   };
 
+  const renderShipmentStatusBadge = (status: string, display?: string) => {
+    const st = (status || "").toUpperCase();
+    let badgeClass = "bg-gray-100 text-gray-800 border-gray-200";
+    let dotClass = "bg-gray-400";
+
+    switch (st) {
+      case "PENDING":
+        badgeClass = "bg-amber-50 text-amber-800 border-amber-200";
+        dotClass = "bg-amber-500";
+        break;
+      case "READY_TO_SHIP":
+        badgeClass = "bg-sky-50 text-sky-800 border-sky-200";
+        dotClass = "bg-sky-500";
+        break;
+      case "SHIPPED":
+        badgeClass = "bg-blue-50 text-blue-800 border-blue-200";
+        dotClass = "bg-blue-600";
+        break;
+      case "IN_TRANSIT":
+        badgeClass = "bg-indigo-50 text-indigo-800 border-indigo-200";
+        dotClass = "bg-indigo-600";
+        break;
+      case "OUT_FOR_DELIVERY":
+        badgeClass = "bg-purple-50 text-purple-800 border-purple-200";
+        dotClass = "bg-purple-600";
+        break;
+      case "DELIVERED":
+        badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200";
+        dotClass = "bg-emerald-600";
+        break;
+      case "FAILED":
+      case "RETURNED":
+        badgeClass = "bg-rose-50 text-rose-800 border-rose-200";
+        dotClass = "bg-rose-600";
+        break;
+    }
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${badgeClass}`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} aria-hidden="true" />
+        <span>{display || st}</span>
+      </span>
+    );
+  };
+
   // 404 Not Found State
   if (notFound) {
     return (
@@ -446,6 +559,12 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
   const isTerminalState = ["DELIVERED", "CANCELLED"].includes(order.status.toUpperCase());
   const isPendingUnpaid =
     order.status.toUpperCase() === "PENDING" && order.payment_status.toUpperCase() !== "PAID";
+  const hasActiveShipment = Boolean(
+    order.shipments?.some((s) => s.status !== "FAILED" && s.status !== "RETURNED")
+  );
+  const isPaid = order.payment_status?.toUpperCase() === "PAID";
+  const isFulfillmentStatus = ["CONFIRMED", "PROCESSING"].includes(order.status?.toUpperCase());
+  const isEligibleForShipment = isPaid && isFulfillmentStatus && !hasActiveShipment;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -849,11 +968,20 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
 
           {/* Payment Audit Record */}
           <div className="bg-white rounded-xl border border-[#EBE2D8] p-4 shadow-[0_2px_10px_-2px_rgba(79,0,18,0.03)] space-y-3">
-            <div className="flex items-center gap-2 border-b border-[#F5EFE9] pb-2.5">
-              <CreditCard className="w-4 h-4 text-[#6D1826]" />
-              <h3 className="text-xs uppercase tracking-wider font-semibold text-[#1F1B17]">
-                Payment Audit Record
-              </h3>
+            <div className="flex items-center justify-between border-b border-[#F5EFE9] pb-2.5">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[#6D1826]" />
+                <h3 className="text-xs uppercase tracking-wider font-semibold text-[#1F1B17]">
+                  Payment Audit Record
+                </h3>
+              </div>
+              <Link
+                href={`/admin/payments?search=${encodeURIComponent(order.order_number)}`}
+                className="text-[11px] text-[#6D1826] hover:underline flex items-center gap-1 font-medium"
+              >
+                <span>Payments Console</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
             </div>
 
             {order.payment || (order.payments && order.payments.length > 0) ? (
@@ -899,6 +1027,136 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Shipments & Fulfillment Section */}
+      <div className="bg-white rounded-xl border border-[#EBE2D8] shadow-[0_2px_10px_-2px_rgba(79,0,18,0.03)] overflow-hidden">
+        <div className="p-4 border-b border-[#EBE2D8] bg-[#FAF6F2] flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Truck className="w-4 h-4 text-[#6D1826]" />
+            <h2 className="text-xs uppercase tracking-wider font-semibold text-[#1F1B17]">
+              Shipments & Fulfillment ({order.shipments?.length || 0})
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <Link
+              href={`/admin/shipments?search=${encodeURIComponent(order.order_number)}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#554243] bg-white border border-[#EBE2D8] hover:bg-[#FAF6F2] rounded-lg transition-colors"
+            >
+              <span>Shipments Console</span>
+              <ExternalLink className="w-3 h-3 text-[#8C7A78]" />
+            </Link>
+
+            {isEligibleForShipment && (
+              <button
+                type="button"
+                onClick={handleOpenCreateShipment}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#4F0012] hover:bg-[#6D1826] text-white rounded-lg transition-colors shadow-xs"
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>Create Shipment</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4">
+          {order.shipments && order.shipments.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-[#F5EFE9] text-[#8C7A78] uppercase text-[10px] tracking-wider font-semibold">
+                    <th scope="col" className="py-2.5 px-3">Shipment Ref</th>
+                    <th scope="col" className="py-2.5 px-3">Carrier</th>
+                    <th scope="col" className="py-2.5 px-3">Tracking Number</th>
+                    <th scope="col" className="py-2.5 px-3">Status</th>
+                    <th scope="col" className="py-2.5 px-3">Dispatched At</th>
+                    <th scope="col" className="py-2.5 px-3">Delivered At</th>
+                    <th scope="col" className="py-2.5 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F5EFE9]">
+                  {order.shipments.map((shp) => (
+                    <tr key={shp.id} className="hover:bg-[#FAF6F2]/40 transition-colors">
+                      <td className="py-2.5 px-3 font-mono text-[11px] text-[#1F1B17]">
+                        {shp.id.slice(0, 8)}...
+                      </td>
+                      <td className="py-2.5 px-3 font-medium text-[#1F1B17]">
+                        {shp.carrier || "—"}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        {shp.tracking_number ? (
+                          shp.tracking_url ? (
+                            <a
+                              href={shp.tracking_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[#6D1826] hover:underline font-mono text-[11px]"
+                            >
+                              <span>{shp.tracking_number}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="font-mono text-[11px] text-[#554243]">
+                              {shp.tracking_number}
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[#A89895] italic">Not assigned</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        {renderShipmentStatusBadge(shp.status, shp.status_display)}
+                      </td>
+                      <td className="py-2.5 px-3 text-[#554243] text-[11px] whitespace-nowrap">
+                        {shp.dispatched_at ? formatDate(shp.dispatched_at) : "—"}
+                      </td>
+                      <td className="py-2.5 px-3 text-[#554243] text-[11px] whitespace-nowrap">
+                        {shp.delivered_at ? formatDate(shp.delivered_at) : "—"}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <Link
+                          href={`/admin/shipments?search=${encodeURIComponent(order.order_number)}`}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6D1826] hover:underline"
+                        >
+                          <span>Manage</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-6 text-center">
+              <Truck className="w-8 h-8 text-[#A89895] mx-auto mb-2 opacity-60" />
+              <p className="text-xs font-medium text-[#1F1B17] mb-1">
+                No shipment records created for this order yet.
+              </p>
+              <p className="text-[11px] text-[#8C7A78] max-w-md mx-auto mb-4">
+                {isEligibleForShipment
+                  ? "This order has been verified and paid. Create a shipment record to assign a carrier, enter tracking details, and initiate dispatch."
+                  : hasActiveShipment
+                  ? "An active shipment is already associated with this order."
+                  : !isPaid
+                  ? "Shipments cannot be created or dispatched for unpaid orders. Payment status must be PAID."
+                  : "Order status is currently ineligible for new shipment creation."}
+              </p>
+              {isEligibleForShipment && (
+                <button
+                  type="button"
+                  onClick={handleOpenCreateShipment}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium bg-[#4F0012] hover:bg-[#6D1826] text-white rounded-lg transition-colors shadow-xs"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Create First Shipment</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -956,7 +1214,7 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
                         <td className="py-2.5 px-3 text-[#554243] text-[11px] font-mono">
                           {log.actor_email || "System"}
                         </td>
-                        <td className="py-2.5 px-3 text-[#554243] text-[11px] max-w-xs break-words">
+                        <td className="py-2.5 px-3 text-[#554243] text-[11px] max-w-xs wrap-break-word">
                           {log.note || "—"}
                         </td>
                       </tr>
@@ -1247,6 +1505,176 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Create Shipment Modal Dialog */}
+      {createShipmentModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-shipment-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        >
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EBE2D8] space-y-5 animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3
+                  id="modal-shipment-title"
+                  className="text-base font-serif font-bold text-[#1F1B17]"
+                >
+                  Create Order Shipment
+                </h3>
+                <p className="text-xs text-[#8C7A78] mt-1">
+                  Assign carrier and tracking information to initiate parcel fulfillment for {order.order_number}.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseCreateShipment}
+                disabled={submittingShipment}
+                className="text-[#8C7A78] hover:text-[#1F1B17] p-1 rounded-lg hover:bg-[#FAF6F2] transition-colors disabled:opacity-50"
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateShipment} className="space-y-4">
+              {/* Carrier Selection */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="shipment-carrier"
+                  className="block text-xs font-medium text-[#1F1B17]"
+                >
+                  Logistics Carrier
+                </label>
+                <input
+                  id="shipment-carrier"
+                  type="text"
+                  value={shipmentCarrier}
+                  onChange={(e) => setShipmentCarrier(e.target.value)}
+                  placeholder="e.g. Blue Dart, Delhivery, DTDC, FedEx"
+                  disabled={submittingShipment}
+                  className="w-full text-xs rounded-lg border border-[#EBE2D8] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#4F0012]/20 focus:border-[#4F0012] bg-[#FAF6F2]/30 disabled:opacity-50"
+                  maxLength={100}
+                />
+              </div>
+
+              {/* Tracking Number */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="shipment-tracking-number"
+                  className="block text-xs font-medium text-[#1F1B17]"
+                >
+                  Tracking Number / Waybill
+                </label>
+                <input
+                  id="shipment-tracking-number"
+                  type="text"
+                  value={shipmentTrackingNumber}
+                  onChange={(e) => setShipmentTrackingNumber(e.target.value)}
+                  placeholder="e.g. BD982341209IN"
+                  disabled={submittingShipment}
+                  className="w-full text-xs rounded-lg border border-[#EBE2D8] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#4F0012]/20 focus:border-[#4F0012] bg-[#FAF6F2]/30 font-mono disabled:opacity-50"
+                  maxLength={100}
+                />
+              </div>
+
+              {/* Tracking URL */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="shipment-tracking-url"
+                  className="block text-xs font-medium text-[#1F1B17]"
+                >
+                  Tracking Portal URL{" "}
+                  <span className="text-[#8C7A78] font-normal">(Optional, http/https only)</span>
+                </label>
+                <input
+                  id="shipment-tracking-url"
+                  type="url"
+                  value={shipmentTrackingUrl}
+                  onChange={(e) => setShipmentTrackingUrl(e.target.value)}
+                  placeholder="https://track.bluedart.com/track?ref=..."
+                  disabled={submittingShipment}
+                  className="w-full text-xs rounded-lg border border-[#EBE2D8] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#4F0012]/20 focus:border-[#4F0012] bg-[#FAF6F2]/30 font-mono disabled:opacity-50"
+                  maxLength={500}
+                />
+              </div>
+
+              {/* Initial Status */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="shipment-initial-status"
+                  className="block text-xs font-medium text-[#1F1B17]"
+                >
+                  Initial Shipment Status
+                </label>
+                <select
+                  id="shipment-initial-status"
+                  value={shipmentInitialStatus}
+                  onChange={(e) =>
+                    setShipmentInitialStatus(
+                      e.target.value as "PENDING" | "READY_TO_SHIP"
+                    )
+                  }
+                  disabled={submittingShipment}
+                  className="w-full text-xs rounded-lg border border-[#EBE2D8] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#4F0012]/20 focus:border-[#4F0012] bg-white disabled:opacity-50"
+                >
+                  <option value="READY_TO_SHIP">Ready to Ship (Packed, awaiting carrier dispatch)</option>
+                  <option value="PENDING">Pending (Packing in atelier)</option>
+                </select>
+              </div>
+
+              {/* Internal Shipping Note */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="shipment-note"
+                  className="block text-xs font-medium text-[#1F1B17]"
+                >
+                  Internal Shipping Note{" "}
+                  <span className="text-[#8C7A78] font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  id="shipment-note"
+                  rows={2}
+                  value={shipmentInternalNote}
+                  onChange={(e) => setShipmentInternalNote(e.target.value)}
+                  placeholder="e.g. Fragile silk packaging, tamper tape verified..."
+                  disabled={submittingShipment}
+                  className="w-full text-xs rounded-lg border border-[#EBE2D8] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#4F0012]/20 focus:border-[#4F0012] bg-[#FAF6F2]/30 disabled:opacity-50"
+                  maxLength={500}
+                />
+              </div>
+
+              {/* Error Alert */}
+              {shipmentError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{shipmentError}</span>
+                </div>
+              )}
+
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseCreateShipment}
+                  disabled={submittingShipment}
+                  className="px-4 py-2 text-xs font-medium text-[#554243] hover:text-[#1F1B17] bg-white border border-[#EBE2D8] hover:bg-[#FAF6F2] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingShipment}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg text-white bg-[#4F0012] hover:bg-[#6D1826] transition-colors disabled:opacity-50 shadow-xs"
+                >
+                  {submittingShipment && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{submittingShipment ? "Creating Shipment..." : "Create Shipment"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

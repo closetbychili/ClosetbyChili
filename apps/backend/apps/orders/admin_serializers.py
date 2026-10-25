@@ -9,9 +9,17 @@ Exposes zero auth secrets, tokens, or passwords.
 from __future__ import annotations
 
 from typing import Any
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from apps.orders.models import Order, OrderAuditLog, OrderItem
+from apps.orders.models import (
+    Order,
+    OrderAuditLog,
+    OrderItem,
+    Shipment,
+    ShipmentAuditLog,
+    validate_tracking_url,
+)
 from apps.inventory.models import InventoryItem, InventoryMovement, InventoryReservation
 
 
@@ -272,11 +280,44 @@ class AdminOrderCancelSerializer(serializers.Serializer):
     note = serializers.CharField(required=False, allow_blank=True, default="", max_length=1000)
 
 
+class AdminShipmentSummarySerializer(serializers.ModelSerializer):
+    """Summary serializer for shipments embedded within order detail."""
+
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    dispatched_by_email = serializers.SerializerMethodField()
+    delivered_by_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Shipment
+        fields = [
+            "id",
+            "status",
+            "status_display",
+            "carrier",
+            "tracking_number",
+            "tracking_url",
+            "internal_note",
+            "dispatched_at",
+            "dispatched_by_email",
+            "delivered_at",
+            "delivered_by_email",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_dispatched_by_email(self, obj: Shipment) -> str:
+        return obj.dispatched_by.email if obj.dispatched_by else ""
+
+    def get_delivered_by_email(self, obj: Shipment) -> str:
+        return obj.delivered_by.email if obj.delivered_by else ""
+
+
 class AdminOrderDetailSerializer(serializers.ModelSerializer):
     """
     Detailed serializer for administrative inspection of a single customer order.
     Includes full monetary breakdown, customer summary, historical address snapshots,
-    item snapshots, safe payment audit records, and inventory reservation/movement timeline.
+    item snapshots, safe payment audit records, shipments, and inventory reservation/movement timeline.
     Never exposes cryptographic secrets or signatures.
     """
 
@@ -315,6 +356,7 @@ class AdminOrderDetailSerializer(serializers.ModelSerializer):
     items = AdminOrderItemSerializer(many=True, read_only=True)
     payments = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
+    shipments = AdminShipmentSummarySerializer(many=True, read_only=True)
     inventory = serializers.SerializerMethodField()
     audit_logs = AdminOrderAuditLogSerializer(many=True, read_only=True)
 
@@ -342,6 +384,7 @@ class AdminOrderDetailSerializer(serializers.ModelSerializer):
             "items",
             "payments",
             "payment",
+            "shipments",
             "inventory",
             "audit_logs",
             "created_at",
@@ -442,3 +485,247 @@ class AdminOrderDetailSerializer(serializers.ModelSerializer):
             "reservations": AdminOrderReservationSerializer(reservations, many=True).data,
             "movements": AdminOrderMovementSerializer(movements, many=True).data,
         }
+
+
+# =============================================================================
+# Shipment Management Serializers (Sprint A4.5)
+# =============================================================================
+
+
+class AdminShipmentAuditLogSerializer(serializers.ModelSerializer):
+    """Serializer for immutable shipment audit log entries."""
+
+    event_type_display = serializers.CharField(source="get_event_type_display", read_only=True)
+
+    class Meta:
+        model = ShipmentAuditLog
+        fields = [
+            "id",
+            "from_status",
+            "to_status",
+            "event_type",
+            "event_type_display",
+            "actor_email",
+            "note",
+            "metadata",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class AdminShipmentListSerializer(serializers.ModelSerializer):
+    """Serializer for administrative shipment listing endpoint."""
+
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    order_id = serializers.UUIDField(source="order.id", read_only=True)
+    order_number = serializers.CharField(source="order.order_number", read_only=True)
+    order_status = serializers.CharField(source="order.status", read_only=True)
+    order_status_display = serializers.CharField(source="order.get_status_display", read_only=True)
+    order_payment_status = serializers.CharField(source="order.payment_status", read_only=True)
+    order_payment_status_display = serializers.CharField(source="order.get_payment_status_display", read_only=True)
+    customer_email = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+    item_count = serializers.SerializerMethodField()
+    dispatched_by_email = serializers.SerializerMethodField()
+    delivered_by_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Shipment
+        fields = [
+            "id",
+            "order_id",
+            "order_number",
+            "order_status",
+            "order_status_display",
+            "order_payment_status",
+            "order_payment_status_display",
+            "status",
+            "status_display",
+            "carrier",
+            "tracking_number",
+            "tracking_url",
+            "internal_note",
+            "dispatched_at",
+            "dispatched_by_email",
+            "delivered_at",
+            "delivered_by_email",
+            "customer_email",
+            "customer_name",
+            "item_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_customer_email(self, obj: Shipment) -> str:
+        return obj.order.user.email if obj.order and obj.order.user else ""
+
+    def get_customer_name(self, obj: Shipment) -> str:
+        user = obj.order.user if obj.order else None
+        if not user:
+            return ""
+        if hasattr(user, "profile") and user.profile and getattr(user.profile, "display_name", ""):
+            return user.profile.display_name.strip()
+        if obj.order.shipping_address_snapshot and isinstance(obj.order.shipping_address_snapshot, dict):
+            name = obj.order.shipping_address_snapshot.get("full_name")
+            if name:
+                return str(name).strip()
+        return user.email.split("@")[0] if user.email else ""
+
+    def get_item_count(self, obj: Shipment) -> int:
+        return obj.order.items.count() if obj.order else 0
+
+    def get_dispatched_by_email(self, obj: Shipment) -> str:
+        return obj.dispatched_by.email if obj.dispatched_by else ""
+
+    def get_delivered_by_email(self, obj: Shipment) -> str:
+        return obj.delivered_by.email if obj.delivered_by else ""
+
+
+class AdminShipmentDetailOrderSerializer(serializers.ModelSerializer):
+    """Detailed order summary for the shipment detail view."""
+
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    payment_status_display = serializers.CharField(source="get_payment_status_display", read_only=True)
+    customer = AdminOrderCustomerSerializer(source="user", read_only=True)
+    shipping_address = serializers.SerializerMethodField()
+    items = AdminOrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "order_number",
+            "status",
+            "status_display",
+            "payment_status",
+            "payment_status_display",
+            "currency",
+            "total",
+            "customer",
+            "shipping_address",
+            "items",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_shipping_address(self, obj: Order) -> dict[str, Any]:
+        return obj.shipping_address_snapshot if isinstance(obj.shipping_address_snapshot, dict) else {}
+
+
+class AdminShipmentDetailSerializer(serializers.ModelSerializer):
+    """Full detail serializer for single shipment view."""
+
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    order = AdminShipmentDetailOrderSerializer(read_only=True)
+    audit_logs = AdminShipmentAuditLogSerializer(many=True, read_only=True)
+    dispatched_by_email = serializers.SerializerMethodField()
+    delivered_by_email = serializers.SerializerMethodField()
+    created_by_email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Shipment
+        fields = [
+            "id",
+            "status",
+            "status_display",
+            "carrier",
+            "tracking_number",
+            "tracking_url",
+            "internal_note",
+            "dispatched_at",
+            "dispatched_by_email",
+            "delivered_at",
+            "delivered_by_email",
+            "created_by_email",
+            "created_at",
+            "updated_at",
+            "order",
+            "audit_logs",
+        ]
+        read_only_fields = fields
+
+    def get_dispatched_by_email(self, obj: Shipment) -> str:
+        return obj.dispatched_by.email if obj.dispatched_by else ""
+
+    def get_delivered_by_email(self, obj: Shipment) -> str:
+        return obj.delivered_by.email if obj.delivered_by else ""
+
+    def get_created_by_email(self, obj: Shipment) -> str:
+        return obj.created_by.email if obj.created_by else ""
+
+
+class AdminShipmentCreateSerializer(serializers.Serializer):
+    """Input serializer for creating a new shipment for an order."""
+
+    carrier = serializers.CharField(required=False, allow_blank=True, default="", max_length=100)
+    tracking_number = serializers.CharField(required=False, allow_blank=True, default="", max_length=100)
+    tracking_url = serializers.CharField(required=False, allow_blank=True, default="", max_length=500)
+    status = serializers.ChoiceField(
+        choices=[Shipment.Status.PENDING, Shipment.Status.READY_TO_SHIP],
+        required=False,
+        default=Shipment.Status.READY_TO_SHIP,
+    )
+    internal_note = serializers.CharField(required=False, allow_blank=True, default="", max_length=1000)
+
+    def validate_tracking_url(self, value: str) -> str:
+        val = value.strip()
+        if val:
+            try:
+                validate_tracking_url(val)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError(exc.message)
+        return val
+
+
+class AdminShipmentTrackingUpdateSerializer(serializers.Serializer):
+    """Input serializer for updating carrier and tracking information."""
+
+    carrier = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    tracking_number = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    tracking_url = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    internal_note = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+
+    def validate_tracking_url(self, value: str) -> str:
+        val = value.strip()
+        if val:
+            try:
+                validate_tracking_url(val)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError(exc.message)
+        return val
+
+
+class AdminShipmentDispatchSerializer(serializers.Serializer):
+    """Input serializer for dispatching a shipment."""
+
+    carrier = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    tracking_number = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    tracking_url = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    note = serializers.CharField(required=False, allow_blank=True, default="", max_length=1000)
+
+    def validate_tracking_url(self, value: str) -> str:
+        val = value.strip()
+        if val:
+            try:
+                validate_tracking_url(val)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError(exc.message)
+        return val
+
+
+class AdminShipmentTransitionSerializer(serializers.Serializer):
+    """Input serializer for transition operations (in-transit, delivered, failed, returned)."""
+
+    target_status = serializers.CharField(required=True)
+    note = serializers.CharField(required=False, allow_blank=True, default="", max_length=1000)
+
+    def validate_target_status(self, value: str) -> str:
+        val = value.strip().upper()
+        valid = {c[0] for c in Shipment.Status.choices}
+        if val not in valid:
+            raise serializers.ValidationError(
+                f"Invalid target status '{value}'. Allowed choices: {', '.join(sorted(valid))}."
+            )
+        return val
+

@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Sparkles,
   TicketPercent,
+  Truck,
   Users,
   Warehouse,
 } from "lucide-react";
@@ -70,6 +71,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: ClipboardList,
     section: "operations",
     description: "Customer orders, payment states and fulfillment tracking",
+  },
+  {
+    title: "Shipments",
+    href: "/admin/shipments",
+    icon: Truck,
+    section: "operations",
+    description: "Carrier parcels, tracking details and dispatch workflows",
   },
   {
     title: "Coupons & Promotions",

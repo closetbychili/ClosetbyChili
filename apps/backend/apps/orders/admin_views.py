@@ -30,9 +30,21 @@ from apps.orders.admin_serializers import (
     AdminOrderDetailSerializer,
     AdminOrderListSerializer,
     AdminOrderStatusTransitionSerializer,
+    AdminShipmentCreateSerializer,
+    AdminShipmentDetailSerializer,
+    AdminShipmentDispatchSerializer,
+    AdminShipmentListSerializer,
+    AdminShipmentTrackingUpdateSerializer,
+    AdminShipmentTransitionSerializer,
 )
-from apps.orders.models import Order, OrderAuditLog, OrderItem
+from apps.orders.models import Order, OrderAuditLog, OrderItem, Shipment, ShipmentAuditLog
 from apps.orders.services import cancel_order_admin, transition_order_status
+from apps.orders.shipment_services import (
+    create_order_shipment,
+    dispatch_shipment,
+    transition_shipment_status,
+    update_shipment_tracking,
+)
 
 ALLOWED_ORDERING_FIELDS = {
     "created_at",
@@ -266,6 +278,10 @@ def resolve_order(order_id_param: str) -> Order:
             "audit_logs",
             queryset=OrderAuditLog.objects.select_related("actor").order_by("-created_at"),
         ),
+        Prefetch(
+            "shipments",
+            queryset=Shipment.objects.select_related("dispatched_by", "delivered_by").order_by("-created_at"),
+        ),
     )
 
     if order_uuid:
@@ -373,5 +389,370 @@ class AdminOrderHistoryView(APIView):
         history = order.audit_logs.all().order_by("-created_at")
         serializer = AdminOrderAuditLogSerializer(history, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Shipment Admin Views & Filtering (Sprint A4.5)
+# =============================================================================
+
+ALLOWED_SHIPMENT_ORDERING_FIELDS = {
+    "created_at",
+    "-created_at",
+    "updated_at",
+    "-updated_at",
+    "dispatched_at",
+    "-dispatched_at",
+    "delivered_at",
+    "-delivered_at",
+    "status",
+    "-status",
+    "carrier",
+    "-carrier",
+    "order__order_number",
+    "-order__order_number",
+}
+
+
+class AdminShipmentFilterBackend(filters.BaseFilterBackend):
+    """
+    Filter backend for administrative shipment listing.
+    Supports:
+    - Search: order_number, tracking_number, carrier, patron email
+    - status: validated against Shipment.Status choices (case-insensitive)
+    - carrier: carrier name match
+    - order_id: UUID of order
+    - order_number: order number string
+    - Date ranges:
+      - created_after / date_from / start_date & created_before / date_to / end_date
+      - dispatched_after & dispatched_before
+      - delivered_after & delivered_before
+    - ordering: validated against ALLOWED_SHIPMENT_ORDERING_FIELDS
+    """
+
+    def filter_queryset(self, request: Request, queryset, view):
+        # 1. Search across order number, tracking number, carrier, patron email, address
+        search = (request.query_params.get("search") or "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(order__order_number__icontains=search)
+                | Q(tracking_number__icontains=search)
+                | Q(carrier__icontains=search)
+                | Q(order__user__email__icontains=search)
+                | Q(order__shipping_address_snapshot__icontains=search)
+            )
+
+        # 2. Status filter
+        status_param = (request.query_params.get("status") or "").strip().upper()
+        if status_param and status_param != "ALL":
+            valid_statuses = {choice[0].upper(): choice[0] for choice in Shipment.Status.choices}
+            if status_param not in valid_statuses:
+                raise ValidationError({
+                    "status": (
+                        f"Invalid shipment status '{status_param}'. "
+                        f"Allowed choices are: {', '.join(sorted(valid_statuses.keys()))}."
+                    )
+                })
+            queryset = queryset.filter(status=valid_statuses[status_param])
+
+        # 3. Carrier filter
+        carrier_param = (request.query_params.get("carrier") or "").strip()
+        if carrier_param and carrier_param.upper() != "ALL":
+            queryset = queryset.filter(carrier__icontains=carrier_param)
+
+        # 4. Order ID filter
+        order_id = (request.query_params.get("order_id") or "").strip()
+        if order_id and order_id.lower() != "all":
+            try:
+                ord_uuid = uuid.UUID(order_id)
+                queryset = queryset.filter(order_id=ord_uuid)
+            except (ValueError, TypeError):
+                raise ValidationError({"order_id": f"Invalid order UUID '{order_id}'."})
+
+        # 5. Order Number filter
+        order_num = (request.query_params.get("order_number") or "").strip()
+        if order_num:
+            queryset = queryset.filter(order__order_number__iexact=order_num)
+
+        # 6. Created Date Range
+        created_after = (
+            request.query_params.get("created_after")
+            or request.query_params.get("start_date")
+            or request.query_params.get("date_from")
+        )
+        if created_after and created_after.strip():
+            try:
+                dt_after = parse_date_param(created_after, is_end=False)
+                queryset = queryset.filter(created_at__gte=dt_after)
+            except ValueError as exc:
+                raise ValidationError({"created_after": str(exc)}) from exc
+
+        created_before = (
+            request.query_params.get("created_before")
+            or request.query_params.get("end_date")
+            or request.query_params.get("date_to")
+        )
+        if created_before and created_before.strip():
+            try:
+                dt_before = parse_date_param(created_before, is_end=True)
+                queryset = queryset.filter(created_at__lte=dt_before)
+            except ValueError as exc:
+                raise ValidationError({"created_before": str(exc)}) from exc
+
+        # 7. Dispatched Date Range
+        dispatched_after = request.query_params.get("dispatched_after")
+        if dispatched_after and dispatched_after.strip():
+            try:
+                dt = parse_date_param(dispatched_after, is_end=False)
+                queryset = queryset.filter(dispatched_at__gte=dt)
+            except ValueError as exc:
+                raise ValidationError({"dispatched_after": str(exc)}) from exc
+
+        dispatched_before = request.query_params.get("dispatched_before")
+        if dispatched_before and dispatched_before.strip():
+            try:
+                dt = parse_date_param(dispatched_before, is_end=True)
+                queryset = queryset.filter(dispatched_at__lte=dt)
+            except ValueError as exc:
+                raise ValidationError({"dispatched_before": str(exc)}) from exc
+
+        # 8. Delivered Date Range
+        delivered_after = request.query_params.get("delivered_after")
+        if delivered_after and delivered_after.strip():
+            try:
+                dt = parse_date_param(delivered_after, is_end=False)
+                queryset = queryset.filter(delivered_at__gte=dt)
+            except ValueError as exc:
+                raise ValidationError({"delivered_after": str(exc)}) from exc
+
+        delivered_before = request.query_params.get("delivered_before")
+        if delivered_before and delivered_before.strip():
+            try:
+                dt = parse_date_param(delivered_before, is_end=True)
+                queryset = queryset.filter(delivered_at__lte=dt)
+            except ValueError as exc:
+                raise ValidationError({"delivered_before": str(exc)}) from exc
+
+        # 9. Deterministic Ordering
+        ordering = (request.query_params.get("ordering") or "-created_at").strip()
+        if ordering:
+            if ordering not in ALLOWED_SHIPMENT_ORDERING_FIELDS:
+                raise ValidationError({
+                    "ordering": (
+                        f"Invalid ordering field '{ordering}'. Allowed fields: {', '.join(sorted(ALLOWED_SHIPMENT_ORDERING_FIELDS))}."
+                    )
+                })
+            if ordering in ("-id", "id"):
+                queryset = queryset.order_by(ordering)
+            else:
+                queryset = queryset.order_by(ordering, "-id")
+        else:
+            queryset = queryset.order_by("-created_at", "-id")
+
+        return queryset
+
+
+class AdminShipmentListView(generics.ListAPIView):
+    """
+    GET /api/v1/admin/shipments/
+
+    Paginated listing of shipments for administrative fulfillment operations.
+    Enforces administrator permissions.
+    """
+
+    permission_classes = [IsAdminUser]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [AdminShipmentFilterBackend]
+    serializer_class = AdminShipmentListSerializer
+
+    def get_queryset(self):
+        return (
+            Shipment.objects.select_related(
+                "order",
+                "order__user",
+                "order__user__profile",
+                "dispatched_by",
+                "delivered_by",
+            )
+            .prefetch_related("order__items")
+            .all()
+        )
+
+
+def resolve_shipment(shipment_id_param: str) -> Shipment:
+    """
+    Look up a shipment by UUID and prefetch relationships needed for inspection and audits.
+    """
+    cleaned = (shipment_id_param or "").strip()
+    if not cleaned:
+        raise NotFound("Shipment not found.")
+    try:
+        shipment_uuid = uuid.UUID(cleaned)
+    except (ValueError, AttributeError):
+        raise NotFound(f"Shipment '{cleaned}' not found: invalid UUID.")
+
+    shipment = (
+        Shipment.objects.select_related(
+            "order",
+            "order__user",
+            "order__user__profile",
+            "created_by",
+            "dispatched_by",
+            "delivered_by",
+        )
+        .prefetch_related(
+            Prefetch(
+                "order__items",
+                queryset=OrderItem.objects.select_related("product", "variant").prefetch_related("product__images"),
+            ),
+            Prefetch(
+                "audit_logs",
+                queryset=ShipmentAuditLog.objects.select_related("actor").order_by("-created_at"),
+            ),
+        )
+        .filter(id=shipment_uuid)
+        .first()
+    )
+    if not shipment:
+        raise NotFound(f"Shipment '{cleaned}' not found.")
+    return shipment
+
+
+class AdminOrderShipmentCreateView(APIView):
+    """
+    POST /api/v1/admin/orders/<order_id>/shipments/
+
+    Create a shipment for an eligible order.
+    Validates order eligibility, payment status, safe tracking URLs, and active shipment constraint.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, order_id: str) -> Response:
+        order = resolve_order(order_id)
+        serializer = AdminShipmentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        shipment, _ = create_order_shipment(
+            order=order,
+            carrier=data.get("carrier", ""),
+            tracking_number=data.get("tracking_number", ""),
+            tracking_url=data.get("tracking_url", ""),
+            status=data.get("status", Shipment.Status.READY_TO_SHIP),
+            internal_note=data.get("internal_note", ""),
+            actor=request.user,
+        )
+
+        refreshed = resolve_shipment(str(shipment.id))
+        response_serializer = AdminShipmentDetailSerializer(refreshed)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminShipmentDetailView(APIView):
+    """
+    GET /api/v1/admin/shipments/<shipment_id>/
+
+    Admin inspection of a single shipment with order reference, safe customer shipping details,
+    and complete audit log history.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, shipment_id: str) -> Response:
+        shipment = resolve_shipment(str(shipment_id))
+        serializer = AdminShipmentDetailSerializer(shipment)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminShipmentTrackingUpdateView(APIView):
+    """
+    PATCH /api/v1/admin/shipments/<shipment_id>/tracking/
+
+    Update carrier and tracking details on a shipment.
+    Audits metadata changes without mutating shipment status.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request: Request, shipment_id: str) -> Response:
+        shipment = resolve_shipment(str(shipment_id))
+        serializer = AdminShipmentTrackingUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        updated_shipment, _ = update_shipment_tracking(
+            shipment=shipment,
+            carrier=data.get("carrier"),
+            tracking_number=data.get("tracking_number"),
+            tracking_url=data.get("tracking_url"),
+            internal_note=data.get("internal_note"),
+            actor=request.user,
+        )
+
+        refreshed = resolve_shipment(str(updated_shipment.id))
+        response_serializer = AdminShipmentDetailSerializer(refreshed)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminShipmentDispatchView(APIView):
+    """
+    POST /api/v1/admin/shipments/<shipment_id>/dispatch/
+
+    Mark an eligible shipment as dispatched.
+    Synchronizes order lifecycle and writes immutable audit logs.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, shipment_id: str) -> Response:
+        shipment = resolve_shipment(str(shipment_id))
+        serializer = AdminShipmentDispatchSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        dispatched_shipment, _ = dispatch_shipment(
+            shipment=shipment,
+            carrier=data.get("carrier"),
+            tracking_number=data.get("tracking_number"),
+            tracking_url=data.get("tracking_url"),
+            actor=request.user,
+            note=data.get("note", ""),
+        )
+
+        refreshed = resolve_shipment(str(dispatched_shipment.id))
+        response_serializer = AdminShipmentDetailSerializer(refreshed)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminShipmentTransitionView(APIView):
+    """
+    POST /api/v1/admin/shipments/<shipment_id>/transition/
+    POST /api/v1/admin/shipments/<shipment_id>/status/
+
+    Transition shipment status (IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED, RETURNED).
+    Validates state machine and synchronizes order status upon delivery.
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, shipment_id: str) -> Response:
+        shipment = resolve_shipment(str(shipment_id))
+        serializer = AdminShipmentTransitionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_status = serializer.validated_data["target_status"]
+        note = serializer.validated_data.get("note", "")
+
+        transitioned_shipment, _ = transition_shipment_status(
+            shipment=shipment,
+            target_status=target_status,
+            actor=request.user,
+            note=note,
+        )
+
+        refreshed = resolve_shipment(str(transitioned_shipment.id))
+        response_serializer = AdminShipmentDetailSerializer(refreshed)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
 
 

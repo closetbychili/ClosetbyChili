@@ -66,10 +66,10 @@ describe("Admin Navigation & Layout Shell", () => {
   });
 
   describe("AdminSidebar Component", () => {
-    it("renders all 11 required navigation links with valid hrefs and no dead anchors", () => {
+    it("renders all 12 required navigation links with valid hrefs and no dead anchors", () => {
       renderWithAdminContext(<AdminSidebar />);
 
-      expect(ADMIN_NAV_ITEMS).toHaveLength(11);
+      expect(ADMIN_NAV_ITEMS).toHaveLength(12);
 
       ADMIN_NAV_ITEMS.forEach((item) => {
         const link = screen.getByRole("link", { name: new RegExp(item.title, "i") });

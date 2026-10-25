@@ -363,7 +363,7 @@ class AdminOrderDetailApiTests(TestCase):
                 line_total=Decimal("10000.00"),
             )
 
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             resp = self.client.get(f"/api/v1/admin/orders/{multi_order.id}/")
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
             self.assertEqual(len(resp.json()["items"]), 5)

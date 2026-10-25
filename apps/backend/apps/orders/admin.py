@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from apps.orders.models import Order, OrderItem
+from apps.orders.models import Order, OrderAuditLog, OrderItem, Shipment, ShipmentAuditLog
 
 
 @admin.register(Order)
@@ -40,3 +40,38 @@ class OrderItemAdmin(admin.ModelAdmin):
     @admin.display(description="Order")
     def order_number(self, obj: OrderItem) -> str:
         return obj.order.order_number
+
+
+@admin.register(Shipment)
+class ShipmentAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "order",
+        "status",
+        "carrier",
+        "tracking_number",
+        "dispatched_at",
+        "delivered_at",
+        "created_at",
+    ]
+    list_filter = ["status", "carrier"]
+    search_fields = ["order__order_number", "tracking_number", "carrier"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    ordering = ["-created_at"]
+
+
+@admin.register(ShipmentAuditLog)
+class ShipmentAuditLogAdmin(admin.ModelAdmin):
+    list_display = [
+        "shipment",
+        "from_status",
+        "to_status",
+        "event_type",
+        "actor_email",
+        "created_at",
+    ]
+    list_filter = ["event_type"]
+    search_fields = ["shipment__id", "actor_email", "note"]
+    readonly_fields = ["id", "created_at"]
+    ordering = ["-created_at"]
+
