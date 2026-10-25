@@ -511,6 +511,16 @@ class Coupon(models.Model):
         PERCENTAGE = "PERCENTAGE", "Percentage"
         FIXED_AMOUNT = "FIXED_AMOUNT", "Fixed Amount"
 
+    class TargetingMode(models.TextChoices):
+        ALL_PRODUCTS = "ALL_PRODUCTS", "All Products"
+        SPECIFIC_PRODUCTS = "SPECIFIC_PRODUCTS", "Specific Products"
+        SPECIFIC_CATEGORIES = "SPECIFIC_CATEGORIES", "Specific Categories"
+        SPECIFIC_COLLECTIONS = "SPECIFIC_COLLECTIONS", "Specific Collections"
+        PRODUCTS_AND_CATEGORIES = "PRODUCTS_AND_CATEGORIES", "Products and Categories"
+        PRODUCTS_AND_COLLECTIONS = "PRODUCTS_AND_COLLECTIONS", "Products and Collections"
+        CATEGORIES_AND_COLLECTIONS = "CATEGORIES_AND_COLLECTIONS", "Categories and Collections"
+        MIXED = "MIXED", "Mixed (Products, Categories & Collections)"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(
         max_length=50,
@@ -543,6 +553,31 @@ class Coupon(models.Model):
         max_length=3,
         default="INR",
         help_text="ISO 4217 3-letter currency code for fixed discounts.",
+    )
+    targeting_mode = models.CharField(
+        max_length=32,
+        choices=TargetingMode.choices,
+        default=TargetingMode.ALL_PRODUCTS,
+        db_index=True,
+        help_text="Targeting scope determining which catalog products qualify for discount redemption.",
+    )
+    applicable_products = models.ManyToManyField(
+        "catalog.Product",
+        related_name="targeted_coupons",
+        blank=True,
+        help_text="Explicit products eligible for this coupon under product-targeted modes.",
+    )
+    applicable_categories = models.ManyToManyField(
+        "catalog.Category",
+        related_name="targeted_coupons",
+        blank=True,
+        help_text="Explicit categories eligible for this coupon under category-targeted modes.",
+    )
+    applicable_collections = models.ManyToManyField(
+        "catalog.Collection",
+        related_name="targeted_coupons",
+        blank=True,
+        help_text="Explicit merchandising collections eligible for this coupon under collection-targeted modes.",
     )
     min_order_subtotal = models.DecimalField(
         max_digits=12,
@@ -645,8 +680,27 @@ class Coupon(models.Model):
             models.Index(fields=["code"], name="idx_coupon_code"),
             models.Index(fields=["is_active", "start_date", "end_date"], name="idx_coupon_active_dates"),
             models.Index(fields=["discount_type"], name="idx_coupon_discount_type"),
+            models.Index(fields=["targeting_mode"], name="idx_coupon_targeting_mode"),
             models.Index(fields=["created_at"], name="idx_coupon_created_at"),
         ]
+
+    @property
+    def target_summary(self) -> str:
+        if self.targeting_mode == self.TargetingMode.ALL_PRODUCTS:
+            return "All Products"
+        if not self.pk:
+            return self.get_targeting_mode_display()
+        parts = []
+        p_count = self.applicable_products.count()
+        c_count = self.applicable_categories.count()
+        col_count = self.applicable_collections.count()
+        if p_count:
+            parts.append(f"{p_count} Product{'s' if p_count != 1 else ''}")
+        if c_count:
+            parts.append(f"{c_count} Categor{'ies' if c_count != 1 else 'y'}")
+        if col_count:
+            parts.append(f"{col_count} Collection{'s' if col_count != 1 else ''}")
+        return ", ".join(parts) if parts else self.get_targeting_mode_display()
 
     @property
     def lifecycle_status(self) -> str:
@@ -678,6 +732,8 @@ class Coupon(models.Model):
             raise ValidationError({"per_customer_limit": "Per-customer usage limit must be at least 1."})
         if self.start_date and self.end_date and self.end_date <= self.start_date:
             raise ValidationError({"end_date": "End date must be later than start date."})
+        if self.targeting_mode and self.targeting_mode not in self.TargetingMode.values:
+            raise ValidationError({"targeting_mode": f"Invalid targeting mode '{self.targeting_mode}'."})
 
     def save(self, *args, **kwargs):
         if self.code:

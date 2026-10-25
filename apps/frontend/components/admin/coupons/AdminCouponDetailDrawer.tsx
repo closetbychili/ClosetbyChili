@@ -12,6 +12,9 @@ import {
   User,
   Loader2,
   AlertCircle,
+  Layers,
+  Package,
+  FolderTree,
 } from "lucide-react";
 import {
   getAdminCouponDetail,
@@ -249,6 +252,84 @@ export default function AdminCouponDetailDrawer({
                     <div className="flex items-center gap-2 p-2 bg-purple-50 border border-purple-200 rounded-lg text-xs font-semibold text-purple-700">
                       <Sparkles className="w-4 h-4 shrink-0" />
                       <span>Restricted to First-Time Customers Only</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 2.5: Catalog Targeting & Scope */}
+                <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-stone-500" />
+                      Catalog Targeting & Scope
+                    </h3>
+                    <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-stone-200/80 text-stone-800">
+                      {coupon.targeting_mode}
+                    </span>
+                  </div>
+
+                  {coupon.targeting_mode === "ALL_PRODUCTS" ? (
+                    <p className="text-xs text-stone-600 bg-white p-2.5 rounded-lg border border-stone-200">
+                      Storewide coupon: qualifies all published catalog products meeting subtotal and date conditions.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 text-xs">
+                      {coupon.applicable_products && coupon.applicable_products.length > 0 && (
+                        <div>
+                          <span className="text-stone-400 font-medium block mb-1">
+                            Products ({coupon.applicable_products.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicable_products.map((p) => (
+                              <span
+                                key={p.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-stone-900 text-white rounded text-[11px]"
+                              >
+                                <Package className="w-3 h-3 text-stone-400" />
+                                {p.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {coupon.applicable_categories && coupon.applicable_categories.length > 0 && (
+                        <div>
+                          <span className="text-stone-400 font-medium block mb-1">
+                            Categories ({coupon.applicable_categories.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicable_categories.map((c) => (
+                              <span
+                                key={c.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-900 text-white rounded text-[11px]"
+                              >
+                                <FolderTree className="w-3 h-3 text-indigo-300" />
+                                {c.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {coupon.applicable_collections && coupon.applicable_collections.length > 0 && (
+                        <div>
+                          <span className="text-stone-400 font-medium block mb-1">
+                            Collections ({coupon.applicable_collections.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicable_collections.map((col) => (
+                              <span
+                                key={col.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-800 text-white rounded text-[11px]"
+                              >
+                                <Sparkles className="w-3 h-3 text-amber-300" />
+                                {col.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

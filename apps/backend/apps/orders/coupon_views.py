@@ -66,7 +66,12 @@ def resolve_coupon(coupon_id_param: Any) -> Coupon:
 
     coupon = (
         Coupon.objects.select_related("created_by", "updated_by")
-        .prefetch_related("audit_logs__actor")
+        .prefetch_related(
+            "audit_logs__actor",
+            "applicable_products",
+            "applicable_categories",
+            "applicable_collections",
+        )
         .filter(id=coupon_uuid)
         .first()
     )
@@ -78,8 +83,8 @@ def resolve_coupon(coupon_id_param: Any) -> Coupon:
 class AdminCouponFilterBackend(filters.BaseFilterBackend):
     """
     Filters and sorts coupons for administrative listing.
-    Supports search (code, name), active flag, discount type, lifecycle state,
-    and deterministic ordering.
+    Supports search (code, name), active flag, discount type, targeting mode,
+    lifecycle state, and deterministic ordering.
     """
 
     def filter_queryset(self, request: Request, queryset: Any, view: Any) -> Any:
@@ -108,7 +113,16 @@ class AdminCouponFilterBackend(filters.BaseFilterBackend):
                 })
             queryset = queryset.filter(discount_type=discount_type)
 
-        # 4. Lifecycle state (scheduled, currently_valid, valid, expired, inactive)
+        # 4. Targeting Mode (ALL_PRODUCTS, SPECIFIC_PRODUCTS, etc.)
+        targeting_mode = (request.query_params.get("targeting_mode") or "").strip().upper()
+        if targeting_mode:
+            if targeting_mode not in Coupon.TargetingMode.values:
+                raise ValidationError({
+                    "targeting_mode": f"Invalid targeting mode '{targeting_mode}'. Allowed: {', '.join(Coupon.TargetingMode.values)}."
+                })
+            queryset = queryset.filter(targeting_mode=targeting_mode)
+
+        # 5. Lifecycle state (scheduled, currently_valid, valid, expired, inactive)
         lifecycle = (request.query_params.get("lifecycle") or request.query_params.get("lifecycle_state") or "").strip().lower()
         if lifecycle:
             now = timezone.now()
@@ -127,7 +141,7 @@ class AdminCouponFilterBackend(filters.BaseFilterBackend):
                     "lifecycle": f"Invalid lifecycle state '{lifecycle}'. Allowed: scheduled, currently_valid, expired, inactive."
                 })
 
-        # 5. Deterministic Ordering
+        # 6. Deterministic Ordering
         ordering = (request.query_params.get("ordering") or "-created_at").strip()
         if ordering:
             if ordering not in ALLOWED_COUPON_ORDERING_FIELDS:
@@ -167,6 +181,11 @@ class AdminCouponListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return (
             Coupon.objects.select_related("created_by", "updated_by")
+            .prefetch_related(
+                "applicable_products",
+                "applicable_categories",
+                "applicable_collections",
+            )
             .all()
         )
 
@@ -187,12 +206,20 @@ class AdminCouponListCreateView(generics.ListCreateAPIView):
             event_type=CouponAuditLog.EventType.CREATED,
             actor=user,
             actor_email=user.email if user else "",
-            notes=f"Coupon '{coupon.code}' created with discount {coupon.discount_value} ({coupon.discount_type}).",
+            notes=(
+                f"Coupon '{coupon.code}' created with discount {coupon.discount_value} "
+                f"({coupon.discount_type}) [Targeting: {coupon.targeting_mode}]."
+            ),
             metadata={
                 "code": coupon.code,
                 "discount_type": coupon.discount_type,
                 "discount_value": str(coupon.discount_value),
                 "is_active": coupon.is_active,
+                "targeting_mode": coupon.targeting_mode,
+                "target_summary": coupon.target_summary,
+                "applicable_products_count": coupon.applicable_products.count(),
+                "applicable_categories_count": coupon.applicable_categories.count(),
+                "applicable_collections_count": coupon.applicable_collections.count(),
                 "start_date": coupon.start_date.isoformat() if coupon.start_date else None,
                 "end_date": coupon.end_date.isoformat() if coupon.end_date else None,
             },
@@ -200,6 +227,18 @@ class AdminCouponListCreateView(generics.ListCreateAPIView):
 
         detail_serializer = AdminCouponDetailSerializer(coupon)
         return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
+
+
+def _json_safe(val: Any) -> Any:
+    if isinstance(val, (uuid.UUID, Decimal)):
+        return str(val)
+    if hasattr(val, "isoformat"):
+        return val.isoformat()
+    if isinstance(val, (list, tuple, set)):
+        return [_json_safe(x) for x in val]
+    if isinstance(val, dict):
+        return {k: _json_safe(v) for k, v in val.items()}
+    return val
 
 
 class AdminCouponDetailView(APIView):
@@ -228,7 +267,7 @@ class AdminCouponDetailView(APIView):
         updated_coupon = serializer.save(updated_by=user)
 
         # Record audit log
-        changed_fields = list(serializer.validated_data.keys())
+        changed_fields = [k for k in serializer.validated_data.keys() if not k.startswith("_")]
         CouponAuditLog.objects.create(
             coupon=updated_coupon,
             event_type=CouponAuditLog.EventType.UPDATED,
@@ -237,9 +276,15 @@ class AdminCouponDetailView(APIView):
             notes=f"Coupon '{updated_coupon.code}' modified fields: {', '.join(changed_fields)}.",
             metadata={
                 "changed_fields": changed_fields,
+                "targeting_mode": updated_coupon.targeting_mode,
+                "target_summary": updated_coupon.target_summary,
+                "applicable_products_count": updated_coupon.applicable_products.count(),
+                "applicable_categories_count": updated_coupon.applicable_categories.count(),
+                "applicable_collections_count": updated_coupon.applicable_collections.count(),
                 "updated_values": {
-                    k: str(v) if hasattr(v, "isoformat") or isinstance(v, Decimal) else v
+                    k: _json_safe(v)
                     for k, v in serializer.validated_data.items()
+                    if not k.startswith("_")
                 },
             },
         )

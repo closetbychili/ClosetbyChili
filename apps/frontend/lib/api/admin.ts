@@ -2397,6 +2397,24 @@ export type AdminCouponLifecycleStatus =
   | "EXPIRED"
   | "INACTIVE";
 
+export type AdminCouponTargetingMode =
+  | "ALL_PRODUCTS"
+  | "SPECIFIC_PRODUCTS"
+  | "SPECIFIC_CATEGORIES"
+  | "SPECIFIC_COLLECTIONS"
+  | "PRODUCTS_AND_CATEGORIES"
+  | "PRODUCTS_AND_COLLECTIONS"
+  | "CATEGORIES_AND_COLLECTIONS"
+  | "MIXED";
+
+export interface AdminCouponTargetItem {
+  id: string;
+  name: string;
+  slug: string;
+  status?: string;
+  is_active?: boolean;
+}
+
 export interface AdminCouponAuditLogItem {
   id: string;
   event_type: "CREATED" | "UPDATED" | "ACTIVATED" | "DEACTIVATED";
@@ -2415,6 +2433,11 @@ export interface AdminCoupon {
   discount_type: AdminCouponDiscountType;
   discount_value: string;
   currency: string;
+  targeting_mode: AdminCouponTargetingMode;
+  target_summary?: string;
+  applicable_products_count?: number;
+  applicable_categories_count?: number;
+  applicable_collections_count?: number;
   min_order_subtotal: string | null;
   max_discount_amount: string | null;
   start_date: string;
@@ -2432,6 +2455,9 @@ export interface AdminCoupon {
 }
 
 export interface AdminCouponDetail extends AdminCoupon {
+  applicable_products: AdminCouponTargetItem[];
+  applicable_categories: AdminCouponTargetItem[];
+  applicable_collections: AdminCouponTargetItem[];
   audit_logs: AdminCouponAuditLogItem[];
 }
 
@@ -2441,6 +2467,7 @@ export interface AdminCouponQueryParams {
   search?: string;
   is_active?: string | boolean;
   discount_type?: AdminCouponDiscountType | string;
+  targeting_mode?: AdminCouponTargetingMode | string;
   lifecycle?: "scheduled" | "currently_valid" | "expired" | "inactive" | string;
   ordering?: string;
 }
@@ -2452,6 +2479,10 @@ export interface AdminCreateCouponPayload {
   discount_type: AdminCouponDiscountType;
   discount_value: string | number;
   currency?: string;
+  targeting_mode?: AdminCouponTargetingMode;
+  product_ids?: string[];
+  category_ids?: string[];
+  collection_ids?: string[];
   min_order_subtotal?: string | number | null;
   max_discount_amount?: string | number | null;
   start_date: string;
@@ -2469,6 +2500,10 @@ export interface AdminUpdateCouponPayload {
   discount_type?: AdminCouponDiscountType;
   discount_value?: string | number;
   currency?: string;
+  targeting_mode?: AdminCouponTargetingMode;
+  product_ids?: string[];
+  category_ids?: string[];
+  collection_ids?: string[];
   min_order_subtotal?: string | number | null;
   max_discount_amount?: string | number | null;
   start_date?: string;
@@ -2495,6 +2530,9 @@ export async function getAdminCoupons(
     }
     if (params.discount_type && params.discount_type !== "ALL" && params.discount_type !== "all") {
       query.set("discount_type", params.discount_type);
+    }
+    if (params.targeting_mode && params.targeting_mode !== "ALL" && params.targeting_mode !== "all") {
+      query.set("targeting_mode", params.targeting_mode);
     }
     if (params.lifecycle && params.lifecycle !== "ALL" && params.lifecycle !== "all") {
       query.set("lifecycle", params.lifecycle);

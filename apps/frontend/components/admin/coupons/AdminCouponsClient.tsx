@@ -45,6 +45,7 @@ export default function AdminCouponsClient() {
   const search = searchParams.get("search") || "";
   const lifecycle = searchParams.get("lifecycle") || "all";
   const discountType = searchParams.get("discount_type") || "all";
+  const targetingMode = searchParams.get("targeting_mode") || "all";
   const isActive = searchParams.get("is_active") || "all";
   const ordering = searchParams.get("ordering") || "-created_at";
 
@@ -52,6 +53,7 @@ export default function AdminCouponsClient() {
     search ||
       (lifecycle && lifecycle !== "all") ||
       (discountType && discountType !== "all") ||
+      (targetingMode && targetingMode !== "all") ||
       (isActive && isActive !== "all") ||
       ordering !== "-created_at"
   );
@@ -101,6 +103,7 @@ export default function AdminCouponsClient() {
       search: search || undefined,
       lifecycle: lifecycle !== "all" ? lifecycle : undefined,
       discount_type: discountType !== "all" ? discountType : undefined,
+      targeting_mode: targetingMode !== "all" ? targetingMode : undefined,
       is_active: isActive !== "all" ? isActive : undefined,
       ordering,
     })
@@ -124,7 +127,7 @@ export default function AdminCouponsClient() {
     return () => {
       ignore = true;
     };
-  }, [page, search, lifecycle, discountType, isActive, ordering]);
+  }, [page, search, lifecycle, discountType, targetingMode, isActive, ordering]);
 
   // Manual refresh handler
   const handleRefresh = useCallback(async () => {
@@ -137,6 +140,7 @@ export default function AdminCouponsClient() {
         search: search || undefined,
         lifecycle: lifecycle !== "all" ? lifecycle : undefined,
         discount_type: discountType !== "all" ? discountType : undefined,
+        targeting_mode: targetingMode !== "all" ? targetingMode : undefined,
         is_active: isActive !== "all" ? isActive : undefined,
         ordering,
       });
@@ -150,7 +154,7 @@ export default function AdminCouponsClient() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [page, search, lifecycle, discountType, isActive, ordering]);
+  }, [page, search, lifecycle, discountType, targetingMode, isActive, ordering]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -329,6 +333,8 @@ export default function AdminCouponsClient() {
         onLifecycleChange={(val) => updateUrl({ lifecycle: val, page: 1 })}
         discountType={discountType}
         onDiscountTypeChange={(val) => updateUrl({ discount_type: val, page: 1 })}
+        targetingMode={targetingMode}
+        onTargetingModeChange={(val) => updateUrl({ targeting_mode: val, page: 1 })}
         isActive={isActive}
         onIsActiveChange={(val) => updateUrl({ is_active: val, page: 1 })}
         ordering={ordering}
