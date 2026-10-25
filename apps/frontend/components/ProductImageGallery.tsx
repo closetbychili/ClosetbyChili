@@ -53,7 +53,7 @@ export default function ProductImageGallery({
                 type="button"
                 onClick={() => setSelectedIndex(idx)}
                 aria-label={`View image ${idx + 1}`}
-                className={`group relative aspect-[3/4] w-20 md:w-full overflow-hidden bg-surface-container shadow-sm focus:outline-none transition-all duration-200 cursor-pointer ${
+                className={`group relative aspect-3/4 w-20 md:w-full overflow-hidden bg-surface-container shadow-sm focus:outline-none transition-all duration-200 cursor-pointer ${
                   isSelected
                     ? "ring-2 ring-primary ring-offset-2 ring-offset-background opacity-100"
                     : "opacity-80 hover:opacity-100"
@@ -86,7 +86,7 @@ export default function ProductImageGallery({
         {/* ── Center / Main Column: Primary Viewport & Multi-Image Gallery ── */}
         <div className="flex-1 flex flex-col gap-4">
           {/* Main Hero Image Showcase */}
-          <div className="relative w-full aspect-[3/4] bg-surface-container overflow-hidden group shadow-md rounded-none">
+          <div className="relative w-full aspect-3/4 bg-surface-container overflow-hidden group shadow-md rounded-none">
             {!isCurrentError && currentImage ? (
               <Image
                 id="main-product-img"
@@ -102,7 +102,7 @@ export default function ProductImageGallery({
                 }
               />
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-[#f8f1ec] via-[#f1e6df] to-[#e8dad1] flex flex-col items-center justify-center p-8 text-center">
+              <div className="absolute inset-0 bg-linear-to-br from-[#f8f1ec] via-[#f1e6df] to-[#e8dad1] flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-16 h-16 rounded-full border border-primary/20 flex items-center justify-center mb-3">
                   <span className="font-headline-sm text-primary font-bold tracking-widest">
                     CBC
@@ -155,7 +155,7 @@ export default function ProductImageGallery({
             </div>
 
             {/* Bottom Editorial Banner Overlay */}
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-inverse-surface/85 via-inverse-surface/30 to-transparent p-6 text-inverse-on-surface flex items-end justify-between pointer-events-none">
+            <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-inverse-surface/85 via-inverse-surface/30 to-transparent p-6 text-inverse-on-surface flex items-end justify-between pointer-events-none">
               <div>
                 <p className="font-title-editorial text-title-editorial italic text-secondary-fixed drop-shadow-xs">
                   &ldquo;We don&apos;t just dress you, we express you.&rdquo;
@@ -178,7 +178,7 @@ export default function ProductImageGallery({
                 if (targetIdx !== -1) setSelectedIndex(targetIdx);
                 else setIsZoomOpen(true);
               }}
-              className="relative aspect-[4/5] bg-surface-container overflow-hidden shadow-sm group cursor-pointer"
+              className="relative aspect-4/5 bg-surface-container overflow-hidden shadow-sm group cursor-pointer"
             >
               <Image
                 src={detailTile1}
@@ -198,7 +198,7 @@ export default function ProductImageGallery({
                 if (targetIdx !== -1) setSelectedIndex(targetIdx);
                 else setIsZoomOpen(true);
               }}
-              className="relative aspect-[4/5] bg-surface-container overflow-hidden shadow-sm group cursor-pointer"
+              className="relative aspect-4/5 bg-surface-container overflow-hidden shadow-sm group cursor-pointer"
             >
               <Image
                 src={detailTile2}

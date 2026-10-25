@@ -14,6 +14,7 @@ from apps.accounts.models import User
 from apps.addresses.models import Address
 from apps.cart.models import Cart
 from apps.orders.models import Order
+from apps.payments import services
 from apps.payments.services import (
     convert_inr_to_paise,
     create_razorpay_order,
@@ -115,7 +116,7 @@ class RazorpayPaymentsApiTests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_create_order_success_amount_from_db_and_secret_never_returned(self, mock_get_client):
         mock_client = MagicMock()
         mock_client.order.create.return_value = {"id": "order_rzp_mock_12345"}
@@ -144,7 +145,7 @@ class RazorpayPaymentsApiTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual(self.order.razorpay_order_id, "order_rzp_mock_12345")
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_create_order_reuses_existing_razorpay_order_id(self, mock_get_client):
         self.order.razorpay_order_id = "order_rzp_existing_999"
         self.order.save(update_fields=["razorpay_order_id"])
@@ -238,7 +239,7 @@ class RazorpayPaymentsApiTests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_verify_rejects_mismatched_order_id_from_gateway(self, mock_get_client):
         self.order.razorpay_order_id = "order_rzp_valid"
         self.order.save(update_fields=["razorpay_order_id"])
@@ -265,7 +266,7 @@ class RazorpayPaymentsApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("MISMATCHED_ORDER_ID", str(response.json()))
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_verify_rejects_wrong_amount_from_gateway(self, mock_get_client):
         self.order.razorpay_order_id = "order_rzp_amount_test"
         self.order.save(update_fields=["razorpay_order_id"])
@@ -292,7 +293,7 @@ class RazorpayPaymentsApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("MISMATCHED_AMOUNT", str(response.json()))
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_verify_rejects_wrong_currency_from_gateway(self, mock_get_client):
         self.order.razorpay_order_id = "order_rzp_curr_test"
         self.order.save(update_fields=["razorpay_order_id"])
@@ -319,7 +320,7 @@ class RazorpayPaymentsApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("MISMATCHED_CURRENCY", str(response.json()))
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_valid_verification_transitions_payment_status_to_paid(self, mock_get_client):
         self.order.razorpay_order_id = "order_rzp_success_123"
         self.order.save(update_fields=["razorpay_order_id"])
@@ -346,14 +347,15 @@ class RazorpayPaymentsApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["payment_status"], Order.PaymentStatus.PAID)
-        self.assertEqual(data["status"], Order.Status.PENDING)  # Must remain PENDING in sprint 1.4
+        self.assertEqual(data["status"], Order.Status.CONFIRMED)
 
         self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.CONFIRMED)
         self.assertEqual(self.order.payment_status, Order.PaymentStatus.PAID)
         self.assertEqual(self.order.razorpay_payment_id, "pay_success_123")
         self.assertEqual(self.order.razorpay_signature, sig)
 
-    @patch("apps.payments.services.get_razorpay_client")
+    @patch.object(services, "get_razorpay_client")
     def test_verification_is_idempotent(self, mock_get_client):
         self.order.razorpay_order_id = "order_rzp_idemp"
         self.order.razorpay_payment_id = "pay_idemp_123"

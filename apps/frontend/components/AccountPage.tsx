@@ -452,7 +452,7 @@ export default function AccountPage() {
         <div className="flex flex-col w-full">
           {/* Breadcrumb Bar */}
           <div className="bg-surface-container-low py-3 px-6 lg:px-12 border-b border-outline-variant/20">
-            <div className="max-w-[1440px] mx-auto flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">
+            <div className="max-w-360 mx-auto flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">
               <Link className="hover:text-primary transition-colors" href="/">
                 Home
               </Link>
@@ -462,7 +462,7 @@ export default function AccountPage() {
           </div>
 
           {/* Main Account View Area */}
-          <div className="max-w-[1440px] mx-auto w-full px-6 lg:px-12 py-10 lg:py-14">
+          <div className="max-w-360 mx-auto w-full px-6 lg:px-12 py-10 lg:py-14">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
               {/* Left Column: User Summary & Navigation */}
               <aside className="lg:col-span-4 flex flex-col gap-8 bg-surface-card p-6 lg:p-8 rounded-none shadow-sm border border-outline-variant/30">
@@ -717,7 +717,7 @@ export default function AccountPage() {
               </aside>
 
               {/* Right Column: Dynamic Panel Content */}
-              <section className="lg:col-span-8 bg-surface-card p-6 lg:p-10 shadow-sm border border-outline-variant/30 flex flex-col gap-10 min-h-[620px]">
+              <section className="lg:col-span-8 bg-surface-card p-6 lg:p-10 shadow-sm border border-outline-variant/30 flex flex-col gap-10 min-h-155">
                 {/* ────────────────────────────────────────────────────────── */}
                 {/* TAB 1: MY PROFILE */}
                 {/* ────────────────────────────────────────────────────────── */}
@@ -1472,7 +1472,7 @@ export default function AccountPage() {
                             key={address.id}
                             className={`p-5 border flex flex-col justify-between gap-4 transition-all ${
                               address.is_default
-                                ? "border-primary bg-primary/[0.02] shadow-xs"
+                                ? "border-primary bg-primary/2 shadow-xs"
                                 : "border-outline-variant/40 bg-surface-container-lowest hover:border-outline"
                             }`}
                           >

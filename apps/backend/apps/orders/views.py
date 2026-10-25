@@ -162,6 +162,27 @@ class CheckoutView(APIView):
                 .first()
             )
             if not cart or cart.items.count() == 0:
+                if idempotency_key:
+                    order_by_key = self._get_order_for_key(str(request.user.id), idempotency_key)
+                    if order_by_key:
+                        return Response(
+                            OrderDetailSerializer(order_by_key).data,
+                            status=status.HTTP_200_OK,
+                        )
+                recent_pending = (
+                    Order.objects.filter(
+                        user=request.user,
+                        status=Order.Status.PENDING,
+                        payment_status=Order.PaymentStatus.PENDING,
+                    )
+                    .order_by("-created_at")
+                    .first()
+                )
+                if recent_pending:
+                    return Response(
+                        OrderDetailSerializer(recent_pending).data,
+                        status=status.HTTP_200_OK,
+                    )
                 raise DRFValidationError({"cart": "Your cart is empty."})
 
             order_by_cart = self._get_order_for_cart(str(request.user.id), str(cart.id))
@@ -296,6 +317,9 @@ class CheckoutView(APIView):
                     line_total=line["line_total"],
                 )
 
+            from apps.inventory.services import create_order_reservations
+            create_order_reservations(order=order, items=line_items, actor=request.user)
+
             cart.is_active = False
             cart.items.all().delete()
             cart.save(update_fields=["is_active", "updated_at"])
@@ -356,3 +380,65 @@ class OrderDetailView(generics.RetrieveAPIView):
             .prefetch_related("items")
             .order_by("-created_at")
         )
+
+
+class OrderCancelView(APIView):
+    """
+    POST /api/v1/orders/<order_number>/cancel/
+
+    Cancel a customer's PENDING order and release all held inventory reservations.
+    Enforces domain invariants:
+    - Paid, confirmed, shipped, or delivered orders cannot be cancelled directly.
+    - Idempotent: repeated cancellation requests on an already cancelled order return safely.
+    - Atomically releases all active reservations and logs RESERVATION_RELEASED movements.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: Request, order_number: str) -> Response:
+        order = Order.objects.filter(
+            order_number=order_number,
+            user=request.user,
+        ).first()
+        if not order:
+            return Response(
+                {"detail": "Order not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if order.status == Order.Status.CANCELLED:
+            return Response(OrderDetailSerializer(order).data, status=status.HTTP_200_OK)
+
+        if order.status != Order.Status.PENDING or order.payment_status == Order.PaymentStatus.PAID:
+            return Response(
+                {
+                    "detail": f"Order in status '{order.status}' / payment '{order.payment_status}' cannot be cancelled."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.inventory.services import release_order_reservations
+
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(id=order.id)
+            if order.status == Order.Status.CANCELLED:
+                return Response(OrderDetailSerializer(order).data, status=status.HTTP_200_OK)
+            if order.status != Order.Status.PENDING or order.payment_status == Order.PaymentStatus.PAID:
+                return Response(
+                    {"detail": f"Order in status '{order.status}' cannot be cancelled."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            order.status = Order.Status.CANCELLED
+            if order.payment_status == Order.PaymentStatus.PENDING:
+                order.payment_status = Order.PaymentStatus.FAILED
+            order.save(update_fields=["status", "payment_status", "updated_at"])
+
+            release_order_reservations(order=order, reason="customer_cancelled", actor=request.user)
+
+        order = (
+            Order.objects.select_related("user")
+            .prefetch_related("items")
+            .get(id=order.id)
+        )
+        return Response(OrderDetailSerializer(order).data, status=status.HTTP_200_OK)
+

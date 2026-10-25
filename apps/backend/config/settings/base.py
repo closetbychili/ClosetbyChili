@@ -265,3 +265,27 @@ RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 
+# ============================================================
+# Cloudinary Product Media Configuration (Sprint A2.4)
+# ============================================================
+CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
+CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL", "")
+CLOUDINARY_FOLDER = os.environ.get("CLOUDINARY_FOLDER", "closet-by-chilli/products")
+CLOUDINARY_MAX_FILE_SIZE = int(os.environ.get("CLOUDINARY_MAX_FILE_SIZE", 5 * 1024 * 1024))  # 5MB default
+
+try:
+    import cloudinary
+    if CLOUDINARY_URL:
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL, secure=True)
+    elif CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+        cloudinary.config(
+            cloud_name=CLOUDINARY_CLOUD_NAME,
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET,
+            secure=True,
+        )
+except Exception:
+    pass
+

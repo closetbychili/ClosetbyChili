@@ -106,7 +106,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         <div className="flex flex-col w-full">
           {/* ── Top Breadcrumb Bar ────────────────────────────── */}
           <div className="w-full bg-surface-container-low/70 py-3.5 px-6 lg:px-12 border-b border-outline-variant/30">
-            <div className="max-w-[1440px] mx-auto flex items-center justify-between text-body-sm font-body-sm">
+            <div className="max-w-360 mx-auto flex items-center justify-between text-body-sm font-body-sm">
               <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-on-surface-variant flex-wrap">
                 <Link href="/" className="hover:text-primary transition-colors">
                   Home
@@ -127,7 +127,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                   </>
                 )}
                 <span className="text-outline text-xs">/</span>
-                <span className="text-on-surface font-medium truncate max-w-[220px] sm:max-w-none">
+                <span className="text-on-surface font-medium truncate max-w-55 sm:max-w-none">
                   {product.name}
                 </span>
               </nav>
@@ -144,7 +144,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </div>
 
           {/* ── Primary Product Hero & Commerce Grid ──────────── */}
-          <section className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-12 py-8 lg:py-12">
+          <section className="max-w-360 mx-auto w-full px-4 sm:px-6 lg:px-12 py-8 lg:py-12">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-14 items-start">
               {/* LEFT COLUMN: Fashion Imagery Grid (7 cols) */}
               <div className="lg:col-span-7">
@@ -211,10 +211,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           {/* ── Deep Editorial Specifications & Details Accordions ── */}
           <section className="w-full bg-surface-container-low/50 py-12 px-4 sm:px-6 lg:px-12 border-y border-outline-variant/30">
-            <div className="max-w-[1440px] mx-auto">
+            <div className="max-w-360 mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Editorial Quote & Mood Card */}
-                <div className="lg:col-span-4 bg-inverse-surface text-inverse-on-surface p-8 lg:p-10 flex flex-col justify-between relative overflow-hidden shadow-lg min-h-[420px]">
+                <div className="lg:col-span-4 bg-inverse-surface text-inverse-on-surface p-8 lg:p-10 flex flex-col justify-between relative overflow-hidden shadow-lg min-h-105">
                   <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
                   <div className="flex flex-col gap-6 relative z-10">
                     <span className="text-secondary-fixed text-4xl font-headline-lg font-serif">
@@ -428,7 +428,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           {/* ── Luxury Packaging & Unboxing Visual Showcase ────── */}
           <section className="w-full bg-surface-container-low/60 py-16 px-4 sm:px-6 lg:px-12 border-t border-outline-variant/30">
-            <div className="max-w-[1440px] mx-auto">
+            <div className="max-w-360 mx-auto">
               <div className="text-center max-w-xl mx-auto mb-12">
                 <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">
                   The Unboxing Ritual
@@ -556,7 +556,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           {/* ── You May Also Like / Recommended Silhouettes ──── */}
           {relatedProducts.length > 0 && (
-            <section className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-12 py-16">
+            <section className="max-w-360 mx-auto w-full px-4 sm:px-6 lg:px-12 py-16">
               <div className="flex flex-col sm:flex-row items-baseline justify-between mb-8 gap-3">
                 <div>
                   <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">
@@ -584,7 +584,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           {/* ── High-Trust Customer Experience & Assurance Strip ── */}
           <section className="w-full bg-surface-container py-10 px-6 lg:px-12 border-t border-outline-variant/30">
-            <div className="max-w-[1440px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="max-w-360 mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-surface text-primary flex items-center justify-center shrink-0 shadow-sm border border-outline-variant/20">
                   <span className="material-symbols-outlined text-[26px]">

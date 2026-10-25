@@ -130,7 +130,7 @@ export default async function ProductsPage({
 
       <main className="flex-1 pt-24 sm:pt-28">
         {/* ── Editorial Collection Header & Lead Narrative ────── */}
-        <header className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pt-6 pb-6">
+        <header className="w-full max-w-360 mx-auto px-4 sm:px-6 lg:px-12 pt-6 pb-6">
           {/* Breadcrumbs */}
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 font-label-caps text-[11px] text-on-surface-variant uppercase tracking-wider mb-5">
             <Link href="/" className="hover:text-primary transition-colors">
@@ -187,7 +187,7 @@ export default async function ProductsPage({
         </header>
 
         {/* ── Main Catalog Section (Filters + Product Grid) ────── */}
-        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pb-12">
+        <div className="w-full max-w-360 mx-auto px-4 sm:px-6 lg:px-12 pb-12">
           <ProductFilters
             categories={categories}
             collections={collections}
@@ -282,7 +282,7 @@ export default async function ProductsPage({
 
         {/* ── Closet by Chilli Brand Assurance Bar ────────────── */}
         <section className="w-full bg-surface-container-low py-12 px-4 sm:px-6 lg:px-12 border-t border-outline-variant/30 my-6">
-          <div className="max-w-[1440px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="max-w-360 mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* 1 */}
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 shrink-0 bg-primary/10 text-primary flex items-center justify-center shadow-2xs border border-primary/20">

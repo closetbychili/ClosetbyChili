@@ -77,10 +77,12 @@ export async function apiFetch<T>(
   const queryString = buildQueryString(params);
   const url = `${baseUrl}${normalizedPath}${queryString}`;
 
-  const defaultHeaders: HeadersInit = {
+  const defaultHeaders: Record<string, string> = {
     Accept: 'application/json',
-    'Content-Type': 'application/json',
   };
+  if (typeof FormData === 'undefined' || !(fetchOptions.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
 
   let response: Response;
 

@@ -14,7 +14,7 @@ from apps.payments.exceptions import PaymentError
 logger = logging.getLogger(__name__)
 
 
-def get_razorpay_client() -> razorpay.Client:
+def get_razorpay_client() -> Any:
     """Return an authenticated Razorpay client using project settings."""
     key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
     key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
@@ -34,7 +34,7 @@ def convert_inr_to_paise(amount: Decimal) -> int:
     return int((amount * Decimal("100")).quantize(Decimal("1")))
 
 
-def create_razorpay_order(order: Order, client: Optional[razorpay.Client] = None) -> Dict[str, Any]:
+def create_razorpay_order(order: Order, client: Optional[Any] = None) -> Dict[str, Any]:
     """
     Create a Razorpay order for a given internal Order.
 
@@ -70,11 +70,10 @@ def create_razorpay_order(order: Order, client: Optional[razorpay.Client] = None
             "order_number": order.order_number,
         }
 
-    if client is None:
-        client = get_razorpay_client()
+    active_client: Any = client or get_razorpay_client()
 
     try:
-        rzp_order = client.order.create(
+        rzp_order = active_client.order.create(
             data={
                 "amount": amount_in_paise,
                 "currency": order.currency,
@@ -130,7 +129,7 @@ def verify_razorpay_payment(
     razorpay_payment_id: str,
     razorpay_signature: str,
     user: Optional[Any] = None,
-    client: Optional[razorpay.Client] = None,
+    client: Optional[Any] = None,
 ) -> Order:
     """
     Verify payment details and transition Order payment_status to PAID.
@@ -197,11 +196,10 @@ def verify_razorpay_payment(
             )
 
         # 4. Fetch and verify payment record from Razorpay gateway
-        if client is None:
-            client = get_razorpay_client()
+        active_client: Any = client or get_razorpay_client()
 
         try:
-            payment = client.payment.fetch(razorpay_payment_id)
+            payment = active_client.payment.fetch(razorpay_payment_id)
         except Exception as exc:
             logger.exception("Failed to fetch payment %s from Razorpay: %s", razorpay_payment_id, exc)
             raise PaymentError(
@@ -234,18 +232,23 @@ def verify_razorpay_payment(
                 code="MISMATCHED_AMOUNT",
             )
 
-        # 5. Transition payment_status to PAID
+        # 5. Transition payment_status to PAID and status to CONFIRMED
         order.payment_status = Order.PaymentStatus.PAID
+        order.status = Order.Status.CONFIRMED
         order.razorpay_payment_id = razorpay_payment_id
         order.razorpay_signature = razorpay_signature
         order.save(
             update_fields=[
+                "status",
                 "payment_status",
                 "razorpay_payment_id",
                 "razorpay_signature",
                 "updated_at",
             ]
         )
+
+        from apps.inventory.services import finalize_order_inventory
+        finalize_order_inventory(order=order, actor=order.user)
 
         return order
 
@@ -276,7 +279,7 @@ def process_razorpay_webhook(
 ) -> Dict[str, Any]:
     """
     Process incoming Razorpay webhook event idempotently.
-    Supports 'payment.captured' and 'order.paid' events.
+    Supports 'payment.captured', 'order.paid', and 'payment.failed' events.
     """
     if not verify_razorpay_webhook_signature(body, signature):
         raise PaymentError("Invalid webhook signature.", code="INVALID_WEBHOOK_SIGNATURE")
@@ -293,6 +296,8 @@ def process_razorpay_webhook(
 
     logger.info("Processing Razorpay webhook event: %s", event)
 
+    from apps.inventory.services import finalize_order_inventory, release_order_reservations
+
     if event in ("payment.captured", "order.paid"):
         payment_entity = payload.get("payment", {}).get("entity", {})
         razorpay_order_id = payment_entity.get("order_id")
@@ -307,6 +312,8 @@ def process_razorpay_webhook(
                 )
                 if order:
                     if order.payment_status == Order.PaymentStatus.PAID:
+                        # Ensure inventory was finalized idempotently
+                        finalize_order_inventory(order=order)
                         return {"status": "already_processed", "order_number": order.order_number}
 
                     # Verify amount and currency
@@ -316,8 +323,28 @@ def process_razorpay_webhook(
                         and payment_entity.get("currency") == order.currency
                     ):
                         order.payment_status = Order.PaymentStatus.PAID
+                        order.status = Order.Status.CONFIRMED
                         order.razorpay_payment_id = razorpay_payment_id
-                        order.save(update_fields=["payment_status", "razorpay_payment_id", "updated_at"])
+                        order.save(update_fields=["status", "payment_status", "razorpay_payment_id", "updated_at"])
+                        finalize_order_inventory(order=order)
                         return {"status": "paid", "order_number": order.order_number}
 
+    elif event == "payment.failed":
+        payment_entity = payload.get("payment", {}).get("entity", {})
+        razorpay_order_id = payment_entity.get("order_id")
+        if razorpay_order_id:
+            with transaction.atomic():
+                order = (
+                    Order.objects.select_for_update()
+                    .filter(razorpay_order_id=razorpay_order_id)
+                    .first()
+                )
+                if order and order.payment_status != Order.PaymentStatus.PAID:
+                    order.payment_status = Order.PaymentStatus.FAILED
+                    order.status = Order.Status.CANCELLED
+                    order.save(update_fields=["status", "payment_status", "updated_at"])
+                    release_order_reservations(order=order, reason="payment_failed")
+                    return {"status": "payment_failed", "order_number": order.order_number}
+
     return {"status": "ignored", "event": event}
+

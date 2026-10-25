@@ -39,17 +39,30 @@ class Category(models.Model):
         related_name="children",
     )
     is_active = models.BooleanField(default=True)
+    is_visible_on_storefront = models.BooleanField(default=True, db_index=True)
+    ordering = models.IntegerField(default=0, db_index=True)
+    image_url = models.CharField(max_length=2048, blank=True, default="")
+    image_public_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    image_alt = models.CharField(max_length=512, blank=True, default="")
+    short_description = models.CharField(max_length=500, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "catalog_categories"
         verbose_name_plural = "categories"
-        ordering = ["name"]
+        ordering = ["ordering", "name"]
         indexes = [
             models.Index(fields=["slug"], name="idx_category_slug"),
             models.Index(fields=["parent"], name="idx_category_parent"),
+            models.Index(fields=["ordering"], name="idx_category_ordering"),
+            models.Index(fields=["is_visible_on_storefront"], name="idx_category_storefront"),
         ]
+
+    @property
+    def image(self) -> str:
+        """Convenience property for storefront template and serializer compatibility."""
+        return self.image_url
 
     def __str__(self) -> str:
         return self.name
@@ -206,6 +219,13 @@ class ProductVariant(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0)],
     )
+    sale_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+    )
     wholesale_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -224,14 +244,21 @@ class ProductVariant(models.Model):
             models.Index(fields=["sku"], name="idx_variant_sku"),
             models.Index(fields=["product"], name="idx_variant_product"),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(sale_price__isnull=True)
+                | models.Q(sale_price__lt=models.F("retail_price")),
+                name="chk_variant_sale_price_lt_retail_price",
+            ),
+        ]
 
     def __str__(self) -> str:
-        parts = [self.sku]
+        parts: list[str] = [str(self.sku)]
         if self.size:
-            parts.append(self.size)
+            parts.append(str(self.size))
         if self.color:
-            parts.append(self.color)
-        return " / ".join(parts)
+            parts.append(str(self.color))
+        return str(" / ".join(parts))
 
 
 class ProductImage(models.Model):
@@ -263,6 +290,12 @@ class ProductImage(models.Model):
     # /assets/products/kurti-1.jpg without requiring an environment-specific
     # domain prefix.
     image_url = models.CharField(max_length=2048)
+    public_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+    format = models.CharField(max_length=32, blank=True, default="")
+    resource_type = models.CharField(max_length=32, blank=True, default="image")
+    bytes = models.PositiveIntegerField(null=True, blank=True)
     alt_text = models.CharField(max_length=512, blank=True, default="")
     ordering = models.IntegerField(default=0)
     is_primary = models.BooleanField(default=False)
@@ -291,3 +324,40 @@ class ProductImage(models.Model):
     def __str__(self) -> str:
         flag = " [primary]" if self.is_primary else ""
         return f"{self.product} — image {self.ordering}{flag}"
+
+
+class MediaAsset(models.Model):
+    """
+    Persisted media asset metadata for Central Admin Media Library (Sprint A3.1).
+
+    Stores metadata for images uploaded through the admin console or synced from
+    the product/category catalogs.
+    Tracks Cloudinary public_id, secure_url, dimensions, format, file size,
+    and descriptive metadata.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    image_url = models.CharField(max_length=2048)
+    public_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    original_filename = models.CharField(max_length=255, blank=True, default="")
+    alt_text = models.CharField(max_length=512, blank=True, default="")
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+    format = models.CharField(max_length=32, blank=True, default="")
+    resource_type = models.CharField(max_length=32, blank=True, default="image")
+    bytes = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "catalog_media_assets"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["public_id"], name="idx_media_asset_public_id"),
+            models.Index(fields=["created_at"], name="idx_media_asset_created"),
+        ]
+
+    def __str__(self) -> str:
+        name = self.original_filename or self.public_id or str(self.id)
+        return f"MediaAsset: {name}"
+

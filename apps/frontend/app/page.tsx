@@ -24,7 +24,7 @@ export default async function Home() {
     const [naRes, bsRes, catRes] = await Promise.allSettled([
       getProducts({ collection: "new-arrivals", page_size: 4 }, { next: { revalidate: 60 } }),
       getProducts({ collection: "bestsellers", page_size: 3 }, { next: { revalidate: 60 } }),
-      getCategories({ page_size: 5 }, { next: { revalidate: 60 } }),
+      getCategories({ page_size: 100, storefront: true }, { next: { revalidate: 60 } }),
     ]);
 
     // Handle New Arrivals

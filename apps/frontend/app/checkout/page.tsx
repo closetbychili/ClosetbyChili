@@ -398,7 +398,7 @@ export default function CheckoutPage() {
       <main className="w-full pt-20">
         {/* ── Top Luxury Checkout Utility Banner (Distraction-Free) ── */}
         <section className="w-full bg-surface-container-low/80 py-3 px-4 sm:px-6 lg:px-12 border-b border-outline-variant/30">
-          <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant font-label-caps text-[11px] tracking-widest uppercase">
+          <div className="max-w-350 mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant font-label-caps text-[11px] tracking-widest uppercase">
             <div className="flex items-center gap-2">
               <ShieldCheck className="text-primary" size={16} />
               <span>256-Bit Bank-Grade SSL Encrypted Checkout</span>
@@ -423,7 +423,7 @@ export default function CheckoutPage() {
 
         {/* ── Stepper & Checkout Header Bar (Matched with Cart Page) ── */}
         <section className="w-full bg-surface-container-low py-8 px-6 lg:px-12 border-b border-outline-variant/30">
-          <div className="max-w-[1440px] mx-auto flex flex-col gap-6">
+          <div className="max-w-360 mx-auto flex flex-col gap-6">
             {/* Stepper Navigation */}
             <nav
               aria-label="Checkout Progress"
@@ -490,7 +490,7 @@ export default function CheckoutPage() {
 
         {/* ── Main Checkout Content Grid ──────────────────────── */}
         <section className="w-full pb-20 px-4 sm:px-6 lg:px-12 bg-page-bg">
-          <div className="max-w-[1400px] mx-auto pt-8">
+          <div className="max-w-350 mx-auto pt-8">
             <div className="mb-6">
               <Link
                 href="/cart"

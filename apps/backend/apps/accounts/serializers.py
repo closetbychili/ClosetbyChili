@@ -26,6 +26,26 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Safe, minimal serialization of authenticated administrator details."""
+
+    is_admin = serializers.BooleanField(read_only=True)
+    is_staff = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "role",
+            "is_admin",
+            "is_staff",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
 class UpdateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerProfile

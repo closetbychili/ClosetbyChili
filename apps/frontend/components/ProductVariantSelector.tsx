@@ -43,7 +43,12 @@ export default function ProductVariantSelector({
   const availableSizes = useMemo(() => {
     const sizes = new Set<string>();
     activeVariants.forEach((v) => {
-      if (v.size) sizes.add(v.size);
+      if (v.size) {
+        v.size.split(/[,/]+/).forEach((s) => {
+          const clean = s.trim().toUpperCase();
+          if (clean) sizes.add(clean);
+        });
+      }
     });
     return Array.from(sizes);
   }, [activeVariants]);
@@ -82,12 +87,23 @@ export default function ProductVariantSelector({
   // Standard Indian fit sizing matrix
   const standardSizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
+  // Helper to test if a variant matches a requested size (exact match or comma-separated e.g. "S,M,L")
+  const variantMatchesSize = (variantSize: string | undefined | null, targetSize: string) => {
+    if (!variantSize || !targetSize) return false;
+    const vTrim = variantSize.trim().toUpperCase();
+    const tTrim = targetSize.trim().toUpperCase();
+    if (vTrim === tTrim) return true;
+    const parts = vTrim.split(/[,/]+/).map((s) => s.trim().toUpperCase());
+    return parts.includes(tTrim);
+  };
+
   // Resolve matching active variant based on current color & size selections
   const currentVariant = useMemo(() => {
     return (
       activeVariants.find((v) => {
-        const matchesColor = !selectedColor || v.color === selectedColor;
-        const matchesSize = !selectedSize || v.size === selectedSize;
+        const matchesColor =
+          !selectedColor || v.color?.trim().toLowerCase() === selectedColor.trim().toLowerCase();
+        const matchesSize = !selectedSize || variantMatchesSize(v.size, selectedSize);
         return matchesColor && matchesSize;
       }) || null
     );
@@ -96,7 +112,9 @@ export default function ProductVariantSelector({
   // Check if a specific size is available
   const isSizeAvailable = (size: string) => {
     return activeVariants.some(
-      (v) => v.size === size && (!selectedColor || v.color === selectedColor)
+      (v) =>
+        variantMatchesSize(v.size, size) &&
+        (!selectedColor || v.color?.trim().toLowerCase() === selectedColor.trim().toLowerCase())
     );
   };
 
@@ -107,9 +125,18 @@ export default function ProductVariantSelector({
     );
   };
 
+  const isOutOfStock = Boolean(
+    currentVariant &&
+      (currentVariant.is_in_stock === false || currentVariant.stock_status === "out_of_stock")
+  );
+
   const handleAddToCart = async () => {
-    if (!currentVariant) {
-      setValidationError("Please select an available size and color configuration.");
+    if (!currentVariant || isOutOfStock) {
+      setValidationError(
+        isOutOfStock
+          ? "This variant is currently out of stock."
+          : "Please select an available size and color configuration."
+      );
       return;
     }
 
@@ -142,8 +169,12 @@ export default function ProductVariantSelector({
   };
 
   const handleBuyNow = async () => {
-    if (!currentVariant) {
-      setValidationError("Please select an available size and color configuration.");
+    if (!currentVariant || isOutOfStock) {
+      setValidationError(
+        isOutOfStock
+          ? "This variant is currently out of stock."
+          : "Please select an available size and color configuration."
+      );
       return;
     }
 
@@ -272,10 +303,17 @@ export default function ProductVariantSelector({
         {/* ── In Stock Indicator ───────────────────────────── */}
         <div className="pt-1 flex items-center gap-2">
           {currentVariant ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800 bg-emerald-50 px-2 py-0.5 border border-emerald-200/60">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              In Stock — Ready to Ship
-            </span>
+            isOutOfStock ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-rose-800 bg-rose-50 px-2 py-0.5 border border-rose-200/60">
+                <span className="w-2 h-2 rounded-full bg-rose-600" />
+                Out of Stock
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800 bg-emerald-50 px-2 py-0.5 border border-emerald-200/60">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                In Stock — Ready to Ship
+              </span>
+            )
           ) : (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-rose-800 bg-rose-50 px-2 py-0.5 border border-rose-200/60">
               Currently Unavailable
@@ -446,9 +484,9 @@ export default function ProductVariantSelector({
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={!currentVariant || isSubmitting}
+            disabled={!currentVariant || isSubmitting || isOutOfStock}
             className={`w-full font-label-caps text-label-caps uppercase tracking-widest py-4 px-6 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.99] cursor-pointer ${
-              currentVariant && !isSubmitting
+              currentVariant && !isSubmitting && !isOutOfStock
                 ? "bg-primary hover:bg-primary-container text-on-primary"
                 : "bg-surface-container-highest text-outline cursor-not-allowed"
             }`}
@@ -456,21 +494,21 @@ export default function ProductVariantSelector({
             <span className="material-symbols-outlined text-[20px]">
               shopping_bag
             </span>
-            {isSubmitting ? "Adding..." : "Add To Bag"}
+            {isSubmitting ? "Adding..." : isOutOfStock ? "Out of Stock" : "Add To Bag"}
           </button>
 
           <button
             type="button"
             onClick={handleBuyNow}
-            disabled={!currentVariant || isSubmitting}
+            disabled={!currentVariant || isSubmitting || isOutOfStock}
             className={`w-full font-label-caps text-label-caps uppercase tracking-widest py-4 px-6 flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99] cursor-pointer ${
-              currentVariant && !isSubmitting
+              currentVariant && !isSubmitting && !isOutOfStock
                 ? "bg-inverse-surface hover:bg-on-surface text-inverse-on-surface"
                 : "bg-surface-container-highest text-outline cursor-not-allowed"
             }`}
           >
             <span className="material-symbols-outlined text-[20px]">bolt</span>
-            Buy It Now
+            {isOutOfStock ? "Unavailable" : "Buy It Now"}
           </button>
         </div>
 

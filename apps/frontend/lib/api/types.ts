@@ -36,6 +36,12 @@ export interface CategorySummary {
   id: string;
   name: string;
   slug: string;
+  image_url?: string;
+  image?: string;
+  image_alt?: string;
+  short_description?: string;
+  ordering?: number;
+  is_visible_on_storefront?: boolean;
 }
 
 export interface Category {
@@ -43,6 +49,12 @@ export interface Category {
   name: string;
   slug: string;
   description: string;
+  short_description?: string;
+  image_url?: string;
+  image?: string;
+  image_alt?: string;
+  ordering?: number;
+  is_visible_on_storefront?: boolean;
   parent: string | null;
   parent_slug: string | null;
   children: CategorySummary[];
@@ -56,6 +68,9 @@ export interface CategoryListParams {
   page_size?: number;
   search?: string;
   ordering?: string;
+  storefront?: boolean;
+  is_active?: boolean;
+  all?: boolean;
 }
 
 // =============================================================================
@@ -95,7 +110,10 @@ export interface ProductVariantSummary {
   size: string;
   color: string;
   retail_price: string;
+  sale_price?: string | null;
   is_active: boolean;
+  is_in_stock?: boolean;
+  stock_status?: "in_stock" | "low_stock" | "out_of_stock" | string;
 }
 
 // =============================================================================
@@ -110,6 +128,12 @@ export interface ProductImage {
   alt_text: string;
   ordering: number;
   is_primary: boolean;
+  public_id?: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  resource_type?: string;
+  bytes?: number;
 }
 
 export interface ProductListItem {

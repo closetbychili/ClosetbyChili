@@ -30,6 +30,20 @@ class InventoryItem(models.Model):
     )
     quantity_available = models.IntegerField(default=0)
     quantity_reserved = models.IntegerField(default=0)
+    low_stock_threshold = models.IntegerField(
+        default=5,
+        validators=[MinValueValidator(0)],
+        help_text="Configurable sellable available stock threshold below which low-stock alerts trigger.",
+    )
+    is_alert_acknowledged = models.BooleanField(
+        default=False,
+        help_text="Whether low-stock or out-of-stock alert has been acknowledged by an administrator.",
+    )
+    alert_acknowledged_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when alert was acknowledged.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,6 +57,10 @@ class InventoryItem(models.Model):
             models.CheckConstraint(
                 condition=models.Q(quantity_reserved__gte=0),
                 name="chk_quantity_reserved_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(low_stock_threshold__gte=0),
+                name="chk_low_stock_threshold_non_negative",
             ),
         ]
 
@@ -67,6 +85,14 @@ class InventoryMovement(models.Model):
         RETURN_RECEIVED = "return_received", "Return Received"
         DAMAGED = "damaged", "Damaged"
 
+    class AdjustmentReason(models.TextChoices):
+        RECEIVED_STOCK = "received_stock", "Received Stock"
+        DAMAGED_GOODS = "damaged_goods", "Damaged Goods"
+        LOST_OR_MISSING = "lost_or_missing", "Lost or Missing Stock"
+        COUNT_CORRECTION = "count_correction", "Stock Count Correction"
+        RETURN_RECEIVED = "return_received", "Return Received"
+        OTHER = "other", "Other"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     inventory_item = models.ForeignKey(
         InventoryItem,
@@ -79,6 +105,18 @@ class InventoryMovement(models.Model):
     )
     quantity_change = models.IntegerField()
     reference = models.CharField(max_length=255, blank=True, default="")
+    actor = models.ForeignKey(
+        "accounts.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="inventory_movements",
+    )
+    actor_email = models.CharField(max_length=255, blank=True, default="")
+    reason_code = models.CharField(max_length=50, blank=True, default="")
+    note = models.TextField(blank=True, default="")
+    resulting_quantity = models.IntegerField(null=True, blank=True)
+    idempotency_key = models.CharField(max_length=255, blank=True, default="", db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -88,6 +126,10 @@ class InventoryMovement(models.Model):
             models.Index(
                 fields=["inventory_item", "movement_type"],
                 name="idx_movement_item_type",
+            ),
+            models.Index(
+                fields=["inventory_item", "reason_code"],
+                name="idx_movement_item_reason",
             ),
         ]
 
@@ -124,6 +166,14 @@ class InventoryReservation(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+    order = models.ForeignKey(
+        "orders.Order",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="inventory_reservations",
+    )
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -140,6 +190,14 @@ class InventoryReservation(models.Model):
             models.Index(
                 fields=["inventory_item", "status"],
                 name="idx_reservation_item_status",
+            ),
+            models.Index(
+                fields=["order", "status"],
+                name="idx_res_order_status",
+            ),
+            models.Index(
+                fields=["status", "expires_at"],
+                name="idx_res_status_expires",
             ),
         ]
 
