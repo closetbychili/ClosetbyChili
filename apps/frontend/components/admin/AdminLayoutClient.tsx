@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminMobileDrawer from "./AdminMobileDrawer";
@@ -11,6 +11,34 @@ interface AdminLayoutClientProps {
 
 export default function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Global Admin Modal / Drawer Scroll Lock Observer:
+  // Automatically prevents the background dashboard page from scrolling whenever
+  // any modal, drawer, or dialog overlay is opened across the entire admin console.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const syncBodyScroll = () => {
+      const activeModal = document.querySelector(
+        '[role="dialog"], [aria-modal="true"], .fixed.inset-0.z-50, .fixed.inset-0.z-60'
+      );
+      if (activeModal) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+    };
+
+    syncBodyScroll();
+
+    const observer = new MutationObserver(syncBodyScroll);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F7F1E8] flex antialiased text-[#1F1B17]">

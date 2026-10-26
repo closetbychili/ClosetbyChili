@@ -27,6 +27,7 @@ vi.mock("@/lib/api/admin", async (importOriginal) => {
     ...actual,
     getAdminCoupons: vi.fn(),
     getAdminCouponDetail: vi.fn(),
+    getAdminCouponRedemptions: vi.fn().mockResolvedValue({ count: 0, next: null, previous: null, results: [] }),
     createAdminCoupon: vi.fn(),
     updateAdminCoupon: vi.fn(),
     activateAdminCoupon: vi.fn(),
@@ -529,4 +530,146 @@ describe("Admin Coupon Management (Sprint A5.1)", () => {
       expect(screen.getByText("Festive 2026")).toBeInTheDocument();
     });
   });
+
+  it("displays accurate usage capacity metrics and redemption history in drawer", async () => {
+    const mockDetail: adminApi.AdminCouponDetail = {
+      ...mockCoupons[0],
+      total_redemptions: 12,
+      remaining_capacity: 488,
+      active_reservations_count: 2,
+      applicable_products: [],
+      applicable_categories: [],
+      applicable_collections: [],
+      audit_logs: [],
+    };
+
+    const mockRedemptions: adminApi.AdminCouponRedemption[] = [
+      {
+        id: "red-1",
+        coupon_id: "coup-1111-2222-3333",
+        coupon_code: "FESTIVE25",
+        coupon_name: "Festive Season 25% Off",
+        customer_id: "cust-1",
+        customer_email_masked: "c***1@example.com",
+        customer_display: "First Customer",
+        order_id: "ord-1",
+        order_number: "ORD-998877",
+        state: "REDEEMED",
+        discount_amount: "450.00",
+        currency: "INR",
+        idempotency_key: "tok-1",
+        reserved_at: "2026-10-25T10:00:00Z",
+        expires_at: null,
+        finalized_at: "2026-10-25T10:15:00Z",
+        released_at: null,
+        release_reason: "",
+        created_at: "2026-10-25T10:00:00Z",
+        updated_at: "2026-10-25T10:15:00Z",
+      },
+      {
+        id: "red-2",
+        coupon_id: "coup-1111-2222-3333",
+        coupon_code: "FESTIVE25",
+        coupon_name: "Festive Season 25% Off",
+        customer_id: "cust-2",
+        customer_email_masked: "c***2@example.com",
+        customer_display: "Second Customer",
+        order_id: null,
+        order_number: null,
+        state: "RESERVED",
+        discount_amount: "0.00",
+        currency: "INR",
+        idempotency_key: "tok-2",
+        reserved_at: "2026-10-26T12:00:00Z",
+        expires_at: "2026-10-26T12:15:00Z",
+        finalized_at: null,
+        released_at: null,
+        release_reason: "",
+        created_at: "2026-10-26T12:00:00Z",
+        updated_at: "2026-10-26T12:00:00Z",
+      },
+    ];
+
+    vi.mocked(adminApi.getAdminCouponDetail).mockResolvedValue(mockDetail);
+    vi.mocked(adminApi.getAdminCouponRedemptions).mockResolvedValue({
+      count: 2,
+      next: null,
+      previous: null,
+      results: mockRedemptions,
+    });
+
+    render(
+      <AdminCouponDetailDrawer
+        isOpen={true}
+        couponId="coup-1111-2222-3333"
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+        onToggleStatus={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      // Usage and Capacity metrics
+      expect(screen.getByText("Usage & Capacity")).toBeInTheDocument();
+      expect(screen.getByText("Finalized Redemptions")).toBeInTheDocument();
+      expect(screen.getByText("12")).toBeInTheDocument();
+      expect(screen.getByText("Remaining Capacity")).toBeInTheDocument();
+      expect(screen.getByText("488")).toBeInTheDocument();
+
+      // Redemptions history
+      expect(screen.getByText("Redemption History (2)")).toBeInTheDocument();
+      expect(screen.getByText("ORD-998877")).toBeInTheDocument();
+      expect(screen.getByText("c***1@example.com")).toBeInTheDocument();
+      expect(screen.getByText("c***2@example.com")).toBeInTheDocument();
+      expect(screen.getAllByText("Finalized").length).toBeGreaterThan(0);
+      expect(screen.getByText("Reserved (In Checkout)")).toBeInTheDocument();
+    });
+  });
+
+  it("handles empty redemption history and state filtering", async () => {
+    const mockDetail: adminApi.AdminCouponDetail = {
+      ...mockCoupons[0],
+      total_redemptions: 0,
+      remaining_capacity: 500,
+      applicable_products: [],
+      applicable_categories: [],
+      applicable_collections: [],
+      audit_logs: [],
+    };
+
+    vi.mocked(adminApi.getAdminCouponDetail).mockResolvedValue(mockDetail);
+    vi.mocked(adminApi.getAdminCouponRedemptions).mockResolvedValue({
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+    });
+
+    render(
+      <AdminCouponDetailDrawer
+        isOpen={true}
+        couponId="coup-1111-2222-3333"
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+        onToggleStatus={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Redemption History (0)")).toBeInTheDocument();
+      expect(screen.getByText("No redemptions found under this filter.")).toBeInTheDocument();
+    });
+
+    // Click filter button for "Finalized"
+    const finalizedFilterBtn = screen.getByRole("button", { name: "Finalized" });
+    fireEvent.click(finalizedFilterBtn);
+
+    await waitFor(() => {
+      expect(adminApi.getAdminCouponRedemptions).toHaveBeenCalledWith("coup-1111-2222-3333", {
+        state: "REDEEMED",
+        page_size: 20,
+      });
+    });
+  });
 });
+

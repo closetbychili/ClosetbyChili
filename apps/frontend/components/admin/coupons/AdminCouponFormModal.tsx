@@ -285,7 +285,7 @@ function AdminCouponFormInner({
       </div>
 
       {/* Form Body (Scrollable) */}
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 overscroll-contain">
         {/* General Error Banner */}
         {generalError && (
           <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
@@ -659,7 +659,12 @@ export default function AdminCouponFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain"
+    >
       <AdminCouponFormInner
         key={couponToEdit?.id ?? "create-new-coupon"}
         couponToEdit={couponToEdit}

@@ -117,9 +117,10 @@ export default function MediaDetailPanel({
       role="dialog"
       aria-modal="true"
       aria-labelledby="detail-panel-title"
-      className="fixed inset-0 z-40 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity"
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-40 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity overscroll-contain"
     >
-      <div className="w-full max-w-lg bg-white border-l border-[#EBE2D8] shadow-2xl h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+      <div className="w-full max-w-lg bg-white border-l border-[#EBE2D8] shadow-2xl h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 overscroll-contain">
         {/* Panel Header */}
         <div className="px-6 py-4 border-b border-[#EBE2D8] flex items-center justify-between bg-[#FDFBF7]">
           <div>

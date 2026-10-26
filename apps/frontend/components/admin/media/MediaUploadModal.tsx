@@ -178,9 +178,10 @@ export default function MediaUploadModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="upload-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overscroll-contain"
     >
-      <div className="relative w-full max-w-2xl bg-white border border-[#EBE2D8] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-white border border-[#EBE2D8] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] overscroll-contain">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#EBE2D8] flex items-center justify-between bg-[#FDFBF7]">
           <div>

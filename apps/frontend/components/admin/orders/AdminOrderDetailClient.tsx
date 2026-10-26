@@ -1389,9 +1389,10 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-action-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overscroll-contain"
         >
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EBE2D8] space-y-5 animate-in fade-in-50 zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EBE2D8] space-y-5 animate-in fade-in-50 zoom-in-95 duration-150 overscroll-contain">
             <div className="flex items-start justify-between">
               <div>
                 <h3
@@ -1514,9 +1515,10 @@ export default function AdminOrderDetailClient({ orderId }: AdminOrderDetailClie
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-shipment-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overscroll-contain"
         >
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EBE2D8] space-y-5 animate-in fade-in-50 zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#EBE2D8] space-y-5 animate-in fade-in-50 zoom-in-95 duration-150 overscroll-contain">
             <div className="flex items-start justify-between">
               <div>
                 <h3

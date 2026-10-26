@@ -54,6 +54,7 @@ from apps.orders.coupon_views import (
     AdminCouponDeactivateView,
     AdminCouponDetailView,
     AdminCouponListCreateView,
+    AdminCouponRedemptionListView,
 )
 from apps.payments.admin_views import (
     AdminPaymentDetailView,
@@ -71,6 +72,7 @@ urlpatterns = [
     path("coupons/", AdminCouponListCreateView.as_view(), name="admin-coupons-list-create"),
     path("coupons/<uuid:pk>/activate/", AdminCouponActivateView.as_view(), name="admin-coupons-activate"),
     path("coupons/<uuid:pk>/deactivate/", AdminCouponDeactivateView.as_view(), name="admin-coupons-deactivate"),
+    path("coupons/<uuid:pk>/redemptions/", AdminCouponRedemptionListView.as_view(), name="admin-coupons-redemptions"),
     path("coupons/<uuid:pk>/", AdminCouponDetailView.as_view(), name="admin-coupons-detail"),
     path("shipments/", AdminShipmentListView.as_view(), name="admin-shipments-list"),
     path("shipments/<str:shipment_id>/tracking/", AdminShipmentTrackingUpdateView.as_view(), name="admin-shipments-tracking"),

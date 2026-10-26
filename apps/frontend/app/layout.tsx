@@ -13,6 +13,7 @@ const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 const montserrat = Montserrat({
@@ -47,7 +48,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${bodoniModa.variable} ${cinzel.variable} ${montserrat.variable} antialiased`}>
+      <body
+        suppressHydrationWarning
+        className={`${bodoniModa.variable} ${cinzel.variable} ${montserrat.variable} antialiased`}
+      >
         <SmoothScroll>
           <AuthProvider>
             <CartProvider>

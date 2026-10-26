@@ -214,7 +214,7 @@ export default function AdminShipmentsTable({
                 <td className="py-3.5 px-4 text-[#554243] whitespace-nowrap text-[11px]">
                   {formatDate(shipment.dispatched_at)}
                   {shipment.dispatched_by_email && (
-                    <div className="text-[10px] text-[#8C7A78] truncate max-w-[130px]">
+                    <div className="text-[10px] text-[#8C7A78] truncate max-w-32.5">
                       by {shipment.dispatched_by_email}
                     </div>
                   )}
@@ -224,7 +224,7 @@ export default function AdminShipmentsTable({
                 <td className="py-3.5 px-4 text-[#554243] whitespace-nowrap text-[11px]">
                   {formatDate(shipment.delivered_at)}
                   {shipment.delivered_by_email && (
-                    <div className="text-[10px] text-[#8C7A78] truncate max-w-[130px]">
+                    <div className="text-[10px] text-[#8C7A78] truncate max-w-32.5">
                       by {shipment.delivered_by_email}
                     </div>
                   )}

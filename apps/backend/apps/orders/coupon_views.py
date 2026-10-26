@@ -27,9 +27,10 @@ from apps.orders.coupon_serializers import (
     AdminCouponCreateSerializer,
     AdminCouponDetailSerializer,
     AdminCouponListSerializer,
+    AdminCouponRedemptionSerializer,
     AdminCouponUpdateSerializer,
 )
-from apps.orders.models import Coupon, CouponAuditLog
+from apps.orders.models import Coupon, CouponAuditLog, CouponRedemption
 
 ALLOWED_COUPON_ORDERING_FIELDS = {
     "created_at",
@@ -354,3 +355,40 @@ class AdminCouponDeactivateView(APIView):
 
         detail_serializer = AdminCouponDetailSerializer(coupon)
         return Response(detail_serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminCouponRedemptionListView(generics.ListAPIView):
+    """
+    GET /api/v1/admin/coupons/<uuid:pk>/redemptions/
+
+    Lists durable redemptions and reservations for a coupon.
+    Supports filtering by state (RESERVED, REDEEMED, RELEASED),
+    search by order number or customer, and pagination.
+    """
+
+    permission_classes = [IsAdminUser]
+    serializer_class = AdminCouponRedemptionSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        coupon = resolve_coupon(self.kwargs.get("pk"))
+        qs = (
+            CouponRedemption.objects.filter(coupon=coupon)
+            .select_related("coupon", "customer", "order")
+            .order_by("-created_at")
+        )
+
+        state_param = self.request.query_params.get("state")
+        if state_param and state_param.strip().upper() in CouponRedemption.State.values:
+            qs = qs.filter(state=state_param.strip().upper())
+
+        search = (self.request.query_params.get("search") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(order__order_number__icontains=search)
+                | Q(customer__email__icontains=search)
+                | Q(customer__profile__display_name__icontains=search)
+                | Q(idempotency_key__icontains=search)
+            )
+
+        return qs

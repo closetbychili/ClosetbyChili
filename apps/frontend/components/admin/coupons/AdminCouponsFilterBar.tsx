@@ -40,7 +40,7 @@ export default function AdminCouponsFilterBar({
     <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm mb-6 space-y-3">
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         {/* Search input */}
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-60">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
             type="text"

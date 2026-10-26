@@ -19,8 +19,6 @@ export default function Bestsellers({
 
   useEffect(() => {
     if (initialProducts !== undefined) {
-      setProducts(initialProducts);
-      setLoading(false);
       return;
     }
 
@@ -63,7 +61,7 @@ export default function Bestsellers({
     }));
   };
 
-  const displayedProducts = products || [];
+  const displayedProducts = initialProducts ?? products ?? [];
   const showEmptyState = !loading && displayedProducts.length === 0;
 
   return (
@@ -126,6 +124,12 @@ export default function Bestsellers({
                       <img
                         src={item.image || "/assets/products/kurti-2.jpg"}
                         alt={item.name}
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          if (!target.src.includes("/assets/products/kurti-2.jpg")) {
+                            target.src = "/assets/products/kurti-2.jpg";
+                          }
+                        }}
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     </Link>
@@ -135,6 +139,7 @@ export default function Bestsellers({
 
                     <button
                       type="button"
+                      suppressHydrationWarning
                       aria-label="Add to Wishlist"
                       onClick={(e) => toggleWishlist(item.id, e)}
                       className={`absolute top-4 right-4 w-9 h-9 rounded-full bg-surface/90 hover:bg-surface flex items-center justify-center transition-colors shadow-xs cursor-pointer ${

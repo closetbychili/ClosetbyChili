@@ -22,8 +22,6 @@ export default function NewArrivals({
 
   useEffect(() => {
     if (initialProducts !== undefined) {
-      setProducts(initialProducts);
-      setLoading(false);
       return;
     }
 
@@ -77,7 +75,7 @@ export default function NewArrivals({
     }));
   };
 
-  const displayedProducts = products || [];
+  const displayedProducts = initialProducts ?? products ?? [];
   const showEmptyState = !loading && displayedProducts.length === 0;
 
   return (
@@ -145,6 +143,7 @@ export default function NewArrivals({
                     {/* Wishlist Heart Button */}
                     <button
                       type="button"
+                      suppressHydrationWarning
                       aria-label="Add to Wishlist"
                       onClick={(e) => toggleWishlist(product.id, e)}
                       className={`absolute top-3 right-3 z-10 w-8.5 h-8.5 rounded-full bg-surface/90 hover:bg-surface flex items-center justify-center transition-all shadow-xs cursor-pointer ${
@@ -167,6 +166,12 @@ export default function NewArrivals({
                       <img
                         src={product.image || "/assets/products/kurti-1.jpg"}
                         alt={product.name}
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          if (!target.src.includes("/assets/products/kurti-1.jpg")) {
+                            target.src = "/assets/products/kurti-1.jpg";
+                          }
+                        }}
                         className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105"
                       />
                     </Link>
@@ -189,6 +194,7 @@ export default function NewArrivals({
                             <button
                               key={sz}
                               type="button"
+                              suppressHydrationWarning
                               onClick={(e) => selectSize(product.id, sz, e)}
                               className={`py-1 font-label-ui text-xs transition-colors cursor-pointer ${
                                 isChosen

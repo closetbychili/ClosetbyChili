@@ -431,10 +431,12 @@ class Shipment(models.Model):
             if self.pk:
                 existing = existing.exclude(pk=self.pk)
             if existing.exists():
+                first_shipment = existing.first()
+                shipment_id = first_shipment.id if first_shipment else ""
                 raise ValidationError({
                     "order": (
                         f"Order {self.order.order_number} already has an active shipment "
-                        f"({existing.first().id}). Multiple active shipments per order are not supported."
+                        f"({shipment_id}). Multiple active shipments per order are not supported."
                     )
                 })
 
@@ -689,7 +691,7 @@ class Coupon(models.Model):
         if self.targeting_mode == self.TargetingMode.ALL_PRODUCTS:
             return "All Products"
         if not self.pk:
-            return self.get_targeting_mode_display()
+            return str(self.get_targeting_mode_display())
         parts = []
         p_count = self.applicable_products.count()
         c_count = self.applicable_categories.count()
@@ -700,7 +702,7 @@ class Coupon(models.Model):
             parts.append(f"{c_count} Categor{'ies' if c_count != 1 else 'y'}")
         if col_count:
             parts.append(f"{col_count} Collection{'s' if col_count != 1 else ''}")
-        return ", ".join(parts) if parts else self.get_targeting_mode_display()
+        return ", ".join(parts) if parts else str(self.get_targeting_mode_display())
 
     @property
     def lifecycle_status(self) -> str:
@@ -712,6 +714,30 @@ class Coupon(models.Model):
         if self.start_date > now:
             return "SCHEDULED"
         return "CURRENTLY_VALID"
+
+    @property
+    def total_redemptions_count(self) -> int:
+        if not self.pk:
+            return 0
+        return self.redemptions.filter(state="REDEEMED").count()
+
+    @property
+    def active_reservations_count(self) -> int:
+        if not self.pk:
+            return 0
+        now = timezone.now()
+        return self.redemptions.filter(
+            state="RESERVED"
+        ).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+        ).count()
+
+    @property
+    def remaining_capacity(self) -> int | None:
+        if self.usage_limit is None:
+            return None
+        remaining = self.usage_limit - self.total_redemptions_count
+        return max(0, remaining)
 
     def clean(self):
         super().clean()
@@ -790,4 +816,127 @@ class CouponAuditLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.event_type} on {self.coupon.code} at {self.created_at}"
+
+
+class CouponRedemption(models.Model):
+    """
+    Durable record of coupon reservation and redemption lifecycle.
+    Tracks state transitions: RESERVED -> REDEEMED (finalized) or RELEASED (abandoned/cancelled).
+    Stores discount amount snapshots to preserve historical integrity.
+    """
+
+    class State(models.TextChoices):
+        RESERVED = "RESERVED", "Reserved"
+        REDEEMED = "REDEEMED", "Redeemed"
+        RELEASED = "RELEASED", "Released"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    coupon = models.ForeignKey(
+        Coupon,
+        on_delete=models.PROTECT,
+        related_name="redemptions",
+        help_text="The coupon being redeemed.",
+    )
+    customer = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.PROTECT,
+        related_name="coupon_redemptions",
+        help_text="Customer account redeeming the coupon.",
+    )
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="coupon_redemptions",
+        help_text="Associated order once confirmed or finalized.",
+    )
+    state = models.CharField(
+        max_length=20,
+        choices=State.choices,
+        default=State.RESERVED,
+        db_index=True,
+    )
+    discount_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+        help_text="Snapshot of the discount amount applied at finalization.",
+    )
+    currency = models.CharField(
+        max_length=3,
+        default="INR",
+        help_text="Currency of the discount snapshot.",
+    )
+    idempotency_key = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Unique client/checkout key preventing duplicate redemptions.",
+    )
+    reserved_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Reservation expiration timestamp (TTL). Expired reservations cease holding capacity.",
+    )
+    finalized_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when purchase succeeded and redemption finalized.",
+    )
+    released_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when reservation or redemption was cancelled or released.",
+    )
+    release_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Optional rationale for release (e.g. checkout expired, payment failed, order cancelled).",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "orders_coupon_redemptions"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["coupon", "order"],
+                condition=Q(order__isnull=False),
+                name="uq_coupon_redemption_order",
+            ),
+            models.UniqueConstraint(
+                fields=["customer", "idempotency_key"],
+                condition=Q(idempotency_key__isnull=False),
+                name="uq_coupon_redemption_customer_idempotency",
+            ),
+            models.CheckConstraint(
+                condition=Q(discount_amount__gte=0),
+                name="chk_coupon_redemption_discount_non_negative",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["coupon", "state"], name="idx_redemption_coupon_state"),
+            models.Index(fields=["customer", "state"], name="idx_redemption_customer_state"),
+            models.Index(fields=["coupon", "customer", "state"], name="idx_redemption_user_state"),
+            models.Index(fields=["expires_at"], name="idx_redemption_expires_at"),
+            models.Index(fields=["created_at"], name="idx_redemption_created_at"),
+        ]
+
+    def is_reservation_active(self, now: timezone.datetime | None = None) -> bool:
+        if self.state != self.State.RESERVED:
+            return False
+        if self.expires_at is None:
+            return True
+        current_time = now or timezone.now()
+        return self.expires_at > current_time
+
+    def __str__(self) -> str:
+        return f"Redemption {self.id} for {self.coupon.code} [{self.state}] by User {self.customer_id}"
 

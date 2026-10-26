@@ -1146,7 +1146,8 @@ export default function ProductForm({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overscroll-contain"
         >
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-[#EBE2D8] animate-in fade-in zoom-in-95">
             <div className="w-10 h-10 rounded-full bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-center mx-auto mb-3 text-[#DC2626]">

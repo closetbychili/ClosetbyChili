@@ -112,7 +112,7 @@ export default function AdminCouponsTable({
               <th scope="col" className="px-5 py-3.5">Discount</th>
               <th scope="col" className="px-5 py-3.5">Min Order</th>
               <th scope="col" className="px-5 py-3.5">Validity Window</th>
-              <th scope="col" className="px-5 py-3.5">Limits & Rules</th>
+              <th scope="col" className="px-5 py-3.5">Usage & Rules</th>
               <th scope="col" className="px-5 py-3.5">Status</th>
               <th scope="col" className="px-5 py-3.5 text-right">Actions</th>
             </tr>
@@ -200,13 +200,19 @@ export default function AdminCouponsTable({
                   </div>
                 </td>
 
-                {/* Limits & Rules */}
+                {/* Usage & Rules */}
                 <td className="px-5 py-4 text-xs space-y-1">
                   <div>
-                    <span className="text-stone-400">Total cap: </span>
-                    <span className="font-medium text-stone-800">
-                      {coupon.usage_limit ? `${coupon.usage_limit} uses` : "Unlimited"}
+                    <span className="text-stone-400">Usage: </span>
+                    <span className="font-semibold text-stone-800">
+                      {coupon.total_redemptions ?? coupon.usage_count ?? 0}
+                      {coupon.usage_limit ? ` / ${coupon.usage_limit}` : " (Unlimited)"}
                     </span>
+                    {coupon.remaining_capacity !== undefined && coupon.remaining_capacity !== null && (
+                      <span className="ml-1 text-[11px] text-stone-500 font-normal">
+                        ({coupon.remaining_capacity} left)
+                      </span>
+                    )}
                   </div>
                   {coupon.per_customer_limit && (
                     <div>

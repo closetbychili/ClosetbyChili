@@ -16,9 +16,73 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.catalog.models import Category, Collection, Product
-from apps.orders.models import Coupon, CouponAuditLog
+from apps.orders.models import Coupon, CouponAuditLog, CouponRedemption
 
 CODE_VALID_REGEX = re.compile(r"^[A-Z0-9_-]+$")
+
+
+def mask_customer_email(email: str) -> str:
+    """Mask email for privacy, e.g. 'john.doe@example.com' -> 'j***e@example.com'."""
+    if not email or "@" not in email:
+        return "Customer"
+    user_part, domain_part = email.split("@", 1)
+    if len(user_part) <= 2:
+        masked_user = user_part[0] + "***"
+    else:
+        masked_user = user_part[0] + "***" + user_part[-1]
+    return f"{masked_user}@{domain_part}"
+
+
+class AdminCouponRedemptionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for coupon redemption audit and history records.
+    Masks customer PII to adhere to administrative privacy requirements.
+    """
+
+    coupon_code = serializers.CharField(source="coupon.code", read_only=True)
+    coupon_name = serializers.CharField(source="coupon.name", read_only=True)
+    customer_email_masked = serializers.SerializerMethodField()
+    customer_display = serializers.SerializerMethodField()
+    order_number = serializers.CharField(source="order.order_number", read_only=True, default=None)
+
+    class Meta:
+        model = CouponRedemption
+        fields = [
+            "id",
+            "coupon_id",
+            "coupon_code",
+            "coupon_name",
+            "customer_id",
+            "customer_email_masked",
+            "customer_display",
+            "order_id",
+            "order_number",
+            "state",
+            "discount_amount",
+            "currency",
+            "idempotency_key",
+            "reserved_at",
+            "expires_at",
+            "finalized_at",
+            "released_at",
+            "release_reason",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_customer_email_masked(self, obj: CouponRedemption) -> str:
+        if not obj.customer or not obj.customer.email:
+            return "Unknown"
+        return mask_customer_email(obj.customer.email)
+
+    def get_customer_display(self, obj: CouponRedemption) -> str:
+        if not obj.customer:
+            return "Customer"
+        profile = getattr(obj.customer, "profile", None)
+        if profile and profile.display_name:
+            return profile.display_name
+        return mask_customer_email(obj.customer.email or "")
 
 
 class CompactProductTargetSerializer(serializers.ModelSerializer):
@@ -75,6 +139,9 @@ class AdminCouponListSerializer(serializers.ModelSerializer):
     created_by_email = serializers.SerializerMethodField()
     updated_by_email = serializers.SerializerMethodField()
     usage_count = serializers.SerializerMethodField()
+    total_redemptions = serializers.IntegerField(source="total_redemptions_count", read_only=True)
+    remaining_capacity = serializers.IntegerField(read_only=True)
+    active_reservations_count = serializers.IntegerField(read_only=True)
     applicable_products_count = serializers.SerializerMethodField()
     applicable_categories_count = serializers.SerializerMethodField()
     applicable_collections_count = serializers.SerializerMethodField()
@@ -104,6 +171,9 @@ class AdminCouponListSerializer(serializers.ModelSerializer):
             "per_customer_limit",
             "is_first_order_only",
             "usage_count",
+            "total_redemptions",
+            "remaining_capacity",
+            "active_reservations_count",
             "created_at",
             "updated_at",
             "created_by_email",
@@ -117,8 +187,8 @@ class AdminCouponListSerializer(serializers.ModelSerializer):
     def get_updated_by_email(self, obj: Coupon) -> str | None:
         return obj.updated_by.email if obj.updated_by else None
 
-    def get_usage_count(self, obj: Coupon) -> None:
-        return None
+    def get_usage_count(self, obj: Coupon) -> int:
+        return obj.total_redemptions_count
 
     def get_applicable_products_count(self, obj: Coupon) -> int:
         return obj.applicable_products.count() if obj.pk else 0
@@ -138,6 +208,9 @@ class AdminCouponDetailSerializer(serializers.ModelSerializer):
     created_by_email = serializers.SerializerMethodField()
     updated_by_email = serializers.SerializerMethodField()
     usage_count = serializers.SerializerMethodField()
+    total_redemptions = serializers.IntegerField(source="total_redemptions_count", read_only=True)
+    remaining_capacity = serializers.IntegerField(read_only=True)
+    active_reservations_count = serializers.IntegerField(read_only=True)
     applicable_products = CompactProductTargetSerializer(many=True, read_only=True)
     applicable_categories = CompactCategoryTargetSerializer(many=True, read_only=True)
     applicable_collections = CompactCollectionTargetSerializer(many=True, read_only=True)
@@ -174,6 +247,9 @@ class AdminCouponDetailSerializer(serializers.ModelSerializer):
             "per_customer_limit",
             "is_first_order_only",
             "usage_count",
+            "total_redemptions",
+            "remaining_capacity",
+            "active_reservations_count",
             "created_at",
             "updated_at",
             "created_by_email",
@@ -188,8 +264,8 @@ class AdminCouponDetailSerializer(serializers.ModelSerializer):
     def get_updated_by_email(self, obj: Coupon) -> str | None:
         return obj.updated_by.email if obj.updated_by else None
 
-    def get_usage_count(self, obj: Coupon) -> None:
-        return None
+    def get_usage_count(self, obj: Coupon) -> int:
+        return obj.total_redemptions_count
 
     def get_applicable_products_count(self, obj: Coupon) -> int:
         return obj.applicable_products.count() if obj.pk else 0

@@ -2448,10 +2448,43 @@ export interface AdminCoupon {
   per_customer_limit: number | null;
   is_first_order_only: boolean;
   usage_count: number | null;
+  total_redemptions?: number;
+  remaining_capacity?: number | null;
+  active_reservations_count?: number;
   created_at: string;
   updated_at: string;
   created_by_email?: string | null;
   updated_by_email?: string | null;
+}
+
+export interface AdminCouponRedemption {
+  id: string;
+  coupon_id: string;
+  coupon_code: string;
+  coupon_name: string;
+  customer_id: string;
+  customer_email_masked: string;
+  customer_display: string;
+  order_id: string | null;
+  order_number: string | null;
+  state: "RESERVED" | "REDEEMED" | "RELEASED";
+  discount_amount: string;
+  currency: string;
+  idempotency_key: string | null;
+  reserved_at: string;
+  expires_at: string | null;
+  finalized_at: string | null;
+  released_at: string | null;
+  release_reason: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCouponRedemptionQueryParams {
+  page?: number;
+  page_size?: number;
+  state?: "RESERVED" | "REDEEMED" | "RELEASED" | string;
+  search?: string;
 }
 
 export interface AdminCouponDetail extends AdminCoupon {
@@ -2629,6 +2662,35 @@ export async function deactivateAdminCoupon(
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+    },
+  });
+}
+
+export async function getAdminCouponRedemptions(
+  couponId: string,
+  params?: AdminCouponRedemptionQueryParams,
+  token?: string
+): Promise<PaginatedResponse<AdminCouponRedemption>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.state && params.state !== "ALL" && params.state !== "all") {
+      query.set("state", params.state);
+    }
+    if (params.search && params.search.trim()) {
+      query.set("search", params.search.trim());
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/coupons/${encodeURIComponent(couponId)}/redemptions/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCouponRedemption>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 }

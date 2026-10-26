@@ -324,3 +324,15 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Modal & Drawer Scroll Isolation ──────────────────────── */
+[role="dialog"],
+[aria-modal="true"],
+.modal-scroll-overlay {
+  overscroll-behavior: contain;
+}
+
+[role="dialog"] [class*="overflow-y-auto"],
+[aria-modal="true"] [class*="overflow-y-auto"] {
+  overscroll-behavior: contain;
+}

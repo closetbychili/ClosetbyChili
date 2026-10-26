@@ -835,9 +835,10 @@ export default function AdminCategoriesClient() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in overscroll-contain"
         >
-          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 overscroll-contain">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#EBE2D8] bg-[#FAF6F2]/60 shrink-0">
               <div>
@@ -1217,7 +1218,8 @@ export default function AdminCategoriesClient() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in overscroll-contain"
         >
           <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 space-y-4">
             <div className="flex items-center gap-3">

@@ -494,7 +494,7 @@ export default function AdminCouponTargetingSelector({
                   key={p.id}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-stone-900 text-white font-medium"
                 >
-                  <span className="max-w-[200px] truncate">{p.name}</span>
+                  <span className="max-w-50 truncate">{p.name}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveProduct(p.id)}
@@ -594,7 +594,7 @@ export default function AdminCouponTargetingSelector({
                   key={c.id}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-indigo-900 text-white font-medium"
                 >
-                  <span className="max-w-[200px] truncate">{c.name}</span>
+                  <span className="max-w-50 truncate">{c.name}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveCategory(c.id)}
@@ -694,7 +694,7 @@ export default function AdminCouponTargetingSelector({
                   key={col.id}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-amber-800 text-white font-medium"
                 >
-                  <span className="max-w-[200px] truncate">{col.name}</span>
+                  <span className="max-w-50 truncate">{col.name}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveCollection(col.id)}
