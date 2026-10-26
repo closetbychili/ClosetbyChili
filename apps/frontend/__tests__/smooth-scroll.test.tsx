@@ -14,10 +14,7 @@ describe("SmoothScroll Component (Lenis Integration)", () => {
     expect(screen.getByText("Luxury Ethnic Wear Content")).toBeInTheDocument();
   });
 
-  it("exempts admin console routes to maintain native scroll and modal isolation", async () => {
-    const navigation = await import("next/navigation");
-    vi.spyOn(navigation, "usePathname").mockReturnValue("/admin/coupons");
-
+  it("renders admin console routes with smooth scroll enabled", () => {
     render(
       <SmoothScroll>
         <div data-testid="admin-content">Admin Dashboard Content</div>

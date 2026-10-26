@@ -1,15 +1,21 @@
-import AdminPlaceholderPage from "@/components/admin/AdminPlaceholderPage";
+import { Suspense } from "react";
+import AdminCustomersClient from "@/components/admin/customers/AdminCustomersClient";
 
 export const metadata = {
-  title: "Customers Directory | Admin Console",
+  title: "Customer Directory | Admin Console",
+  description: "Registered patrons, commerce profiles, lifetime spend analytics, and purchasing history.",
 };
 
 export default function AdminCustomersPage() {
   return (
-    <AdminPlaceholderPage
-      title="Customers"
-      description="Registered patrons, order histories, saved addresses, and wholesale classifications."
-      routePath="/admin/customers"
-    />
+    <Suspense
+      fallback={
+        <div className="w-full py-12 flex items-center justify-center text-xs text-stone-500">
+          Loading customer directory console...
+        </div>
+      }
+    >
+      <AdminCustomersClient />
+    </Suspense>
   );
 }

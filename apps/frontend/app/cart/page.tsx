@@ -185,7 +185,7 @@ export default function CartPage() {
         <div className="flex flex-col w-full">
           {/* ── Stepper & Bag Header Bar ──────────────────────── */}
           <section className="w-full bg-surface-container-low py-8 px-6 lg:px-12 border-b border-outline-variant/30">
-            <div className="max-w-[1440px] mx-auto flex flex-col gap-6">
+            <div className="max-w-360 mx-auto flex flex-col gap-6">
               {/* Stepper Navigation */}
               <nav
                 aria-label="Checkout Progress"
@@ -268,7 +268,7 @@ export default function CartPage() {
 
           {/* ── Error Banner ──────────────────────────────────── */}
           {error && (
-            <div className="max-w-[1440px] mx-auto w-full px-6 lg:px-12 pt-6">
+            <div className="max-w-360 mx-auto w-full px-6 lg:px-12 pt-6">
               <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-body-sm font-body-sm rounded flex items-center justify-between">
                 <span>{error}</span>
                 <button
@@ -286,7 +286,7 @@ export default function CartPage() {
           {/* ── Main Content: Empty State OR Populated Bag ────── */}
           {items.length === 0 ? (
             /* ── Opulent Empty State ── */
-            <section className="max-w-[1440px] mx-auto w-full px-6 lg:px-12 py-20 sm:py-28 text-center">
+            <section className="max-w-360 mx-auto w-full px-6 lg:px-12 py-20 sm:py-28 text-center">
               <div className="max-w-md mx-auto bg-surface-card p-8 sm:p-12 shadow-sm border border-outline-variant/40 flex flex-col items-center">
                 <div className="w-20 h-20 rounded-full bg-surface-container flex items-center justify-center text-primary mb-6">
                   <span className="material-symbols-outlined text-[36px]">
@@ -310,7 +310,7 @@ export default function CartPage() {
             </section>
           ) : (
             /* ── Main Bag Content & Sticky Checkout Sidebar ── */
-            <section className="max-w-[1440px] mx-auto w-full px-6 lg:px-12 py-10">
+            <section className="max-w-360 mx-auto w-full px-6 lg:px-12 py-10">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
                 {/* LEFT COLUMN: Bag Items & Customizations (8 cols) */}
                 <div className="lg:col-span-8 flex flex-col gap-8">
@@ -864,7 +864,7 @@ export default function CartPage() {
 
           {/* ── CROSS-SELL: "Muses Also Added" 4-Column Grid ──── */}
           <section className="w-full bg-surface-container-low py-16 px-6 lg:px-12 border-t border-outline-variant/30">
-            <div className="max-w-[1440px] mx-auto flex flex-col gap-10">
+            <div className="max-w-360 mx-auto flex flex-col gap-10">
               <div className="flex flex-col sm:flex-row items-baseline justify-between gap-4">
                 <div>
                   <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-bold">
