@@ -1,7 +1,11 @@
 from django.urls import path
 
 from apps.accounts.admin_views import AdminDashboardOverviewView, AdminVerifyAuthView
-from apps.accounts.admin_customers_views import AdminCustomerListView, AdminCustomerDetailView
+from apps.accounts.admin_customers_views import (
+    AdminCustomerDetailView,
+    AdminCustomerListView,
+    AdminCustomerNotesView,
+)
 from apps.inventory.admin_views import (
     AdminInventoryAdjustView,
     AdminInventoryAlertAcknowledgeView,
@@ -77,6 +81,11 @@ urlpatterns = [
     ),
     path("customers/", AdminCustomerListView.as_view(), name="admin-customers-list"),
     path("customers/<uuid:pk>/", AdminCustomerDetailView.as_view(), name="admin-customers-detail"),
+    path(
+        "customers/<uuid:customer_id>/notes/",
+        AdminCustomerNotesView.as_view(),
+        name="admin-customers-notes",
+    ),
     path("coupons/reports/overview/", AdminCouponReportOverviewView.as_view(), name="admin-coupons-reports-overview"),
     path("coupons/reports/performance/", AdminCouponReportPerformanceView.as_view(), name="admin-coupons-reports-performance"),
     path("coupons/reports/redemptions/", AdminCouponReportRedemptionsView.as_view(), name="admin-coupons-reports-redemptions"),

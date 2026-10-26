@@ -2908,8 +2908,96 @@ export interface AdminCustomer {
   currency: string;
 }
 
+export interface AdminCustomerAddress {
+  id: string;
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2: string;
+  landmark: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  address_type: "HOME" | "OFFICE" | "OTHER";
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCustomerOrderShipment {
+  id: string;
+  status: string;
+  status_display: string;
+  carrier: string;
+  tracking_number: string;
+  tracking_url: string;
+  dispatched_at: string | null;
+  delivered_at: string | null;
+}
+
+export interface AdminCustomerOrderHistoryItem {
+  id: string;
+  order_number: string;
+  status: string;
+  status_display: string;
+  payment_status: string;
+  payment_status_display: string;
+  currency: string;
+  subtotal: string;
+  discount: string;
+  shipping_amount: string;
+  tax_amount: string;
+  total: string;
+  coupon_code: string;
+  item_count: number;
+  shipment: AdminCustomerOrderShipment | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCustomerPurchaseSummary {
+  total_orders: number;
+  paid_orders: number;
+  pending_orders: number;
+  cancelled_orders: number;
+  total_paid_spend: string;
+  average_order_value: string;
+  latest_order_date: string | null;
+  currency: string;
+}
+
+export interface AdminCustomerAccountSummary {
+  id: string;
+  email: string;
+  display_name: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  supabase_user_id: string;
+}
+
 export interface AdminCustomerDetail extends AdminCustomer {
   supabase_user_id: string;
+  total_orders: number;
+  paid_orders: number;
+  pending_orders: number;
+  cancelled_orders: number;
+  average_order_value: string;
+  account?: AdminCustomerAccountSummary;
+  purchase_summary?: AdminCustomerPurchaseSummary;
+  addresses: AdminCustomerAddress[];
+  orders: {
+    count: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+    results: AdminCustomerOrderHistoryItem[];
+  };
 }
 
 export interface AdminCustomerQueryParams {
@@ -2961,10 +3049,19 @@ export async function getAdminCustomers(
 
 export async function getAdminCustomerDetail(
   customerId: string,
+  options?: { page?: number; page_size?: number },
   token?: string
 ): Promise<AdminCustomerDetail> {
   const accessToken = await resolveAccessToken(token);
-  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/`;
+  const query = new URLSearchParams();
+
+  if (options) {
+    if (options.page) query.set("page", String(options.page));
+    if (options.page_size) query.set("page_size", String(options.page_size));
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/${qs ? `?${qs}` : ""}`;
 
   return apiFetch<AdminCustomerDetail>(endpoint, {
     headers: {
@@ -2972,4 +3069,56 @@ export async function getAdminCustomerDetail(
     },
   });
 }
+
+export interface AdminCustomerNote {
+  id: string;
+  customer_id: string;
+  author_id: string | null;
+  author_name: string;
+  author_email: string;
+  body: string;
+  created_at: string;
+}
+
+export async function getAdminCustomerNotes(
+  customerId: string,
+  options?: { page?: number; page_size?: number },
+  token?: string
+): Promise<PaginatedResponse<AdminCustomerNote>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (options) {
+    if (options.page) query.set("page", String(options.page));
+    if (options.page_size) query.set("page_size", String(options.page_size));
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/notes/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCustomerNote>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function createAdminCustomerNote(
+  customerId: string,
+  body: string,
+  token?: string
+): Promise<AdminCustomerNote> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/notes/`;
+
+  return apiFetch<AdminCustomerNote>(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ body }),
+  });
+}
+
 

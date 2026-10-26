@@ -10,6 +10,7 @@ Provides:
 
 from __future__ import annotations
 
+import logging
 import uuid
 
 from rest_framework import status
@@ -21,13 +22,19 @@ from rest_framework.views import APIView
 from apps.accounts.admin_customers_serializers import (
     AdminCustomerDetailSerializer,
     AdminCustomerListSerializer,
+    AdminCustomerNoteCreateSerializer,
+    AdminCustomerNoteSerializer,
 )
 from apps.accounts.admin_customers_service import (
     get_admin_customer_detail_queryset,
     get_admin_customers_queryset,
+    get_customer_orders_paginated,
 )
-from apps.accounts.permissions import IsAdminUser
+from apps.accounts.models import CustomerNote, User
+from apps.accounts.permissions import IsAdminUser, IsStaffUser
 from apps.common.pagination import StandardResultsSetPagination
+
+logger = logging.getLogger(__name__)
 
 
 class AdminCustomerListView(APIView):
@@ -75,7 +82,7 @@ class AdminCustomerDetailView(APIView):
     """
     GET /api/v1/admin/customers/<uuid:pk>/
 
-    Customer identity summary and aggregate metrics endpoint.
+    Customer profile, saved addresses, purchase metrics, and paginated order history.
     """
 
     permission_classes = [IsAdminUser]
@@ -86,5 +93,90 @@ class AdminCustomerDetailView(APIView):
         if not customer:
             raise NotFound(detail=f"Customer with id '{pk}' was not found.")
 
-        serializer = AdminCustomerDetailSerializer(customer)
+        try:
+            page = int(request.query_params.get("page", 1))
+        except (TypeError, ValueError):
+            page = 1
+
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except (TypeError, ValueError):
+            page_size = 10
+
+        addresses = list(
+            customer.addresses.all().order_by("-is_default", "-updated_at", "-created_at")
+        )
+        orders_data = get_customer_orders_paginated(customer, page=page, page_size=page_size)
+
+        serializer = AdminCustomerDetailSerializer(
+            customer,
+            context={
+                "request": request,
+                "addresses": addresses,
+                "orders_data": orders_data,
+            },
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminCustomerNotesView(APIView):
+    """
+    GET /api/v1/admin/customers/<uuid:customer_id>/notes/
+    POST /api/v1/admin/customers/<uuid:customer_id>/notes/
+
+    Internal-only customer support context and interaction notes (Sprint A6.3).
+    Append-only: records cannot be edited or deleted by administrative users.
+    Enforces IsAdminUser server-side authorization.
+    """
+
+    permission_classes = [IsStaffUser]
+    pagination_class = StandardResultsSetPagination
+
+    def get_customer(self, customer_id: uuid.UUID) -> User:
+        customer = User.objects.filter(id=customer_id).first()
+        if not customer:
+            raise NotFound(detail=f"Customer with id '{customer_id}' was not found.")
+        return customer
+
+    def get(self, request: Request, customer_id: uuid.UUID) -> Response:
+        customer = self.get_customer(customer_id)
+        notes_qs = (
+            CustomerNote.objects.filter(customer=customer)
+            .select_related("author", "author__profile")
+            .order_by("-created_at", "-id")
+        )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(notes_qs, request, view=self)
+        if page is not None:
+            serializer = AdminCustomerNoteSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = AdminCustomerNoteSerializer(notes_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request: Request, customer_id: uuid.UUID) -> Response:
+        customer = self.get_customer(customer_id)
+        serializer = AdminCustomerNoteCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        body = serializer.validated_data["body"]
+        author = request.user if getattr(request.user, "is_authenticated", False) else None
+
+        note = CustomerNote.objects.create(
+            customer=customer,
+            author=author,
+            body=body,
+        )
+
+        logger.info(
+            "Staff user %s created internal note %s for customer %s",
+            getattr(author, "email", "system"),
+            note.id,
+            customer.id,
+        )
+
+        output_serializer = AdminCustomerNoteSerializer(note)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+

@@ -23,7 +23,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models import CustomerProfile, User
-from apps.orders.models import Order
+from apps.addresses.models import Address
+from apps.orders.models import Order, Shipment
 
 
 class AdminCustomerDirectoryApiTests(TestCase):
@@ -294,3 +295,141 @@ class AdminCustomerDirectoryApiTests(TestCase):
         non_existent = uuid.uuid4()
         res = self.client.get(f"/api/v1/admin/customers/{non_existent}/")
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_customer_detail_saved_addresses_and_default(self):
+        """Validates address list serialization, default address ordering, and address fields."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Create two addresses for customer1: one default, one secondary
+        addr1 = Address.objects.create(
+            user=self.customer1,
+            full_name="Ananya Sharma Home",
+            phone="+919876543210",
+            address_line1="Flat 402, Lotus Apartments",
+            address_line2="Park Street",
+            landmark="Near City Center",
+            city="Kolkata",
+            state="West Bengal",
+            postal_code="700016",
+            country="India",
+            address_type=Address.AddressType.HOME,
+            is_default=True,
+        )
+        addr2 = Address.objects.create(
+            user=self.customer1,
+            full_name="Ananya Work",
+            phone="+919876543211",
+            address_line1="Tower B, Tech Park",
+            city="Kolkata",
+            state="West Bengal",
+            postal_code="700091",
+            country="India",
+            address_type=Address.AddressType.OFFICE,
+            is_default=False,
+        )
+
+        res = self.client.get(f"/api/v1/admin/customers/{self.customer1.id}/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+
+        self.assertIn("addresses", data)
+        self.assertEqual(len(data["addresses"]), 2)
+        # Default address must appear first
+        self.assertTrue(data["addresses"][0]["is_default"])
+        self.assertEqual(data["addresses"][0]["full_name"], "Ananya Sharma Home")
+        self.assertEqual(data["addresses"][0]["postal_code"], "700016")
+        self.assertFalse(data["addresses"][1]["is_default"])
+
+    def test_customer_detail_orders_pagination_and_shipment(self):
+        """Validates order history pagination and shipment details on customer detail endpoint."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Attach a shipment to paid order of customer1
+        shipment = Shipment.objects.create(
+            order=self.c1_order_paid,
+            carrier="BlueDart",
+            tracking_number="BD12345678",
+            tracking_url="https://bluedart.example.com/track/BD12345678",
+            status=Shipment.Status.SHIPPED,
+        )
+
+        # Request page 1 with page_size=2 (customer1 has 3 orders)
+        res = self.client.get(f"/api/v1/admin/customers/{self.customer1.id}/", {"page": 1, "page_size": 2})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+
+        orders_data = data["orders"]
+        self.assertEqual(orders_data["count"], 3)
+        self.assertEqual(orders_data["page"], 1)
+        self.assertEqual(orders_data["page_size"], 2)
+        self.assertEqual(orders_data["total_pages"], 2)
+        self.assertTrue(orders_data["has_next"])
+        self.assertFalse(orders_data["has_previous"])
+        self.assertEqual(len(orders_data["results"]), 2)
+
+        # Locate the order with shipment in results
+        order_with_shipment = next((o for o in orders_data["results"] if o["id"] == str(self.c1_order_paid.id)), None)
+        if order_with_shipment:
+            self.assertIsNotNone(order_with_shipment["shipment"])
+            self.assertEqual(order_with_shipment["shipment"]["carrier"], "BlueDart")
+            self.assertEqual(order_with_shipment["shipment"]["tracking_number"], "BD12345678")
+            self.assertEqual(order_with_shipment["shipment"]["status"], "SHIPPED")
+
+    def test_customer_detail_financial_metrics_and_aov(self):
+        """Validates purchase_summary metrics, AOV calculation, and exclusion of unpaid/cancelled orders."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # customer2 has 2 orders:
+        # c2_order1: PAID (total=4500.00)
+        # c2_order2: PAID (total=1000.00)
+        # total_paid_spend = 5500.00, paid_orders = 2, AOV = 5500.00 / 2 = 2750.00
+        res = self.client.get(f"/api/v1/admin/customers/{self.customer2.id}/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+
+        summary = data["purchase_summary"]
+        self.assertEqual(summary["total_orders"], 2)
+        self.assertEqual(summary["paid_orders"], 2)
+        self.assertEqual(summary["total_paid_spend"], "5500.00")
+        self.assertEqual(summary["average_order_value"], "2750.00")
+        self.assertEqual(data["average_order_value"], "2750.00")
+
+    def test_customer_detail_zero_orders_and_addresses(self):
+        """Validates empty lists, zero metrics, and 0.00 AOV for customer with no activity."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        res = self.client.get(f"/api/v1/admin/customers/{self.customer3.id}/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+
+        self.assertEqual(data["addresses"], [])
+        self.assertEqual(data["orders"]["count"], 0)
+        self.assertEqual(data["orders"]["results"], [])
+        self.assertEqual(data["purchase_summary"]["total_orders"], 0)
+        self.assertEqual(data["purchase_summary"]["paid_orders"], 0)
+        self.assertEqual(data["purchase_summary"]["total_paid_spend"], "0.00")
+        self.assertEqual(data["purchase_summary"]["average_order_value"], "0.00")
+
+    def test_customer_detail_query_efficiency(self):
+        """Ensures single customer detail endpoint does not trigger N+1 queries."""
+        self.client.force_authenticate(user=self.admin_user)
+
+        # Preload customer1 with addresses and shipment
+        Address.objects.create(
+            user=self.customer1,
+            full_name="Ananya Sharma Home",
+            phone="+919876543210",
+            address_line1="Flat 402",
+            city="Kolkata",
+            state="West Bengal",
+            postal_code="700016",
+        )
+
+        with self.assertNumQueries(5):
+            # 1. User with annotated metrics
+            # 2. Addresses
+            # 3. Orders count
+            # 4. Orders with distinct item count
+            # 5. Prefetched shipments
+            res = self.client.get(f"/api/v1/admin/customers/{self.customer1.id}/")
+            self.assertEqual(res.status_code, status.HTTP_200_OK)

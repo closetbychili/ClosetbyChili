@@ -247,6 +247,30 @@ def get_admin_customer_detail_queryset(customer_id: uuid.UUID | str) -> QuerySet
                 ),
                 distinct=True,
             ),
+            pending_orders_count=Count(
+                Case(
+                    When(
+                        (
+                            Q(orders__payment_status=Order.PaymentStatus.PENDING)
+                            | Q(orders__status=Order.Status.PENDING)
+                        )
+                        & ~Q(orders__status=Order.Status.CANCELLED)
+                        & ~Q(orders__payment_status=Order.PaymentStatus.REFUNDED),
+                        then="orders__id",
+                    )
+                ),
+                distinct=True,
+            ),
+            cancelled_orders_count=Count(
+                Case(
+                    When(
+                        Q(orders__status=Order.Status.CANCELLED)
+                        | Q(orders__payment_status=Order.PaymentStatus.FAILED),
+                        then="orders__id",
+                    )
+                ),
+                distinct=True,
+            ),
             total_paid_spend=Coalesce(
                 Sum(
                     Case(
@@ -263,3 +287,40 @@ def get_admin_customer_detail_queryset(customer_id: uuid.UUID | str) -> QuerySet
             latest_order_date=Max("orders__created_at"),
         )
     )
+
+
+def get_customer_orders_paginated(
+    user: User, page: int = 1, page_size: int = 10
+) -> dict:
+    """
+    Retrieves bounded, paginated order history for a specific customer.
+    Prefetches shipments and annotates distinct item count to eliminate N+1 queries.
+    """
+    if page < 1:
+        page = 1
+    if page_size < 1:
+        page_size = 10
+    elif page_size > 50:
+        page_size = 50
+
+    orders_qs = (
+        user.orders.all()
+        .prefetch_related("shipments")
+        .annotate(annotated_item_count=Count("items", distinct=True))
+        .order_by("-created_at", "-id")
+    )
+    total_count = orders_qs.count()
+    total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 1
+    offset = (page - 1) * page_size
+    results = list(orders_qs[offset : offset + page_size])
+
+    return {
+        "count": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_previous": page > 1,
+        "results": results,
+    }
+
