@@ -226,6 +226,9 @@ export interface Cart {
   items: CartItem[];
   item_count: number;
   subtotal: string;
+  discount?: string;
+  total?: string;
+  coupon_code?: string | null;
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -315,6 +318,7 @@ export interface CheckoutOrder {
   shipping_amount: string;
   tax_amount: string;
   total: string;
+  coupon_code?: string | null;
   shipping_address_snapshot: CheckoutAddressSnapshot;
   billing_address_snapshot: CheckoutAddressSnapshot;
   created_at: string;
@@ -327,6 +331,21 @@ export interface CheckoutOrder {
 export interface PlaceOrderPayload {
   shipping_address_id: string;
   idempotency_key?: string;
+  coupon_code?: string;
+}
+
+export interface ValidateCouponResponse {
+  eligible: boolean;
+  reason_code: string | null;
+  message: string;
+  coupon_code: string;
+  discount_description: string;
+  discount_type: string;
+  discount_value: string;
+  discount_amount: string;
+  currency: string;
+  subtotal: string;
+  total: string;
 }
 
 export interface RazorpayOrderSession {

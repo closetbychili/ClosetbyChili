@@ -151,6 +151,32 @@ def _attach_cart_session(response: Response, cart: Cart) -> Response:
     return response
 
 
+def _revalidate_cart_coupon(cart: Cart | None) -> None:
+    """
+    Revalidates the applied coupon against current cart items and subtotal.
+    Clears the coupon if targeting, dates, or minimum subtotal are no longer met.
+    """
+    if not cart or not cart.coupon:
+        return
+    items = list(cart.items.select_related("variant__product").all())
+    if not items:
+        cart.coupon = None
+        cart.save(update_fields=["coupon", "updated_at"])
+        return
+
+    from apps.orders.coupon_eligibility_service import evaluate_coupon_eligibility
+
+    eligibility = evaluate_coupon_eligibility(
+        coupon=cart.coupon,
+        customer=cart.user,
+        subtotal=cart.subtotal,
+        items=items,
+    )
+    if not eligibility.eligible:
+        cart.coupon = None
+        cart.save(update_fields=["coupon", "updated_at"])
+
+
 class CartView(APIView):
     """
     Cart Root Endpoint.
@@ -216,7 +242,8 @@ class CartView(APIView):
         if cart:
             with transaction.atomic():
                 cart.items.all().delete()
-                cart.save()
+                cart.coupon = None
+                cart.save(update_fields=["coupon", "updated_at"])
             serializer = CartSerializer(cart)
             response = Response(serializer.data, status=status.HTTP_200_OK)
             return _attach_cart_session(response, cart)
@@ -320,6 +347,7 @@ class CartItemAddView(APIView):
                 )
 
             cart.save(update_fields=["updated_at"])
+            _revalidate_cart_coupon(cart)
 
         # Fetch refreshed cart with relations
         cart = Cart.objects.prefetch_related("items__variant__product__category").get(
@@ -389,6 +417,7 @@ class CartItemDetailView(APIView):
             cart_item.quantity = new_quantity
             cart_item.save(update_fields=["quantity", "updated_at"])
             cart.save(update_fields=["updated_at"])
+            _revalidate_cart_coupon(cart)
 
         cart = Cart.objects.prefetch_related("items__variant__product__category").get(
             id=cart.id
@@ -408,6 +437,7 @@ class CartItemDetailView(APIView):
         with transaction.atomic():
             cart.items.filter(id=item_id).delete()
             cart.save(update_fields=["updated_at"])
+            _revalidate_cart_coupon(cart)
 
         cart = Cart.objects.prefetch_related("items__variant__product__category").get(
             id=cart.id
@@ -567,7 +597,10 @@ class CartMergeView(APIView):
             guest_cart.is_active = False
             guest_cart.save(update_fields=["is_active", "updated_at"])
 
-            user_cart.save(update_fields=["updated_at"])
+            if not user_cart.coupon and guest_cart.coupon:
+                user_cart.coupon = guest_cart.coupon
+            user_cart.save(update_fields=["coupon", "updated_at"])
+            _revalidate_cart_coupon(user_cart)
 
         user_cart = Cart.objects.prefetch_related(
             "items__variant__product__category"
@@ -576,3 +609,122 @@ class CartMergeView(APIView):
         response = Response(CartSerializer(user_cart).data, status=status.HTTP_200_OK)
         response.delete_cookie("cart_session")
         return response
+
+
+class CartCouponView(APIView):
+    """
+    Manage applied coupon state on the customer's server-side active cart.
+
+    POST   /api/v1/cart/coupon/ - Apply a validated coupon to the active cart.
+    DELETE /api/v1/cart/coupon/ - Remove the coupon from the active cart.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        raw_code = request.data.get("code") or request.data.get("coupon_code")
+        if not raw_code or not str(raw_code).strip():
+            return Response(
+                {
+                    "error": {
+                        "code": "COUPON_CODE_REQUIRED",
+                        "message": "Coupon code is required.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        code = str(raw_code).strip().upper()
+        cart = _get_cart(request, must_exist=True)
+        if not cart or cart.items.count() == 0:
+            return Response(
+                {
+                    "error": {
+                        "code": "EMPTY_CART",
+                        "message": "Cannot apply coupon to an empty cart.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.orders.models import Coupon
+        from apps.orders.coupon_eligibility_service import evaluate_coupon_eligibility
+
+        coupon = Coupon.objects.filter(code=code).first()
+        if not coupon:
+            return Response(
+                {
+                    "error": {
+                        "code": "COUPON_NOT_FOUND",
+                        "message": f"Coupon code '{code}' does not exist.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        customer = (
+            request.user
+            if getattr(request, "user", None) and request.user.is_authenticated
+            else None
+        )
+        items = list(cart.items.select_related("variant__product").all())
+        subtotal = cart.subtotal
+
+        eligibility = evaluate_coupon_eligibility(
+            coupon=coupon,
+            customer=customer,
+            subtotal=subtotal,
+            items=items,
+        )
+        if not eligibility.eligible:
+            return Response(
+                {
+                    "error": {
+                        "code": eligibility.reason_code,
+                        "message": eligibility.message,
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            cart.coupon = coupon
+            cart.save(update_fields=["coupon", "updated_at"])
+
+        cart = Cart.objects.prefetch_related(
+            "items__variant__product__category"
+        ).get(id=cart.id)
+        serializer = CartSerializer(cart)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        return _attach_cart_session(response, cart)
+
+    def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        cart = _get_cart(request, must_exist=False)
+        if cart:
+            with transaction.atomic():
+                cart.coupon = None
+                cart.save(update_fields=["coupon", "updated_at"])
+            cart = Cart.objects.prefetch_related(
+                "items__variant__product__category"
+            ).get(id=cart.id)
+            serializer = CartSerializer(cart)
+            response = Response(serializer.data, status=status.HTTP_200_OK)
+            return _attach_cart_session(response, cart)
+
+        return Response(
+            {
+                "id": None,
+                "session_key": None,
+                "items": [],
+                "item_count": 0,
+                "subtotal": "0.00",
+                "discount": "0.00",
+                "total": "0.00",
+                "coupon_code": None,
+                "is_active": True,
+                "created_at": None,
+                "updated_at": None,
+            },
+            status=status.HTTP_200_OK,
+        )
+

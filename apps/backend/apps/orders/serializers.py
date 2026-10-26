@@ -54,6 +54,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             "payment_status",
             "total",
             "currency",
+            "coupon_code",
             "created_at",
             "item_count",
         ]
@@ -91,6 +92,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         coerce_to_string=True,
         min_value=Decimal("0.00"),
     )
+    coupon_code = serializers.CharField(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     item_count = serializers.IntegerField(read_only=True)
 
@@ -104,6 +106,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "currency",
             "subtotal",
             "discount",
+            "coupon_code",
             "shipping_amount",
             "tax_amount",
             "total",

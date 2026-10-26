@@ -15,7 +15,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework import filters, generics, status
+from rest_framework import filters, generics, permissions, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -392,3 +392,116 @@ class AdminCouponRedemptionListView(generics.ListAPIView):
             )
 
         return qs
+
+
+class CouponValidateView(APIView):
+    """
+    POST /api/v1/coupons/validate/
+
+    Validates a coupon code against the authenticated customer's server-side active cart.
+    Returns eligibility, reason codes, discount amount, currency, subtotal, and final payable amount.
+    Validation alone does NOT reserve redemption capacity or mutate database state.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        raw_code = request.data.get("code") or request.data.get("coupon_code")
+        if not raw_code or not str(raw_code).strip():
+            return Response(
+                {
+                    "error": {
+                        "code": "COUPON_CODE_REQUIRED",
+                        "message": "Coupon code is required.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        code = str(raw_code).strip().upper()
+
+        from apps.cart.models import Cart
+        from apps.orders.coupon_calculation_service import (
+            calculate_coupon_discount,
+            get_coupon_discount_description,
+        )
+        from apps.orders.coupon_eligibility_service import evaluate_coupon_eligibility
+
+        cart = (
+            Cart.objects.filter(user=request.user, is_active=True)
+            .prefetch_related("items__variant__product")
+            .first()
+        )
+        cart_items = list(cart.items.all()) if cart else []
+        subtotal = cart.subtotal if cart else Decimal("0.00")
+
+        coupon = Coupon.objects.filter(code=code).first()
+        if not coupon:
+            return Response(
+                {
+                    "eligible": False,
+                    "reason_code": "COUPON_NOT_FOUND",
+                    "message": f"Coupon code '{code}' does not exist.",
+                    "coupon_code": code,
+                    "discount_description": "",
+                    "discount_type": "",
+                    "discount_value": "0.00",
+                    "discount_amount": "0.00",
+                    "currency": "INR",
+                    "subtotal": str(subtotal),
+                    "total": str(subtotal),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        eligibility = evaluate_coupon_eligibility(
+            coupon=coupon,
+            customer=request.user,
+            subtotal=subtotal,
+            items=cart_items,
+        )
+
+        discount_desc = get_coupon_discount_description(coupon)
+
+        if not eligibility.eligible:
+            return Response(
+                {
+                    "eligible": False,
+                    "reason_code": eligibility.reason_code,
+                    "message": eligibility.message,
+                    "coupon_code": coupon.code,
+                    "discount_description": discount_desc,
+                    "discount_type": coupon.discount_type,
+                    "discount_value": str(coupon.discount_value),
+                    "discount_amount": "0.00",
+                    "currency": "INR",
+                    "subtotal": str(subtotal),
+                    "total": str(subtotal),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        discount_amount = calculate_coupon_discount(
+            coupon=coupon,
+            items=cart_items,
+            subtotal=subtotal,
+        )
+        payable_total = max(Decimal("0.00"), subtotal - discount_amount).quantize(Decimal("0.01"))
+
+        return Response(
+            {
+                "eligible": True,
+                "reason_code": None,
+                "message": "Coupon is valid and eligible.",
+                "coupon_code": coupon.code,
+                "discount_description": discount_desc,
+                "discount_type": coupon.discount_type,
+                "discount_value": str(coupon.discount_value),
+                "discount_amount": str(discount_amount),
+                "currency": "INR",
+                "subtotal": str(subtotal),
+                "total": str(payable_total),
+            },
+            status=status.HTTP_200_OK,
+        )
+

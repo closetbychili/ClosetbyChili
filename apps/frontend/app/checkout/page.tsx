@@ -58,7 +58,18 @@ const emptyAddressForm = {
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, session, loading: authLoading } = useAuth();
-  const { cart, itemCount, subtotal, isLoading: cartLoading, refreshCart } = useCart();
+  const {
+    cart,
+    itemCount,
+    subtotal,
+    discount,
+    total,
+    couponCode,
+    applyCoupon,
+    removeCoupon,
+    isLoading: cartLoading,
+    refreshCart,
+  } = useCart();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -71,6 +82,19 @@ export default function CheckoutPage() {
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [order, setOrder] = useState<CheckoutOrder | null>(null);
 
+  // Coupon state in checkout
+  const [checkoutCouponInput, setCheckoutCouponInput] = useState(couponCode || "");
+  const [checkoutCouponError, setCheckoutCouponError] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  useEffect(() => {
+    if (couponCode) {
+      setCheckoutCouponInput(couponCode);
+    } else {
+      setCheckoutCouponInput("");
+    }
+  }, [couponCode]);
+
   // Luxury Concierge Extras
   const [shippingTier, setShippingTier] = useState<"standard" | "atelier">("standard");
   const [packInKeepsakeBox, setPackInKeepsakeBox] = useState(true);
@@ -80,6 +104,35 @@ export default function CheckoutPage() {
   const [dispatchNote, setDispatchNote] = useState("");
 
   const idempotencyKeyRef = useRef<string | null>(null);
+
+  const handleApplyCoupon = async (e: FormEvent) => {
+    e.preventDefault();
+    const cleanCode = checkoutCouponInput.trim().toUpperCase();
+    if (!cleanCode) return;
+    setCheckoutCouponError(null);
+    setIsApplyingCoupon(true);
+    try {
+      await applyCoupon(cleanCode);
+      setCheckoutCouponError(null);
+    } catch (err) {
+      setCheckoutCouponError(err instanceof Error ? err.message : "Invalid coupon code.");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    setCheckoutCouponError(null);
+    setIsApplyingCoupon(true);
+    try {
+      await removeCoupon();
+      setCheckoutCouponInput("");
+    } catch (err) {
+      setCheckoutCouponError(err instanceof Error ? err.message : "Failed to remove coupon.");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -113,8 +166,9 @@ export default function CheckoutPage() {
   }, [session?.access_token, user]);
 
   const itemTotal = useMemo(() => Number.parseFloat(subtotal) || 0, [subtotal]);
+  const discountAmount = useMemo(() => Number.parseFloat(discount || "0") || 0, [discount]);
   const shippingAmount = shippingTier === "atelier" ? 299 : 0;
-  const grandTotal = itemTotal + shippingAmount;
+  const grandTotal = Math.max(0, itemTotal - discountAmount) + shippingAmount;
 
   // Only treat as having no items once we have a confirmed cart (not while loading).
   const hasItems = (cart?.items?.length ?? 0) > 0;
@@ -209,6 +263,7 @@ export default function CheckoutPage() {
       const created = await placeOrder(
         {
           shipping_address_id: selectedAddressId,
+          ...(cart?.coupon_code ? { coupon_code: cart.coupon_code } : {}),
           ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
         },
         session.access_token
@@ -298,6 +353,14 @@ export default function CheckoutPage() {
                   {order.payment_status}
                 </span>
               </p>
+              {order.coupon_code && Number.parseFloat(order.discount || "0") > 0 && (
+                <p className="flex items-center justify-between text-primary">
+                  <span className="font-semibold">Coupon discount ({order.coupon_code}):</span>{" "}
+                  <span className="font-price-regular font-bold">
+                    -₹{Number.parseFloat(order.discount).toLocaleString("en-IN")}
+                  </span>
+                </p>
+              )}
               <p className="flex items-center justify-between pt-2 border-t border-outline-variant/20">
                 <span className="font-semibold text-on-surface">Total:</span>{" "}
                 <span className="text-base font-price-regular font-bold text-primary">
@@ -1029,24 +1092,57 @@ export default function CheckoutPage() {
                     })}
                   </div>
 
-                  {/* Applied Privilege Voucher */}
+                  {/* Coupon Application / Active Status */}
                   <div className="py-3">
-                    <div className="bg-surface-container-low p-3.5 flex items-center justify-between border border-outline-variant/30">
-                      <div className="flex items-center gap-2.5">
-                        <Tag size={16} className="text-primary" />
-                        <div className="flex flex-col">
-                          <span className="font-label-caps text-xs uppercase tracking-wider text-on-surface font-bold">
-                            ATELIER PRIVILEGE ACTIVE
-                          </span>
-                          <span className="font-body text-[11px] text-primary">
-                            Complimentary shipping on orders above ₹2,999
-                          </span>
+                    {couponCode ? (
+                      <div className="bg-surface-container-low p-3.5 flex items-center justify-between border border-outline-variant/30">
+                        <div className="flex items-center gap-2.5">
+                          <Tag size={16} className="text-primary" />
+                          <div className="flex flex-col">
+                            <span className="font-label-caps text-xs uppercase tracking-wider text-on-surface font-bold">
+                              COUPON: {couponCode}
+                            </span>
+                            <span className="font-body text-[11px] text-primary">
+                              {discountAmount > 0
+                                ? `-₹${discountAmount.toLocaleString("en-IN")} discount applied`
+                                : "Coupon verified & active"}
+                            </span>
+                          </div>
                         </div>
+                        <button
+                          type="button"
+                          aria-label="Remove coupon"
+                          onClick={handleRemoveCoupon}
+                          disabled={isApplyingCoupon || isSubmitting}
+                          className="font-label-caps text-[10px] uppercase text-on-surface-variant hover:text-error underline font-bold cursor-pointer disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
                       </div>
-                      <span className="font-label-caps text-[10px] uppercase text-secondary font-bold">
-                        VERIFIED
-                      </span>
-                    </div>
+                    ) : (
+                      <form onSubmit={handleApplyCoupon} className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={checkoutCouponInput}
+                            onChange={(e) => setCheckoutCouponInput(e.target.value)}
+                            placeholder="COUPON CODE"
+                            disabled={isApplyingCoupon || isSubmitting}
+                            className="flex-1 bg-surface-container-low border border-outline-variant/60 rounded px-3 py-2 font-label-caps text-xs uppercase tracking-wider text-on-surface focus:outline-none focus:border-primary disabled:opacity-50"
+                          />
+                          <button
+                            type="submit"
+                            disabled={isApplyingCoupon || isSubmitting || !checkoutCouponInput.trim()}
+                            className="bg-inverse-surface text-inverse-on-surface font-label-caps text-xs uppercase tracking-widest px-4 py-2 rounded hover:bg-on-surface transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            {isApplyingCoupon ? "..." : "Apply"}
+                          </button>
+                        </div>
+                        {checkoutCouponError && (
+                          <p className="text-xs text-rose-700 font-medium">{checkoutCouponError}</p>
+                        )}
+                      </form>
+                    )}
                   </div>
 
                   {/* Keepsake Packaging Highlight */}
@@ -1072,6 +1168,15 @@ export default function CheckoutPage() {
                         ₹{itemTotal.toLocaleString("en-IN")}
                       </span>
                     </div>
+
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between items-center text-primary font-medium">
+                        <span>Coupon Discount {couponCode ? `(${couponCode})` : ""}</span>
+                        <span className="font-price-regular font-bold">
+                          -₹{discountAmount.toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-center text-on-surface-variant">
                       <span>Delivery Experience</span>

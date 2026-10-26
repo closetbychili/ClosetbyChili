@@ -268,6 +268,13 @@ def cancel_order_admin(
             actor=actor_user,
         )
 
+        from apps.orders.coupon_redemption_service import release_coupon_redemption
+        for red in locked_order.coupon_redemptions.filter(state="RESERVED"):
+            release_coupon_redemption(
+                redemption=red,
+                reason=f"Order cancelled by admin: {combined_note or 'No reason provided'}",
+            )
+
         audit_log = OrderAuditLog.objects.create(
             order=locked_order,
             from_status=previous_status,

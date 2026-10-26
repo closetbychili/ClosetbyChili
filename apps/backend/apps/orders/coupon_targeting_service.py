@@ -18,15 +18,24 @@ from apps.orders.models import Coupon
 
 
 def _resolve_product_entity(product_or_variant: Any) -> Product | None:
-    """Safely extracts a Product model instance from either a Product or ProductVariant."""
+    """Safely extracts a Product model instance from Product, ProductVariant, CartItem, OrderItem, or dict."""
     if product_or_variant is None:
         return None
     if isinstance(product_or_variant, ProductVariant):
         return product_or_variant.product
     if isinstance(product_or_variant, Product):
         return product_or_variant
+    if hasattr(product_or_variant, "variant"):
+        var = getattr(product_or_variant, "variant")
+        if isinstance(var, ProductVariant):
+            return var.product
     if hasattr(product_or_variant, "product") and isinstance(product_or_variant.product, Product):
         return product_or_variant.product
+    if isinstance(product_or_variant, dict):
+        if "product" in product_or_variant and isinstance(product_or_variant["product"], Product):
+            return product_or_variant["product"]
+        if "variant" in product_or_variant and isinstance(product_or_variant["variant"], ProductVariant):
+            return product_or_variant["variant"].product
     return None
 
 

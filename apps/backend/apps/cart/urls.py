@@ -12,6 +12,7 @@ from django.urls import path
 
 from apps.cart.views import (
     CartClearView,
+    CartCouponView,
     CartItemAddView,
     CartItemDetailView,
     CartMergeView,
@@ -20,6 +21,7 @@ from apps.cart.views import (
 
 urlpatterns = [
     path("", CartView.as_view(), name="cart-root"),
+    path("coupon/", CartCouponView.as_view(), name="cart-coupon"),
     path("items/", CartItemAddView.as_view(), name="cart-item-add"),
     path(
         "items/<uuid:item_id>/", CartItemDetailView.as_view(), name="cart-item-detail"

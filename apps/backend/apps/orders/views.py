@@ -154,6 +154,18 @@ class CheckoutView(APIView):
                 {"shipping_address_id": "Shipping address does not belong to this user."}
             )
 
+        # Determine coupon if specified in payload or already applied to cart
+        coupon_param = request.data.get("coupon_code") or request.data.get("coupon")
+        target_coupon = None
+        if coupon_param and str(coupon_param).strip():
+            c_code = str(coupon_param).strip().upper()
+            from apps.orders.models import Coupon
+            target_coupon = Coupon.objects.filter(code=c_code).first()
+            if not target_coupon:
+                raise DRFValidationError({"coupon": f"Coupon code '{c_code}' does not exist."})
+        elif cart and cart.coupon:
+            target_coupon = cart.coupon
+
         with transaction.atomic():
             cart = (
                 Cart.objects.select_for_update()
@@ -258,6 +270,41 @@ class CheckoutView(APIView):
                     }
                 )
 
+            # If coupon is present, evaluate and reserve capacity atomically under lock
+            discount_amount = Decimal("0.00")
+            redemption = None
+            if target_coupon:
+                from apps.orders.coupon_calculation_service import calculate_coupon_discount
+                from apps.orders.coupon_redemption_service import (
+                    CouponNotEligibleError,
+                    CouponRedemptionError,
+                    reserve_coupon_redemption,
+                )
+
+                redemption_key = f"order-{idempotency_key}" if idempotency_key else None
+                try:
+                    redemption = reserve_coupon_redemption(
+                        coupon_id=target_coupon,
+                        customer=request.user,
+                        order=None,
+                        subtotal=subtotal,
+                        items=line_items,
+                        idempotency_key=redemption_key,
+                        ttl_seconds=900,
+                    )
+                except CouponNotEligibleError as exc:
+                    raise DRFValidationError({"coupon": exc.result.message})
+                except CouponRedemptionError as exc:
+                    raise DRFValidationError({"coupon": str(exc)})
+
+                discount_amount = calculate_coupon_discount(
+                    coupon=target_coupon,
+                    items=line_items,
+                    subtotal=subtotal,
+                )
+
+            final_total = max(Decimal("0.00"), subtotal - discount_amount).quantize(Decimal("0.01"))
+
             shipping_snapshot = {
                 "id": str(shipping_address.id),
                 "full_name": shipping_address.full_name,
@@ -283,10 +330,12 @@ class CheckoutView(APIView):
                     payment_status=Order.PaymentStatus.PENDING,
                     currency="INR",
                     subtotal=subtotal,
-                    discount=Decimal("0.00"),
+                    discount=discount_amount,
                     shipping_amount=Decimal("0.00"),
                     tax_amount=Decimal("0.00"),
-                    total=subtotal,
+                    total=final_total,
+                    coupon=target_coupon,
+                    coupon_code=target_coupon.code if target_coupon else "",
                     shipping_address_snapshot=shipping_snapshot,
                     billing_address_snapshot=billing_snapshot,
                 )
@@ -301,6 +350,11 @@ class CheckoutView(APIView):
                         status=status.HTTP_200_OK,
                     )
                 raise
+
+            if redemption:
+                redemption.order = order
+                redemption.discount_amount = discount_amount
+                redemption.save(update_fields=["order", "discount_amount", "updated_at"])
 
             for line in line_items:
                 OrderItem.objects.create(
@@ -322,7 +376,8 @@ class CheckoutView(APIView):
 
             cart.is_active = False
             cart.items.all().delete()
-            cart.save(update_fields=["is_active", "updated_at"])
+            cart.coupon = None
+            cart.save(update_fields=["is_active", "coupon", "updated_at"])
 
             try:
                 cache.set(
@@ -434,6 +489,10 @@ class OrderCancelView(APIView):
             order.save(update_fields=["status", "payment_status", "updated_at"])
 
             release_order_reservations(order=order, reason="customer_cancelled", actor=request.user)
+
+            from apps.orders.coupon_redemption_service import release_coupon_redemption
+            for red in order.coupon_redemptions.filter(state="RESERVED"):
+                release_coupon_redemption(redemption=red, reason="Order cancelled by customer")
 
         order = (
             Order.objects.select_related("user")

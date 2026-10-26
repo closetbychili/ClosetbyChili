@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
@@ -66,6 +66,11 @@ export default function CartPage() {
     cart,
     itemCount,
     subtotal,
+    discount,
+    total,
+    couponCode,
+    applyCoupon,
+    removeCoupon,
     updateQuantity,
     removeItem,
     clearCart,
@@ -77,9 +82,17 @@ export default function CartPage() {
   } = useCart();
 
   // Coupon / Voucher code state
-  const [couponInput, setCouponInput] = useState("MUSE10");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>("MUSE10");
+  const [couponInput, setCouponInput] = useState(couponCode || "");
   const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  useEffect(() => {
+    if (couponCode) {
+      setCouponInput(couponCode);
+    } else {
+      setCouponInput("");
+    }
+  }, [couponCode]);
 
   // Gifting presentation options
   const [giftingSelected, setGiftingSelected] = useState(true);
@@ -95,6 +108,8 @@ export default function CartPage() {
 
   const items = cart?.items || [];
   const parsedSubtotal = parseFloat(subtotal) || 0;
+  const voucherDiscount = parseFloat(discount || "0") || 0;
+  const finalPayable = total ? parseFloat(total) : Math.max(0, parsedSubtotal - voucherDiscount);
 
   // Free shipping threshold
   const FREE_SHIPPING_THRESHOLD = 2999;
@@ -108,35 +123,42 @@ export default function CartPage() {
   // Dynamic pricing calculations for MRP and Atelier savings
   const calculatedMrpTotal = Math.round(parsedSubtotal * 1.284);
   const mrpSavings = Math.max(0, calculatedMrpTotal - parsedSubtotal);
-
-  // Coupon savings (10% on active coupon)
-  const voucherDiscount = appliedCoupon ? Math.round(parsedSubtotal * 0.1) : 0;
-  const finalPayable = Math.max(0, parsedSubtotal - voucherDiscount);
   const totalCombinedSavings = mrpSavings + voucherDiscount;
   const totalSavingsPercent =
     calculatedMrpTotal > 0
       ? Math.round((totalCombinedSavings / calculatedMrpTotal) * 100)
       : 0;
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCode = couponInput.trim().toUpperCase();
     if (!cleanCode) {
       setCouponError("Please enter a valid coupon code.");
       return;
     }
-    if (["MUSE10", "ROYAL15", "CHILI10", "WELCOME10"].includes(cleanCode)) {
-      setAppliedCoupon(cleanCode);
+    setCouponError("");
+    setIsApplyingCoupon(true);
+    try {
+      await applyCoupon(cleanCode);
       setCouponError("");
-    } else {
-      setCouponError("Invalid voucher code. Try 'MUSE10' for 10% off.");
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : "Invalid coupon code.");
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponInput("");
+  const handleRemoveCoupon = async () => {
     setCouponError("");
+    setIsApplyingCoupon(true);
+    try {
+      await removeCoupon();
+      setCouponInput("");
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : "Failed to remove coupon.");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
   };
 
   const handleAddCrossSell = async (product: CrossSellProduct) => {
@@ -615,13 +637,17 @@ export default function CartPage() {
                           value={couponInput}
                           onChange={(e) => setCouponInput(e.target.value)}
                           placeholder="ENTER CODE"
-                          className="flex-1 bg-surface-container-low border border-outline-variant/60 rounded px-3 py-2.5 font-label-caps text-label-caps uppercase tracking-widest text-on-surface focus:outline-none focus:border-primary font-bold"
+                          disabled={isApplyingCoupon || isLoading}
+                          className="flex-1 bg-surface-container-low border border-outline-variant/60 rounded px-3 py-2.5 font-label-caps text-label-caps uppercase tracking-widest text-on-surface focus:outline-none focus:border-primary font-bold disabled:opacity-50"
                         />
                         <button
                           type="submit"
-                          className="bg-inverse-surface text-inverse-on-surface font-label-caps text-label-caps uppercase tracking-widest px-4 py-2.5 rounded hover:bg-on-surface transition-colors cursor-pointer"
+                          disabled={isApplyingCoupon || isLoading || !couponInput.trim()}
+                          className="bg-inverse-surface text-inverse-on-surface font-label-caps text-label-caps uppercase tracking-widest px-4 py-2.5 rounded hover:bg-on-surface transition-colors cursor-pointer disabled:opacity-50"
                         >
-                          {appliedCoupon === couponInput.trim().toUpperCase()
+                          {isApplyingCoupon
+                            ? "..."
+                            : couponCode && couponCode === couponInput.trim().toUpperCase()
                             ? "Applied"
                             : "Apply"}
                         </button>
@@ -633,20 +659,22 @@ export default function CartPage() {
                         </p>
                       )}
 
-                      {appliedCoupon && (
+                      {couponCode && (
                         <div className="flex items-center justify-between bg-primary-fixed/50 px-3 py-2 rounded text-on-primary-fixed-variant">
                           <div className="flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[16px]">
                               check_circle
                             </span>
                             <span className="font-body-sm text-[12px] font-semibold">
-                              {appliedCoupon} — 10% Royal Welcome Off
+                              {couponCode} {voucherDiscount > 0 ? `— ₹${voucherDiscount.toLocaleString("en-IN")} Off` : "Applied"}
                             </span>
                           </div>
                           <button
                             type="button"
+                            aria-label="Remove coupon"
                             onClick={handleRemoveCoupon}
-                            className="text-[11px] underline uppercase tracking-wider font-bold hover:text-primary cursor-pointer"
+                            disabled={isApplyingCoupon || isLoading}
+                            className="text-[11px] underline uppercase tracking-wider font-bold hover:text-primary cursor-pointer disabled:opacity-50"
                           >
                             Remove
                           </button>
@@ -677,9 +705,9 @@ export default function CartPage() {
                         </span>
                       </div>
 
-                      {appliedCoupon && voucherDiscount > 0 && (
+                      {couponCode && voucherDiscount > 0 && (
                         <div className="flex items-center justify-between text-primary font-medium">
-                          <span>Voucher Savings ({appliedCoupon})</span>
+                          <span>Voucher Savings ({couponCode})</span>
                           <span className="font-price-regular text-price-regular">
                             -₹{voucherDiscount.toLocaleString("en-IN")}
                           </span>

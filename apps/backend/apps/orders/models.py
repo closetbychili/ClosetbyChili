@@ -113,6 +113,21 @@ class Order(models.Model):
         validators=[MinValueValidator(Decimal("0.00"))],
         default=Decimal("0.00"),
     )
+    coupon = models.ForeignKey(
+        "orders.Coupon",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+        help_text="Applied coupon for this order.",
+    )
+    coupon_code = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="Immutable snapshot of the coupon code applied at checkout.",
+    )
     shipping_address_snapshot = models.JSONField(default=dict, blank=True)
     billing_address_snapshot = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
