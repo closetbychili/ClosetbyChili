@@ -55,14 +55,14 @@ export default function HeroCarousel() {
     <section
       id="hero-carousel"
       aria-label="Campaign Hero Carousel"
-      className="relative w-full overflow-hidden bg-page-bg group/carousel pt-24 sm:pt-28"
+      className="relative w-full overflow-hidden bg-page-bg group/carousel pt-20 sm:pt-28"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="relative w-full h-145 sm:h-155 lg:h-170 flex items-center">
+      <div className="relative w-full h-130 sm:h-155 lg:h-170 flex items-center">
         {STITCH_HERO_SLIDES.map((slide, idx) => {
           const isActive = idx === current;
           return (
@@ -75,39 +75,39 @@ export default function HeroCarousel() {
             >
               {/* Background Campaign Photograph & Gradients */}
               <div
-                className="absolute inset-0 bg-cover bg-center lg:bg-position-[right_35%] bg-no-repeat transition-transform duration-1000 ease-out"
+                className="absolute inset-0 bg-cover bg-position-[center_top] sm:bg-center lg:bg-position-[right_35%] bg-no-repeat transition-transform duration-1000 ease-out"
                 style={{ backgroundImage: `url('${slide.image}')` }}
               >
                 {/* Desktop Directional Gradient (Keeps photograph clear & vibrant on the right) */}
                 <div className="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%]" />
                 {/* Mobile Bottom Scrim for Text Readability */}
-                <div className="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/60 to-transparent opacity-90 lg:hidden" />
+                <div className="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/85 to-transparent/20 opacity-95 lg:hidden" />
               </div>
 
               {/* Text & CTAs Content Container */}
-              <div className="relative h-full max-w-360 mx-auto px-6 sm:px-8 lg:px-16 flex items-center">
-                <div className="max-w-2xl py-6 sm:py-10 flex flex-col items-start z-10">
+              <div className="relative h-full max-w-360 mx-auto px-4 sm:px-8 lg:px-16 flex items-center">
+                <div className="max-w-2xl py-4 sm:py-10 flex flex-col items-start z-10">
                   {/* Category Eyebrow Tag */}
                   <div
-                    className={`inline-flex items-center gap-2.5 px-3 py-1 bg-surface/90 backdrop-blur-sm shadow-xs mb-4 sm:mb-5 border-l-2 ${
+                    className={`inline-flex items-center gap-2 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-surface/90 backdrop-blur-sm shadow-xs mb-2.5 sm:mb-5 border-l-2 ${
                       idx === 1 ? "border-secondary" : "border-primary"
                     }`}
                   >
                     <span
-                      className={`font-label-caps text-label-caps uppercase tracking-widest font-semibold ${
+                      className={`font-label-caps text-[9.5px] sm:text-label-caps uppercase tracking-widest font-semibold ${
                         idx === 1 ? "text-secondary" : "text-primary"
                       }`}
                     >
                       {slide.tag}
                     </span>
                     <span className="text-outline-variant text-[10px]">|</span>
-                    <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
+                    <span className="font-label-caps text-[9px] sm:text-[10px] text-on-surface-variant uppercase tracking-wider">
                       {slide.subtitle}
                     </span>
                   </div>
 
                   {/* Headline */}
-                  <h1 className="font-headline-lg text-headline-lg lg:text-display-hero text-on-surface tracking-tight leading-[1.1] mb-4 sm:mb-5">
+                  <h1 className="font-headline-lg text-[26px] sm:text-headline-lg lg:text-display-hero text-on-surface tracking-tight leading-[1.15] sm:leading-[1.1] mb-2 sm:mb-5">
                     {slide.heading.includes("\n") ? (
                       <>
                         {slide.heading.split("\n")[0]}
@@ -122,39 +122,39 @@ export default function HeroCarousel() {
                   </h1>
 
                   {/* Body Copy */}
-                  <p className="font-body-md text-body-md text-on-surface-variant max-w-lg mb-6 sm:mb-8 leading-relaxed line-clamp-3 sm:line-clamp-none">
+                  <p className="font-body-md text-xs sm:text-body-md text-on-surface-variant max-w-sm sm:max-w-lg mb-4 sm:mb-8 leading-relaxed line-clamp-2 sm:line-clamp-none">
                     {slide.description}
                   </p>
 
                   {/* CTA Buttons */}
-                  <div className="flex flex-wrap items-center gap-3.5 sm:gap-4 w-full sm:w-auto mb-6 sm:mb-8">
+                  <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 w-full sm:w-auto mb-4 sm:mb-8">
                     <Link
                       href="#"
                       data-path={slide.primaryCtaPath}
-                      className="px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-on-primary font-label-caps text-label-caps tracking-widest uppercase hover:bg-primary-container transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center gap-3 font-semibold focus:outline-none"
+                      className="px-5 sm:px-8 py-3 sm:py-4 bg-primary text-on-primary font-label-caps text-[10px] sm:text-label-caps tracking-widest uppercase hover:bg-primary-container transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center gap-2 sm:gap-3 font-semibold focus:outline-none"
                     >
                       <span>{slide.primaryCtaText}</span>
-                      <span className="material-symbols-outlined text-[18px]">
+                      <span className="material-symbols-outlined text-[16px] sm:text-[18px]">
                         arrow_forward
                       </span>
                     </Link>
                     <Link
                       href="#"
                       data-path={slide.secondaryCtaPath}
-                      className="px-6 sm:px-8 py-3.5 sm:py-4 bg-surface/90 border border-border-sand text-on-surface font-label-caps text-label-caps tracking-widest uppercase hover:bg-surface transition-all duration-200 shadow-xs flex items-center justify-center gap-2 focus:outline-none"
+                      className="px-4 sm:px-8 py-3 sm:py-4 bg-surface/90 border border-border-sand text-on-surface font-label-caps text-[10px] sm:text-label-caps tracking-widest uppercase hover:bg-surface transition-all duration-200 shadow-xs flex items-center justify-center gap-2 focus:outline-none"
                     >
                       <span>{slide.secondaryCtaText}</span>
                     </Link>
                   </div>
 
                   {/* Trust / Craft Value Markers */}
-                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-on-surface-variant">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6 pt-1 text-on-surface-variant text-[11px] sm:text-body-sm">
                     {slide.perks.map((perk, pIdx) => (
-                      <div key={pIdx} className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-secondary text-[20px]">
+                      <div key={pIdx} className="flex items-center gap-1.5 sm:gap-2">
+                        <span className="material-symbols-outlined text-secondary text-[16px] sm:text-[20px]">
                           {perk.icon}
                         </span>
-                        <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        <span className="font-body-sm text-[11px] sm:text-body-sm text-on-surface-variant">
                           {perk.text}
                         </span>
                         {pIdx < slide.perks.length - 1 && (
@@ -169,12 +169,12 @@ export default function HeroCarousel() {
           );
         })}
 
-        {/* ── Carousel Arrows (Accessible, Elevated, Refined) ── */}
+        {/* ── Carousel Arrows (Accessible, Elevated, Refined, Hidden on Mobile Touch) ── */}
         <button
           type="button"
           aria-label="Previous Slide"
           onClick={prevSlide}
-          className="carousel-prev absolute left-3 sm:left-6 lg:left-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-surface/80 hover:bg-surface border border-outline-variant/40 text-on-surface hover:text-primary transition-all flex items-center justify-center shadow-md backdrop-blur-sm focus:outline-none"
+          className="carousel-prev absolute left-3 sm:left-6 lg:left-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-surface/80 hover:bg-surface border border-outline-variant/40 text-on-surface hover:text-primary transition-all hidden sm:flex items-center justify-center shadow-md backdrop-blur-sm focus:outline-none"
         >
           <span className="material-symbols-outlined text-[24px]">chevron_left</span>
         </button>
@@ -183,30 +183,30 @@ export default function HeroCarousel() {
           type="button"
           aria-label="Next Slide"
           onClick={nextSlide}
-          className="carousel-next absolute right-3 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-surface/80 hover:bg-surface border border-outline-variant/40 text-on-surface hover:text-primary transition-all flex items-center justify-center shadow-md backdrop-blur-sm focus:outline-none"
+          className="carousel-next absolute right-3 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full bg-surface/80 hover:bg-surface border border-outline-variant/40 text-on-surface hover:text-primary transition-all hidden sm:flex items-center justify-center shadow-md backdrop-blur-sm focus:outline-none"
         >
           <span className="material-symbols-outlined text-[24px]">chevron_right</span>
         </button>
 
         {/* ── Bottom Counter & Progress Indicators ── */}
-        <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 lg:left-16 z-30 flex items-center gap-5 sm:gap-6">
+        <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 lg:left-16 z-30 flex items-center gap-4 sm:gap-6">
           <span
             id="carousel-counter"
-            className="font-label-caps text-label-caps tracking-widest text-on-surface font-semibold slide-counter"
+            className="font-label-caps text-[10px] sm:text-label-caps tracking-widest text-on-surface font-semibold slide-counter"
           >
             0{current + 1} / 0{totalSlides}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {STITCH_HERO_SLIDES.map((_, dotIdx) => (
               <button
                 key={dotIdx}
                 type="button"
                 aria-label={`Go to slide ${dotIdx + 1}`}
                 onClick={() => goToSlide(dotIdx)}
-                className={`carousel-dot h-1.5 transition-all duration-300 rounded-none focus:outline-none ${
+                className={`carousel-dot h-1 sm:h-1.5 transition-all duration-300 rounded-none focus:outline-none ${
                   dotIdx === current
-                    ? "w-8 bg-primary"
-                    : "w-4 bg-outline-variant/60 hover:bg-outline-variant"
+                    ? "w-6 sm:w-8 bg-primary"
+                    : "w-3 sm:w-4 bg-outline-variant/60 hover:bg-outline-variant"
                 }`}
               />
             ))}

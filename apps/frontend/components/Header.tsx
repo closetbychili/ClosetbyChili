@@ -35,6 +35,15 @@ export default function Header() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    const handleOpenSearch = () => {
+      setMobileSearchOpen(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    window.addEventListener("open-mobile-search", handleOpenSearch);
+    return () => window.removeEventListener("open-mobile-search", handleOpenSearch);
+  }, []);
+
   const handleShopEnter = () => {
     if (shopTimeoutRef.current) clearTimeout(shopTimeoutRef.current);
     setShopOpen(true);
@@ -63,22 +72,24 @@ export default function Header() {
         }`}
       >
         {/* ── Top Announcement Bar ── */}
-        <div className="bg-inverse-surface text-secondary-fixed py-2 text-center font-label-caps text-[10px] sm:text-label-caps tracking-widest uppercase px-4 flex items-center justify-center gap-2">
-          <span>COMPLIMENTARY DOMESTIC SHIPPING ON ORDERS ABOVE ₹2,999</span>
-          <span className="opacity-40">|</span>
+        <div className="bg-inverse-surface text-secondary-fixed py-1.5 sm:py-2 text-center font-label-caps text-[9px] sm:text-label-caps tracking-wider sm:tracking-widest uppercase px-3 sm:px-4 flex items-center justify-center gap-1.5 sm:gap-2">
+          <span className="material-symbols-outlined text-[13px] sm:text-[14px] text-secondary-fixed shrink-0">
+            local_shipping
+          </span>
+          <span className="line-clamp-1">COMPLIMENTARY DOMESTIC SHIPPING ON ORDERS &gt; ₹2,999</span>
+          <span className="opacity-40 hidden sm:inline">|</span>
           <span className="hidden sm:inline">EXPRESS DISPATCH ACROSS INDIA</span>
-          <span className="sm:hidden">EXPRESS DISPATCH</span>
         </div>
 
         {/* ── Main Navigation Bar ── */}
-        <div className="h-16 md:h-20 max-w-360 mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between gap-4 lg:gap-8">
+        <div className="h-14 sm:h-16 md:h-20 max-w-360 mx-auto px-3 sm:px-6 lg:px-12 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
           {/* Left: Mobile Menu Trigger + Brand Logo */}
-          <div className="flex items-center gap-3 md:gap-8">
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-8">
             <button
               type="button"
               aria-label="Open mobile navigation"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden flex items-center justify-center p-1.5 text-on-surface hover:text-primary transition-colors focus:outline-none"
+              className="lg:hidden w-10 h-10 flex items-center justify-center text-on-surface hover:text-primary transition-colors focus:outline-none"
             >
               <span className="material-symbols-outlined text-[24px]">menu</span>
             </button>
@@ -333,152 +344,169 @@ export default function Header() {
           />
 
           {/* Drawer Content */}
-          <div className="relative w-4/5 max-w-sm bg-surface h-full shadow-2xl flex flex-col z-10 overflow-y-auto" data-lenis-prevent>
+          <aside className="relative w-5/6 max-w-sm bg-surface h-full shadow-2xl flex flex-col z-10 overflow-y-auto" data-lenis-prevent>
             {/* Drawer Header */}
-            <div className="p-4 flex items-center justify-between border-b border-outline-variant/30">
+            <div className="pt-safe px-4 py-3.5 flex items-center justify-between border-b border-outline-variant/30">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 alt="Closet by Chili Logo"
-                className="h-10 w-auto object-contain"
+                className="h-9 w-auto object-contain"
                 src="/assets/brand/logo.png"
               />
               <button
                 type="button"
                 aria-label="Close menu"
                 onClick={() => setMobileOpen(false)}
-                className="p-1.5 text-on-surface hover:text-primary"
+                className="w-10 h-10 flex items-center justify-center text-on-surface hover:text-primary transition-colors"
               >
                 <span className="material-symbols-outlined text-[24px]">close</span>
               </button>
             </div>
 
-            {/* Drawer Navigation Links */}
-            <div className="p-5 flex flex-col gap-3 font-label-caps text-[13px] uppercase tracking-wider">
-              <Link
-                href="/products?collection=new-arrivals"
-                data-path="new-arrivals"
-                onClick={() => setMobileOpen(false)}
-                className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 hover:text-primary"
-              >
-                <span>New Arrivals</span>
-                <span className="bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5">
-                  NEW
-                </span>
-              </Link>
-
-              {/* Mobile Shop Accordion */}
-              <div className="py-2 border-b border-outline-variant/20">
-                <div className="flex items-center justify-between py-1 font-semibold text-on-surface">
-                  <Link
-                    href="/products"
-                    data-path="shop"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Shop All
-                  </Link>
-                </div>
-                <div className="pl-3 pt-2 flex flex-col gap-2 font-normal normal-case text-body-sm text-on-surface-variant">
-                  <Link
-                    href="/products?category=dresses"
-                    data-path="dresses"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-1 hover:text-primary"
-                  >
-                    Dresses &amp; Gowns
-                  </Link>
-                  <Link
-                    href="/products?category=anarkali-sets"
-                    data-path="festive-sets"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-1 hover:text-primary"
-                  >
-                    Anarkali Sets
-                  </Link>
-                  <Link
-                    href="/products?category=kurtis"
-                    data-path="kurtas-and-tunics"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-1 hover:text-primary"
-                  >
-                    Kurtas &amp; Tunics
-                  </Link>
-                  <Link
-                    href="/products?category=co-ord-sets"
-                    data-path="co-ord-sets"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-1 hover:text-primary"
-                  >
-                    Co-ord Sets
-                  </Link>
-                  <Link
-                    href="/categories"
-                    data-path="all-categories"
-                    onClick={() => setMobileOpen(false)}
-                    className="py-1 font-semibold text-primary hover:text-primary flex items-center justify-between"
-                  >
-                    <span>All Categories</span>
-                    <span className="material-symbols-outlined text-[14px]">east</span>
-                  </Link>
-                </div>
+            {/* Curated Collections Section */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="font-label-caps text-[10px] tracking-[0.2em] uppercase text-text-muted mb-2 font-semibold">
+                Curated Collections
               </div>
 
-              <Link
-                href="/products?collection=bestsellers"
-                data-path="bestsellers"
-                onClick={() => setMobileOpen(false)}
-                className="py-2.5 border-b border-outline-variant/20 hover:text-primary"
-              >
-                Bestsellers
-              </Link>
+              <div className="flex flex-col">
+                <Link
+                  href="/products?collection=new-arrivals"
+                  data-path="new-arrivals"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-on-surface hover:text-primary transition-colors font-medium text-body-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>New Arrivals</span>
+                    <span className="bg-primary text-on-primary text-[8.5px] font-bold px-1.5 py-0.5 leading-none">
+                      NEW
+                    </span>
+                  </div>
+                  <span className="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+                </Link>
 
-              <Link
-                href="/products?collection=festive"
-                data-path="festive"
-                onClick={() => setMobileOpen(false)}
-                className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 hover:text-primary"
-              >
-                <span>Festive</span>
-                <span className="bg-secondary text-on-secondary text-[9px] font-bold px-1.5 py-0.5">
-                  HOT
-                </span>
-              </Link>
+                <Link
+                  href="/products?category=co-ord-sets"
+                  data-path="co-ord-sets"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-on-surface hover:text-primary transition-colors font-medium text-body-md"
+                >
+                  <span>Co-ord Sets</span>
+                  <span className="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+                </Link>
 
-              <Link
-                href="/#brand-manifesto"
-                data-path="about"
-                onClick={() => setMobileOpen(false)}
-                className="py-2.5 border-b border-outline-variant/20 hover:text-primary"
-              >
-                About
-              </Link>
+                <Link
+                  href="/products?category=kurtis"
+                  data-path="kurtas-and-tunics"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-on-surface hover:text-primary transition-colors font-medium text-body-md"
+                >
+                  <span>Kurtas &amp; Tunics</span>
+                  <span className="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+                </Link>
 
-              <Link
-                href={user ? "/account" : "/login"}
-                data-path="account"
-                onClick={() => setMobileOpen(false)}
-                className="py-2.5 flex items-center gap-2 hover:text-primary"
-              >
-                <span className="material-symbols-outlined text-[18px]">person</span>
-                <span>{user ? "My Account" : "Sign In"}</span>
-              </Link>
+                <Link
+                  href="/products?category=dresses"
+                  data-path="dresses"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-on-surface hover:text-primary transition-colors font-medium text-body-md"
+                >
+                  <span>Dresses &amp; Gowns</span>
+                  <span className="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+                </Link>
+
+                <Link
+                  href="/products?category=anarkali-sets"
+                  data-path="festive-sets"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-primary transition-colors font-medium text-body-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Festive &amp; Anarkalis</span>
+                    <span className="bg-secondary text-on-secondary text-[8.5px] font-bold px-1.5 py-0.5 leading-none">
+                      HOT
+                    </span>
+                  </div>
+                  <span className="material-symbols-outlined text-primary text-[16px]">arrow_forward</span>
+                </Link>
+
+                <Link
+                  href="/products?collection=bestsellers"
+                  data-path="bestsellers"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-on-surface hover:text-primary transition-colors font-medium text-body-md"
+                >
+                  <span>Bestsellers</span>
+                  <span className="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+                </Link>
+
+                <Link
+                  href="/categories"
+                  data-path="all-categories"
+                  onClick={() => setMobileOpen(false)}
+                  className="py-2.5 flex items-center justify-between border-b border-outline-variant/20 text-primary font-semibold text-body-md"
+                >
+                  <span>All Categories</span>
+                  <span className="material-symbols-outlined text-primary text-[16px]">east</span>
+                </Link>
+              </div>
+
+              {/* Client Suite Section */}
+              <div className="mt-6 pt-4 border-t border-outline-variant/30 flex flex-col gap-2">
+                <div className="font-label-caps text-[10px] tracking-[0.2em] uppercase text-text-muted mb-1 font-semibold">
+                  Client Suite
+                </div>
+                <Link
+                  href={user ? "/account" : "/login"}
+                  data-path="account"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 py-2 text-on-surface hover:text-primary transition-colors text-body-md"
+                >
+                  <span className="material-symbols-outlined text-[20px] text-primary">account_circle</span>
+                  <span>{user ? "My Account & Orders" : "Sign In / Register"}</span>
+                </Link>
+
+                <Link
+                  href="/account?tab=wishlist"
+                  data-path="wishlist"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 py-2 text-on-surface hover:text-primary transition-colors text-body-md"
+                >
+                  <span className="material-symbols-outlined text-[20px] text-primary">favorite</span>
+                  <span>Saved Pieces (Wishlist)</span>
+                </Link>
+
+                <Link
+                  href="/#brand-manifesto"
+                  data-path="about"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 py-2 text-on-surface hover:text-primary transition-colors text-body-md"
+                >
+                  <span className="material-symbols-outlined text-[20px] text-secondary">auto_stories</span>
+                  <span>Our Atelier Story</span>
+                </Link>
+              </div>
             </div>
 
-            {/* Drawer Footer Perks */}
-            <div className="mt-auto p-5 bg-surface-container-low border-t border-outline-variant/20 flex flex-col gap-2 text-xs text-on-surface-variant">
-              <div className="flex items-center gap-2">
+            {/* Drawer Footer Perks & Heritage Note */}
+            <div className="mt-auto p-4 bg-surface-container-low border-t border-outline-variant/20 flex flex-col gap-2.5 pb-safe">
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                 <span className="material-symbols-outlined text-secondary text-[18px]">
                   local_shipping
                 </span>
                 <span>Complimentary Shipping &gt; ₹2,999</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                 <span className="material-symbols-outlined text-secondary text-[18px]">
                   verified
                 </span>
-                <span>Pure Silk &amp; Chanderi Weaves</span>
+                <span>Pure Silk &amp; Handcrafted Weaves</span>
               </div>
+              <p className="font-title-editorial text-[11px] italic text-on-surface-variant text-center pt-1 border-t border-outline-variant/20">
+                Bespoke Indian heritage tailored for modern silhouettes.
+              </p>
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </>

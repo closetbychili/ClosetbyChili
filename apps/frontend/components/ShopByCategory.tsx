@@ -122,27 +122,31 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
   return (
     <section
       id="shop-by-category"
-      className="w-full py-16 sm:py-20 px-4 sm:px-6 lg:px-12 max-w-360 mx-auto"
+      className="w-full py-10 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-12 max-w-360 mx-auto"
       aria-labelledby="category-carousel-heading"
     >
       {/* ── Section Header ── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-10">
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
             <span className="h-px w-6 bg-primary" />
-            <span className="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">
+            <span className="font-label-caps text-[10px] sm:text-label-caps uppercase text-primary tracking-widest font-semibold">
               Shop By Category
             </span>
           </div>
-          <h2 id="category-carousel-heading" className="font-headline-lg text-headline-lg text-on-surface">
+          <h2 id="category-carousel-heading" className="font-headline-lg text-2xl sm:text-headline-lg text-on-surface">
             Discover By Category
           </h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-xl">
+          <p className="font-body-md text-xs sm:text-body-md text-on-surface-variant mt-1 max-w-xl">
             Explore our signature cuts, fluid drapes, and hand-finished silhouettes.
           </p>
         </div>
 
-        <div className="mt-4 md:mt-0 flex items-center gap-4 sm:gap-6">
+        <div className="mt-3 md:mt-0 flex items-center justify-between sm:justify-start gap-4 sm:gap-6">
+          <span className="text-[11px] font-body-sm text-primary italic md:hidden font-medium">
+            Swipe to explore →
+          </span>
+
           {/* Carousel Arrow Controls */}
           <div className="hidden sm:flex items-center gap-2">
             <button
@@ -179,7 +183,7 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
             href="/categories"
             id="browse-all-categories-link"
             data-path="categories"
-            className="inline-flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-primary hover:text-on-surface transition-colors font-semibold"
+            className="hidden sm:inline-flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-primary hover:text-on-surface transition-colors font-semibold"
           >
             <span>Browse All Categories</span>
             <span className="material-symbols-outlined text-[16px]">east</span>
@@ -204,7 +208,7 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUpOrLeave}
             onMouseLeave={handleMouseUpOrLeave}
-            className={`flex items-start gap-4 sm:gap-5 lg:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-12 lg:px-12 select-none scrollbar-none ${
+            className={`flex items-start gap-3 sm:gap-5 lg:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-12 lg:px-12 select-none scrollbar-none ${
               isDragging ? "cursor-grabbing" : "cursor-grab"
             }`}
             style={{
@@ -218,15 +222,15 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
             {displayedCategories.map((cat) => (
               <div
                 key={cat.id}
-                className="shrink-0 snap-start w-60 sm:w-65 lg:w-70"
+                className="shrink-0 snap-start w-44 sm:w-56 lg:w-68"
               >
                 <Link
                   href={cat.href || `/products?category=${cat.id}`}
                   onClick={handleCardClick}
-                  className="group flex flex-col items-center w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t-[80px] lg:rounded-t-[100px]"
+                  className="group flex flex-col items-center w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-t-[60px] sm:rounded-t-[80px] lg:rounded-t-[100px]"
                 >
                   {/* Arched Image Container */}
-                  <div className="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
+                  <div className="relative w-full aspect-[3/4.2] rounded-t-[60px] sm:rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
                     {cat.image ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -238,10 +242,10 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
                     ) : (
                       /* Graceful Fallback for categories without uploaded card media */
                       <div className="w-full h-full bg-linear-to-b from-[#FAF6F2] to-[#F2ECE5] flex flex-col items-center justify-center p-6 text-center">
-                        <div className="w-12 h-12 rounded-full bg-white/80 border border-outline-variant/30 flex items-center justify-center mb-3 shadow-2xs text-primary">
-                          <Sparkles className="w-5 h-5" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/80 border border-outline-variant/30 flex items-center justify-center mb-2 sm:mb-3 shadow-2xs text-primary">
+                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
-                        <span className="font-serif italic text-base text-on-surface font-semibold line-clamp-2">
+                        <span className="font-serif italic text-sm sm:text-base text-on-surface font-semibold line-clamp-2">
                           {cat.name}
                         </span>
                       </div>
@@ -249,20 +253,20 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
 
                     {/* Gradient & Bottom Title Chip */}
                     <div className="absolute inset-0 bg-linear-to-t from-inverse-surface/75 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
-                    <div className="absolute bottom-3.5 inset-x-0 text-center px-2">
-                      <span className="font-body-sm text-[12px] text-secondary-fixed tracking-widest uppercase font-semibold">
+                    <div className="absolute bottom-2.5 sm:bottom-3.5 inset-x-0 text-center px-2">
+                      <span className="font-body-sm text-[10px] sm:text-[12px] text-secondary-fixed tracking-widest uppercase font-semibold">
                         Explore Cuts
                       </span>
                     </div>
                   </div>
 
                   {/* Typography Information */}
-                  <div className="mt-3.5 text-center px-1 w-full">
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                  <div className="mt-2.5 sm:mt-3.5 text-center px-1 w-full">
+                    <h3 className="font-headline-sm text-[14px] sm:text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
                       {cat.name}
                     </h3>
                     {cat.subtitle ? (
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">
+                      <p className="font-body-sm text-[11px] sm:text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">
                         {cat.subtitle}
                       </p>
                     ) : null}

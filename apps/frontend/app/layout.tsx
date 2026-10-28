@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Cinzel, Montserrat } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
@@ -26,6 +26,14 @@ import { CartProvider } from "@/components/CartContext";
 import { AuthProvider } from "@/components/AuthProvider";
 import CartDrawer from "@/components/CartDrawer";
 import SmoothScroll from "@/components/SmoothScroll";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#8b000a",
+};
 
 export const metadata: Metadata = {
   title: "Closet by Chili | Bold. Feminine. Timeless.",

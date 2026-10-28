@@ -40,23 +40,23 @@ export default function SocialSalon() {
   ];
 
   return (
-    <section className="w-full py-20 px-4 sm:px-6 lg:px-12 bg-surface">
+    <section className="w-full py-10 sm:py-20 px-3.5 sm:px-6 lg:px-12 bg-surface">
       <div className="max-w-360 mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-10">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1 sm:mb-1.5">
               <span className="material-symbols-outlined text-primary text-[18px]">
                 photo_camera
               </span>
-              <span className="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">
+              <span className="font-label-caps text-[10px] sm:text-label-caps uppercase text-primary tracking-widest font-semibold">
                 Styled In Chilli
               </span>
             </div>
-            <h2 className="font-headline-lg text-headline-lg text-on-surface">
+            <h2 className="font-headline-lg text-2xl sm:text-headline-lg text-on-surface">
               The Social Salon
             </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+            <p className="font-body-md text-xs sm:text-body-md text-on-surface-variant mt-1">
               Tag <span className="font-semibold text-primary">@closetbychili</span> and use{" "}
               <span className="font-semibold text-on-surface">#ClosetByChilli</span> to be featured on our curated runway feed.
             </p>
@@ -65,15 +65,15 @@ export default function SocialSalon() {
             href="https://instagram.com"
             rel="noopener noreferrer"
             target="_blank"
-            className="mt-4 md:mt-0 inline-flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-on-surface hover:text-primary transition-colors"
+            className="mt-3 md:mt-0 inline-flex items-center gap-1.5 font-label-caps text-[11px] sm:text-label-caps uppercase tracking-wider text-primary sm:text-on-surface hover:text-primary transition-colors font-semibold"
           >
             <span>Follow Us on Instagram</span>
-            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            <span className="material-symbols-outlined text-[15px] sm:text-[16px]">open_in_new</span>
           </a>
         </div>
 
-        {/* 5-Grid Mosaic */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+        {/* 4-Grid on Mobile (2x2) / 5-Grid Mosaic on Desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
           {tiles.map((tile, idx) => (
             <a
               key={idx}
@@ -81,7 +81,7 @@ export default function SocialSalon() {
               target="_blank"
               rel="noopener noreferrer"
               className={`group relative aspect-square overflow-hidden bg-surface-container shadow-xs hover:shadow-md transition-shadow ${
-                idx === 4 ? "col-span-2 md:col-span-1" : ""
+                idx === 4 ? "hidden sm:block md:col-span-1" : ""
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -96,7 +96,7 @@ export default function SocialSalon() {
                   {tile.icon}
                 </span>
               </div>
-              <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[9px] uppercase tracking-wider shadow-xs">
+              <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-surface/90 text-on-surface font-label-caps text-[8.5px] sm:text-[9px] uppercase tracking-wider shadow-xs">
                 {tile.handle}
               </span>
             </a>

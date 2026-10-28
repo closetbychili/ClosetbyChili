@@ -81,30 +81,30 @@ export default function NewArrivals({
   return (
     <section
       id="new-arrivals"
-      className="w-full py-16 sm:py-20 px-4 sm:px-6 lg:px-12 bg-surface-container-low"
+      className="w-full py-10 sm:py-16 lg:py-20 px-3 sm:px-6 lg:px-12 bg-surface-container-low"
     >
       <div className="max-w-360 mx-auto">
         {/* ── Section Header (BIBA 4-Column Retail Architecture) ── */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-6 sm:pb-8 mb-8 border-b-0">
+        <div className="flex items-end justify-between pb-4 sm:pb-8 mb-6 sm:mb-8 border-b-0">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1 sm:mb-1.5">
               <span className="h-2 w-2 rounded-full bg-primary-container" />
-              <span className="font-label-caps text-label-caps uppercase text-primary tracking-widest font-semibold">
+              <span className="font-label-caps text-[10px] sm:text-label-caps uppercase text-primary tracking-widest font-semibold">
                 Fresh Runway Drops
               </span>
             </div>
-            <h2 className="font-headline-lg text-headline-lg text-on-surface">
+            <h2 className="font-headline-lg text-2xl sm:text-headline-lg text-on-surface">
               New Arrivals
             </h2>
           </div>
-          <div className="mt-3 sm:mt-0 flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <Link
               href="/products?collection=new-arrivals"
               data-path="new-arrivals"
-              className="font-label-caps text-label-caps uppercase text-on-surface hover:text-primary transition-colors flex items-center gap-1.5 tracking-wider font-semibold"
+              className="font-label-caps text-[11px] sm:text-label-caps uppercase text-primary sm:text-on-surface hover:text-primary transition-colors flex items-center gap-1 sm:gap-1.5 tracking-wider font-semibold"
             >
-              <span>View All Collection</span>
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <span>View All</span>
+              <span className="material-symbols-outlined text-[14px] sm:text-[16px]">arrow_forward</span>
             </Link>
           </div>
         </div>
@@ -117,8 +117,8 @@ export default function NewArrivals({
             </p>
           </div>
         ) : (
-          /* ── 4-Column Luxury Product Grid (Fetched from DB) ── */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+          /* ── 2-Column Mobile / 4-Column Desktop Luxury Product Grid ── */
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
             {displayedProducts.map((product) => {
               const isWishlisted = !!wishlist[product.id];
               const currentSelectedSize = selectedSizes[product.id] || "M";
@@ -135,7 +135,7 @@ export default function NewArrivals({
                   <div className="relative w-full aspect-3/4 overflow-hidden bg-surface-container">
                     {/* Badge */}
                     {product.badge && (
-                      <span className="absolute top-3 left-3 z-10 bg-primary-container text-on-primary px-2.5 py-1 font-label-caps text-[10px] uppercase tracking-wider font-semibold shadow-xs">
+                      <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-primary-container text-on-primary px-2 py-0.5 sm:px-2.5 sm:py-1 font-label-caps text-[8.5px] sm:text-[10px] uppercase tracking-wider font-semibold shadow-xs">
                         {product.badge}
                       </span>
                     )}
@@ -146,12 +146,12 @@ export default function NewArrivals({
                       suppressHydrationWarning
                       aria-label="Add to Wishlist"
                       onClick={(e) => toggleWishlist(product.id, e)}
-                      className={`absolute top-3 right-3 z-10 w-8.5 h-8.5 rounded-full bg-surface/90 hover:bg-surface flex items-center justify-center transition-all shadow-xs cursor-pointer ${
+                      className={`absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-full bg-surface/90 hover:bg-surface flex items-center justify-center transition-all shadow-xs cursor-pointer ${
                         isWishlisted ? "text-primary" : "text-on-surface hover:text-primary"
                       }`}
                     >
                       <span
-                        className="material-symbols-outlined text-[18px]"
+                        className="material-symbols-outlined text-[15px] sm:text-[18px]"
                         style={{
                           fontVariationSettings: isWishlisted ? "'FILL' 1" : "'FILL' 0",
                         }}
@@ -176,8 +176,8 @@ export default function NewArrivals({
                       />
                     </Link>
 
-                    {/* Quick Add Drawer / Action Overlay */}
-                    <div className="absolute inset-x-0 bottom-0 p-3 bg-surface/95 backdrop-blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex flex-col gap-2 shadow-md z-20">
+                    {/* Desktop Quick Add Drawer / Action Overlay */}
+                    <div className="hidden sm:flex absolute inset-x-0 bottom-0 p-3 bg-surface/95 backdrop-blur-sm translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out flex-col gap-2 shadow-md z-20">
                       <div className="flex items-center justify-between text-on-surface-variant font-label-caps text-[10px]">
                         <span>SELECT SIZE</span>
                         <Link
@@ -211,30 +211,41 @@ export default function NewArrivals({
                   </div>
 
                   {/* Product Metadata & Pricing */}
-                  <div className="p-4 flex flex-col gap-1.5">
-                    <span className="font-label-caps text-[10px] uppercase text-outline tracking-wider">
-                      {product.detail || "Ethnic Wear"}
-                    </span>
-                    <Link href={product.href}>
-                      <h3 className="font-headline-sm text-[15px] sm:text-[16px] text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-                        {product.name}
-                      </h3>
-                    </Link>
-                    <div className="flex items-baseline gap-2 pt-0.5">
-                      <span className="font-price-regular text-price-regular text-on-surface font-semibold">
-                        ₹{product.price.toLocaleString("en-IN")}
+                  <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between gap-1 sm:gap-1.5">
+                    <div>
+                      <span className="font-label-caps text-[9px] sm:text-[10px] uppercase text-outline tracking-wider">
+                        {product.detail || "Ethnic Wear"}
                       </span>
-                      {product.originalPrice && product.originalPrice > product.price && (
-                        <span className="font-price-original text-price-original text-outline line-through">
-                          ₹{product.originalPrice.toLocaleString("en-IN")}
+                      <Link href={product.href}>
+                        <h3 className="font-headline-sm text-[13px] sm:text-[16px] text-on-surface font-semibold group-hover:text-primary transition-colors line-clamp-1 sm:line-clamp-2 leading-tight mt-0.5">
+                          {product.name}
+                        </h3>
+                      </Link>
+                      <div className="flex items-baseline gap-1.5 sm:gap-2 pt-1 flex-wrap">
+                        <span className="font-price-regular text-[13px] sm:text-price-regular text-primary sm:text-on-surface font-bold">
+                          ₹{product.price.toLocaleString("en-IN")}
                         </span>
-                      )}
-                      {discountStr && (
-                        <span className="font-label-caps text-[10px] text-primary font-bold">
-                          {discountStr}
-                        </span>
-                      )}
+                        {product.originalPrice && product.originalPrice > product.price && (
+                          <span className="font-price-original text-[11px] sm:text-price-original text-outline line-through">
+                            ₹{product.originalPrice.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                        {discountStr && (
+                          <span className="font-label-caps text-[9px] sm:text-[10px] text-primary font-bold">
+                            {discountStr}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Mobile Tap-To-View / Select Size Button */}
+                    <Link
+                      href={product.href}
+                      className="mt-2 w-full h-7 sm:hidden bg-surface-container text-on-surface font-label-caps text-[9px] uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-on-surface hover:text-on-primary transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">add</span>
+                      <span>SELECT SIZE</span>
+                    </Link>
                   </div>
                 </div>
               );
