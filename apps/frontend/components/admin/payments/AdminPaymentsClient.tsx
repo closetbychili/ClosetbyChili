@@ -673,8 +673,13 @@ export default function AdminPaymentsClient() {
 
       {/* Detail Slide-Over / Modal */}
       {selectedPaymentId && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overscroll-contain"
+        >
+          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 overscroll-contain">
             {/* Modal Header */}
             <div className="p-4 border-b border-[#EBE2D8] bg-[#FAF6F2] flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -934,8 +939,13 @@ export default function AdminPaymentsClient() {
 
       {/* Confirmation Modal for Reconciliation */}
       {reconcileModalOpen && paymentDetail && (
-        <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overscroll-contain"
+        >
+          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 overscroll-contain">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
                 <AlertCircle className="w-5 h-5" />

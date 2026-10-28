@@ -19,6 +19,8 @@ import {
   getStoredCartSession,
   clearStoredCartSession,
   createEmptyCart,
+  applyCartCoupon as apiApplyCartCoupon,
+  removeCartCoupon as apiRemoveCartCoupon,
 } from "@/lib/api/cart";
 import { ApiClientError } from "@/lib/api/client";
 import { useAuth } from "./AuthProvider";
@@ -27,6 +29,9 @@ interface CartContextValue {
   cart: Cart | null;
   itemCount: number;
   subtotal: string;
+  discount: string;
+  total: string;
+  couponCode: string | null;
   isLoading: boolean;
   error: string | null;
   isDrawerOpen: boolean;
@@ -34,6 +39,8 @@ interface CartContextValue {
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
+  applyCoupon: (code: string) => Promise<void>;
+  removeCoupon: () => Promise<void>;
   openDrawer: () => void;
   closeDrawer: () => void;
   clearError: () => void;
@@ -44,6 +51,7 @@ const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user, session, loading: authLoading } = useAuth();
+  const token = session?.access_token;
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +70,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const token = session?.access_token;
       const data = await getCart(token);
       setCart(data);
     } catch (err) {
@@ -75,7 +82,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token]);
+  }, [token]);
 
   // Single authoritative effect to coordinate initial load, auth transition, cart merge, and logout
   useEffect(() => {
@@ -83,7 +90,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const token = session?.access_token;
     if (token) {
       wasAuthenticatedRef.current = true;
       if (lastProcessedTokenRef.current === token || isMergingRef.current) {
@@ -148,14 +154,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         active = false;
       };
     }
-  }, [authLoading, session?.access_token, refreshCart]);
+  }, [authLoading, token, refreshCart]);
 
   const handleAddToCart = useCallback(
     async (variantId: string, quantity = 1) => {
       try {
         setIsLoading(true);
         setError(null);
-        const token = session?.access_token;
         const updatedCart = await apiAddToCart(
           {
             variant_id: variantId,
@@ -177,7 +182,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [session?.access_token]
+    [token]
   );
 
   const handleUpdateQuantity = useCallback(
@@ -185,7 +190,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
         setError(null);
-        const token = session?.access_token;
         if (quantity < 1) {
           const updated = await apiRemoveCartItem(itemId, token);
           setCart(updated);
@@ -205,7 +209,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [session?.access_token]
+    [token]
   );
 
   const handleRemoveItem = useCallback(
@@ -213,7 +217,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         setIsLoading(true);
         setError(null);
-        const token = session?.access_token;
         const updated = await apiRemoveCartItem(itemId, token);
         setCart(updated);
       } catch (err) {
@@ -228,14 +231,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [session?.access_token]
+    [token]
   );
 
   const handleClearCart = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const token = session?.access_token;
       const updated = await apiClearCart(token);
       setCart(updated);
     } catch (err) {
@@ -249,10 +251,54 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.access_token]);
+  }, [token]);
+
+  const handleApplyCoupon = useCallback(
+    async (code: string) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const updated = await apiApplyCartCoupon(code, token);
+        setCart(updated);
+      } catch (err) {
+        console.error("Failed to apply coupon:", err);
+        const message =
+          err instanceof ApiClientError
+            ? err.message
+            : "Could not apply coupon.";
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token]
+  );
+
+  const handleRemoveCoupon = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const updated = await apiRemoveCartCoupon(token);
+      setCart(updated);
+    } catch (err) {
+      console.error("Failed to remove coupon:", err);
+      const message =
+        err instanceof ApiClientError
+          ? err.message
+          : "Could not remove coupon.";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
 
   const itemCount = cart?.item_count || 0;
   const subtotal = cart?.subtotal || "0.00";
+  const discount = cart?.discount || "0.00";
+  const total = cart?.total || cart?.subtotal || "0.00";
+  const couponCode = cart?.coupon_code || null;
 
   return (
     <CartContext.Provider
@@ -260,6 +306,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         cart,
         itemCount,
         subtotal,
+        discount,
+        total,
+        couponCode,
         isLoading,
         error,
         isDrawerOpen,
@@ -267,6 +316,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity: handleUpdateQuantity,
         removeItem: handleRemoveItem,
         clearCart: handleClearCart,
+        applyCoupon: handleApplyCoupon,
+        removeCoupon: handleRemoveCoupon,
         openDrawer,
         closeDrawer,
         clearError,
@@ -282,6 +333,9 @@ const defaultCartContext: CartContextValue = {
   cart: null,
   itemCount: 0,
   subtotal: "0.00",
+  discount: "0.00",
+  total: "0.00",
+  couponCode: null,
   isLoading: false,
   error: null,
   isDrawerOpen: false,
@@ -289,6 +343,8 @@ const defaultCartContext: CartContextValue = {
   updateQuantity: async () => {},
   removeItem: async () => {},
   clearCart: async () => {},
+  applyCoupon: async () => {},
+  removeCoupon: async () => {},
   openDrawer: () => {},
   closeDrawer: () => {},
   clearError: () => {},

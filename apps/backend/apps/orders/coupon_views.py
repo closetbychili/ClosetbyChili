@@ -15,7 +15,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework import filters, generics, status
+from rest_framework import filters, generics, permissions, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -27,9 +27,10 @@ from apps.orders.coupon_serializers import (
     AdminCouponCreateSerializer,
     AdminCouponDetailSerializer,
     AdminCouponListSerializer,
+    AdminCouponRedemptionSerializer,
     AdminCouponUpdateSerializer,
 )
-from apps.orders.models import Coupon, CouponAuditLog
+from apps.orders.models import Coupon, CouponAuditLog, CouponRedemption
 
 ALLOWED_COUPON_ORDERING_FIELDS = {
     "created_at",
@@ -66,7 +67,12 @@ def resolve_coupon(coupon_id_param: Any) -> Coupon:
 
     coupon = (
         Coupon.objects.select_related("created_by", "updated_by")
-        .prefetch_related("audit_logs__actor")
+        .prefetch_related(
+            "audit_logs__actor",
+            "applicable_products",
+            "applicable_categories",
+            "applicable_collections",
+        )
         .filter(id=coupon_uuid)
         .first()
     )
@@ -78,8 +84,8 @@ def resolve_coupon(coupon_id_param: Any) -> Coupon:
 class AdminCouponFilterBackend(filters.BaseFilterBackend):
     """
     Filters and sorts coupons for administrative listing.
-    Supports search (code, name), active flag, discount type, lifecycle state,
-    and deterministic ordering.
+    Supports search (code, name), active flag, discount type, targeting mode,
+    lifecycle state, and deterministic ordering.
     """
 
     def filter_queryset(self, request: Request, queryset: Any, view: Any) -> Any:
@@ -108,7 +114,16 @@ class AdminCouponFilterBackend(filters.BaseFilterBackend):
                 })
             queryset = queryset.filter(discount_type=discount_type)
 
-        # 4. Lifecycle state (scheduled, currently_valid, valid, expired, inactive)
+        # 4. Targeting Mode (ALL_PRODUCTS, SPECIFIC_PRODUCTS, etc.)
+        targeting_mode = (request.query_params.get("targeting_mode") or "").strip().upper()
+        if targeting_mode:
+            if targeting_mode not in Coupon.TargetingMode.values:
+                raise ValidationError({
+                    "targeting_mode": f"Invalid targeting mode '{targeting_mode}'. Allowed: {', '.join(Coupon.TargetingMode.values)}."
+                })
+            queryset = queryset.filter(targeting_mode=targeting_mode)
+
+        # 5. Lifecycle state (scheduled, currently_valid, valid, expired, inactive)
         lifecycle = (request.query_params.get("lifecycle") or request.query_params.get("lifecycle_state") or "").strip().lower()
         if lifecycle:
             now = timezone.now()
@@ -127,7 +142,7 @@ class AdminCouponFilterBackend(filters.BaseFilterBackend):
                     "lifecycle": f"Invalid lifecycle state '{lifecycle}'. Allowed: scheduled, currently_valid, expired, inactive."
                 })
 
-        # 5. Deterministic Ordering
+        # 6. Deterministic Ordering
         ordering = (request.query_params.get("ordering") or "-created_at").strip()
         if ordering:
             if ordering not in ALLOWED_COUPON_ORDERING_FIELDS:
@@ -167,6 +182,11 @@ class AdminCouponListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return (
             Coupon.objects.select_related("created_by", "updated_by")
+            .prefetch_related(
+                "applicable_products",
+                "applicable_categories",
+                "applicable_collections",
+            )
             .all()
         )
 
@@ -187,12 +207,20 @@ class AdminCouponListCreateView(generics.ListCreateAPIView):
             event_type=CouponAuditLog.EventType.CREATED,
             actor=user,
             actor_email=user.email if user else "",
-            notes=f"Coupon '{coupon.code}' created with discount {coupon.discount_value} ({coupon.discount_type}).",
+            notes=(
+                f"Coupon '{coupon.code}' created with discount {coupon.discount_value} "
+                f"({coupon.discount_type}) [Targeting: {coupon.targeting_mode}]."
+            ),
             metadata={
                 "code": coupon.code,
                 "discount_type": coupon.discount_type,
                 "discount_value": str(coupon.discount_value),
                 "is_active": coupon.is_active,
+                "targeting_mode": coupon.targeting_mode,
+                "target_summary": coupon.target_summary,
+                "applicable_products_count": coupon.applicable_products.count(),
+                "applicable_categories_count": coupon.applicable_categories.count(),
+                "applicable_collections_count": coupon.applicable_collections.count(),
                 "start_date": coupon.start_date.isoformat() if coupon.start_date else None,
                 "end_date": coupon.end_date.isoformat() if coupon.end_date else None,
             },
@@ -200,6 +228,18 @@ class AdminCouponListCreateView(generics.ListCreateAPIView):
 
         detail_serializer = AdminCouponDetailSerializer(coupon)
         return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
+
+
+def _json_safe(val: Any) -> Any:
+    if isinstance(val, (uuid.UUID, Decimal)):
+        return str(val)
+    if hasattr(val, "isoformat"):
+        return val.isoformat()
+    if isinstance(val, (list, tuple, set)):
+        return [_json_safe(x) for x in val]
+    if isinstance(val, dict):
+        return {k: _json_safe(v) for k, v in val.items()}
+    return val
 
 
 class AdminCouponDetailView(APIView):
@@ -228,7 +268,7 @@ class AdminCouponDetailView(APIView):
         updated_coupon = serializer.save(updated_by=user)
 
         # Record audit log
-        changed_fields = list(serializer.validated_data.keys())
+        changed_fields = [k for k in serializer.validated_data.keys() if not k.startswith("_")]
         CouponAuditLog.objects.create(
             coupon=updated_coupon,
             event_type=CouponAuditLog.EventType.UPDATED,
@@ -237,9 +277,15 @@ class AdminCouponDetailView(APIView):
             notes=f"Coupon '{updated_coupon.code}' modified fields: {', '.join(changed_fields)}.",
             metadata={
                 "changed_fields": changed_fields,
+                "targeting_mode": updated_coupon.targeting_mode,
+                "target_summary": updated_coupon.target_summary,
+                "applicable_products_count": updated_coupon.applicable_products.count(),
+                "applicable_categories_count": updated_coupon.applicable_categories.count(),
+                "applicable_collections_count": updated_coupon.applicable_collections.count(),
                 "updated_values": {
-                    k: str(v) if hasattr(v, "isoformat") or isinstance(v, Decimal) else v
+                    k: _json_safe(v)
                     for k, v in serializer.validated_data.items()
+                    if not k.startswith("_")
                 },
             },
         )
@@ -309,3 +355,153 @@ class AdminCouponDeactivateView(APIView):
 
         detail_serializer = AdminCouponDetailSerializer(coupon)
         return Response(detail_serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminCouponRedemptionListView(generics.ListAPIView):
+    """
+    GET /api/v1/admin/coupons/<uuid:pk>/redemptions/
+
+    Lists durable redemptions and reservations for a coupon.
+    Supports filtering by state (RESERVED, REDEEMED, RELEASED),
+    search by order number or customer, and pagination.
+    """
+
+    permission_classes = [IsAdminUser]
+    serializer_class = AdminCouponRedemptionSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        coupon = resolve_coupon(self.kwargs.get("pk"))
+        qs = (
+            CouponRedemption.objects.filter(coupon=coupon)
+            .select_related("coupon", "customer", "order")
+            .order_by("-created_at")
+        )
+
+        state_param = self.request.query_params.get("state")
+        if state_param and state_param.strip().upper() in CouponRedemption.State.values:
+            qs = qs.filter(state=state_param.strip().upper())
+
+        search = (self.request.query_params.get("search") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(order__order_number__icontains=search)
+                | Q(customer__email__icontains=search)
+                | Q(customer__profile__display_name__icontains=search)
+                | Q(idempotency_key__icontains=search)
+            )
+
+        return qs
+
+
+class CouponValidateView(APIView):
+    """
+    POST /api/v1/coupons/validate/
+
+    Validates a coupon code against the authenticated customer's server-side active cart.
+    Returns eligibility, reason codes, discount amount, currency, subtotal, and final payable amount.
+    Validation alone does NOT reserve redemption capacity or mutate database state.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        raw_code = request.data.get("code") or request.data.get("coupon_code")
+        if not raw_code or not str(raw_code).strip():
+            return Response(
+                {
+                    "error": {
+                        "code": "COUPON_CODE_REQUIRED",
+                        "message": "Coupon code is required.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        code = str(raw_code).strip().upper()
+
+        from apps.cart.models import Cart
+        from apps.orders.coupon_calculation_service import (
+            calculate_coupon_discount,
+            get_coupon_discount_description,
+        )
+        from apps.orders.coupon_eligibility_service import evaluate_coupon_eligibility
+
+        cart = (
+            Cart.objects.filter(user=request.user, is_active=True)
+            .prefetch_related("items__variant__product")
+            .first()
+        )
+        cart_items = list(cart.items.all()) if cart else []
+        subtotal = cart.subtotal if cart else Decimal("0.00")
+
+        coupon = Coupon.objects.filter(code=code).first()
+        if not coupon:
+            return Response(
+                {
+                    "eligible": False,
+                    "reason_code": "COUPON_NOT_FOUND",
+                    "message": f"Coupon code '{code}' does not exist.",
+                    "coupon_code": code,
+                    "discount_description": "",
+                    "discount_type": "",
+                    "discount_value": "0.00",
+                    "discount_amount": "0.00",
+                    "currency": "INR",
+                    "subtotal": str(subtotal),
+                    "total": str(subtotal),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        eligibility = evaluate_coupon_eligibility(
+            coupon=coupon,
+            customer=request.user,
+            subtotal=subtotal,
+            items=cart_items,
+        )
+
+        discount_desc = get_coupon_discount_description(coupon)
+
+        if not eligibility.eligible:
+            return Response(
+                {
+                    "eligible": False,
+                    "reason_code": eligibility.reason_code,
+                    "message": eligibility.message,
+                    "coupon_code": coupon.code,
+                    "discount_description": discount_desc,
+                    "discount_type": coupon.discount_type,
+                    "discount_value": str(coupon.discount_value),
+                    "discount_amount": "0.00",
+                    "currency": "INR",
+                    "subtotal": str(subtotal),
+                    "total": str(subtotal),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        discount_amount = calculate_coupon_discount(
+            coupon=coupon,
+            items=cart_items,
+            subtotal=subtotal,
+        )
+        payable_total = max(Decimal("0.00"), subtotal - discount_amount).quantize(Decimal("0.01"))
+
+        return Response(
+            {
+                "eligible": True,
+                "reason_code": None,
+                "message": "Coupon is valid and eligible.",
+                "coupon_code": coupon.code,
+                "discount_description": discount_desc,
+                "discount_type": coupon.discount_type,
+                "discount_value": str(coupon.discount_value),
+                "discount_amount": str(discount_amount),
+                "currency": "INR",
+                "subtotal": str(subtotal),
+                "total": str(payable_total),
+            },
+            status=status.HTTP_200_OK,
+        )
+

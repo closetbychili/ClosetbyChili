@@ -49,6 +49,14 @@ class Cart(models.Model):
             "or explicit expiration."
         ),
     )
+    coupon = models.ForeignKey(
+        "orders.Coupon",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="carts",
+        help_text="Applied coupon for this cart session.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -89,6 +97,30 @@ class Cart(models.Model):
         for item in self.items.select_related("variant"):
             total += item.line_total
         return total.quantize(Decimal("0.01"))
+
+    @property
+    def coupon_code(self) -> str | None:
+        """Returns applied coupon code, if any."""
+        return self.coupon.code if self.coupon else None
+
+    @property
+    def discount(self) -> Decimal:
+        """Authoritative discount amount derived from the applied coupon."""
+        if not self.coupon:
+            return Decimal("0.00")
+        from apps.orders.coupon_calculation_service import calculate_coupon_discount
+        return calculate_coupon_discount(
+            self.coupon,
+            self.items.select_related("variant__product"),
+            self.subtotal,
+        )
+
+    @property
+    def total(self) -> Decimal:
+        """Authoritative total payable amount after discount."""
+        sub = self.subtotal
+        disc = self.discount
+        return max(Decimal("0.00"), sub - disc).quantize(Decimal("0.01"))
 
 
 class CartItem(models.Model):

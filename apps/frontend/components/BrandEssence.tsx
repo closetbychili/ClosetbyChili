@@ -25,24 +25,24 @@ export default function BrandEssence() {
   ];
 
   return (
-    <section className="w-full py-16 px-4 sm:px-6 lg:px-12 bg-page-bg border-y border-border-sand/40">
+    <section className="w-full py-10 sm:py-16 px-3.5 sm:px-6 lg:px-12 bg-page-bg border-y border-border-sand/40">
       <div className="max-w-360 mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
           {pillars.map((pillar, idx) => (
             <div
               key={idx}
-              className="flex items-start gap-4 p-5 bg-surface shadow-xs border border-outline-variant/30 hover:shadow-md transition-shadow"
+              className="flex flex-col sm:flex-row items-start gap-2.5 sm:gap-4 p-3.5 sm:p-5 bg-surface shadow-xs border border-outline-variant/30 hover:shadow-md transition-shadow"
             >
-              <div className="w-12 h-12 rounded-none bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
-                <span className="material-symbols-outlined text-[26px]">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-none bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+                <span className="material-symbols-outlined text-[20px] sm:text-[26px]">
                   {pillar.icon}
                 </span>
               </div>
               <div>
-                <h4 className="font-headline-sm text-[16px] text-on-surface font-semibold mb-1">
+                <h4 className="font-headline-sm text-[13px] sm:text-[16px] text-on-surface font-semibold mb-0.5 sm:mb-1">
                   {pillar.title}
                 </h4>
-                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                <p className="font-body-sm text-[11px] sm:text-body-sm text-on-surface-variant leading-relaxed">
                   {pillar.desc}
                 </p>
               </div>

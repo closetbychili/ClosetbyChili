@@ -11,6 +11,7 @@ import type {
   Cart,
   AddToCartPayload,
   UpdateCartItemPayload,
+  ValidateCouponResponse,
 } from './types';
 
 export const CART_SESSION_STORAGE_KEY = 'closet_cart_session';
@@ -119,6 +120,9 @@ export function createEmptyCart(): Cart {
     items: [],
     item_count: 0,
     subtotal: '0.00',
+    discount: '0.00',
+    total: '0.00',
+    coupon_code: null,
     is_active: true,
     created_at: null,
     updated_at: null,
@@ -224,3 +228,50 @@ export async function mergeCart(token?: string): Promise<Cart> {
   clearStoredCartSession();
   return handleCartResponse(res);
 }
+
+/**
+ * Validates a coupon code against the customer's server-side active cart.
+ */
+export async function validateCoupon(
+  code: string,
+  token?: string
+): Promise<ValidateCouponResponse> {
+  const headers = await getCartHeaders(token);
+  return apiFetch<ValidateCouponResponse>('/coupons/validate/', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ code }),
+    cache: 'no-store',
+  });
+}
+
+/**
+ * Applies a coupon to the active cart.
+ */
+export async function applyCartCoupon(
+  code: string,
+  token?: string
+): Promise<Cart> {
+  const headers = await getCartHeaders(token);
+  const res = await apiFetch<Cart>('/cart/coupon/', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ code }),
+    cache: 'no-store',
+  });
+  return handleCartResponse(res);
+}
+
+/**
+ * Removes the coupon from the active cart.
+ */
+export async function removeCartCoupon(token?: string): Promise<Cart> {
+  const headers = await getCartHeaders(token);
+  const res = await apiFetch<Cart>('/cart/coupon/', {
+    method: 'DELETE',
+    headers,
+    cache: 'no-store',
+  });
+  return handleCartResponse(res);
+}
+

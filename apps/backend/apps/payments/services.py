@@ -250,6 +250,17 @@ def verify_razorpay_payment(
         from apps.inventory.services import finalize_order_inventory
         finalize_order_inventory(order=order, actor=order.user)
 
+        from apps.orders.coupon_redemption_service import finalize_coupon_redemption
+        from apps.orders.models import CouponRedemption
+        redemption = order.coupon_redemptions.filter(state=CouponRedemption.State.RESERVED).first()
+        if redemption:
+            finalize_coupon_redemption(
+                redemption=redemption,
+                order=order,
+                discount_amount=order.discount,
+                currency=order.currency,
+            )
+
         return order
 
 
@@ -314,6 +325,16 @@ def process_razorpay_webhook(
                     if order.payment_status == Order.PaymentStatus.PAID:
                         # Ensure inventory was finalized idempotently
                         finalize_order_inventory(order=order)
+                        from apps.orders.coupon_redemption_service import finalize_coupon_redemption
+                        from apps.orders.models import CouponRedemption
+                        redemption = order.coupon_redemptions.filter(state=CouponRedemption.State.RESERVED).first()
+                        if redemption:
+                            finalize_coupon_redemption(
+                                redemption=redemption,
+                                order=order,
+                                discount_amount=order.discount,
+                                currency=order.currency,
+                            )
                         return {"status": "already_processed", "order_number": order.order_number}
 
                     # Verify amount and currency
@@ -327,6 +348,16 @@ def process_razorpay_webhook(
                         order.razorpay_payment_id = razorpay_payment_id
                         order.save(update_fields=["status", "payment_status", "razorpay_payment_id", "updated_at"])
                         finalize_order_inventory(order=order)
+                        from apps.orders.coupon_redemption_service import finalize_coupon_redemption
+                        from apps.orders.models import CouponRedemption
+                        redemption = order.coupon_redemptions.filter(state=CouponRedemption.State.RESERVED).first()
+                        if redemption:
+                            finalize_coupon_redemption(
+                                redemption=redemption,
+                                order=order,
+                                discount_amount=order.discount,
+                                currency=order.currency,
+                            )
                         return {"status": "paid", "order_number": order.order_number}
 
     elif event == "payment.failed":
@@ -344,6 +375,10 @@ def process_razorpay_webhook(
                     order.status = Order.Status.CANCELLED
                     order.save(update_fields=["status", "payment_status", "updated_at"])
                     release_order_reservations(order=order, reason="payment_failed")
+                    from apps.orders.coupon_redemption_service import release_coupon_redemption
+                    from apps.orders.models import CouponRedemption
+                    for redemption in order.coupon_redemptions.filter(state=CouponRedemption.State.RESERVED):
+                        release_coupon_redemption(redemption=redemption, reason="Payment failed via webhook")
                     return {"status": "payment_failed", "order_number": order.order_number}
 
     return {"status": "ignored", "event": event}

@@ -253,9 +253,12 @@ export default function AdminShipmentDetailDrawer({
   const currentStatus = shipment?.status || "PENDING";
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+    <div
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-sm flex justify-end animate-in fade-in duration-200 overscroll-contain"
+    >
       <div
-        className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-[#EBE2D8] text-[#1F1B17] overflow-hidden"
+        className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-[#EBE2D8] text-[#1F1B17] overflow-hidden overscroll-contain"
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
@@ -298,7 +301,7 @@ export default function AdminShipmentDetailDrawer({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
           {loading && (
             <div className="py-20 flex flex-col items-center justify-center text-[#8C7A78] space-y-3">
               <RefreshCw className="w-6 h-6 animate-spin text-[#6D1826]" />
@@ -862,8 +865,13 @@ export default function AdminShipmentDetailDrawer({
 
         {/* Action Confirmation Modal */}
         {confirmation && (
-          <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-[#EBE2D8] space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div
+            role="dialog"
+            aria-modal="true"
+            data-lenis-prevent="true"
+            className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overscroll-contain"
+          >
+            <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-[#EBE2D8] space-y-4 animate-in fade-in zoom-in-95 duration-150 overscroll-contain">
               <div className="flex items-center justify-between border-b border-[#F5EFE9] pb-3">
                 <h3 className="text-sm font-semibold text-[#1F1B17]">{confirmation.title}</h3>
                 <button

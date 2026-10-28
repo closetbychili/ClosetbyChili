@@ -10,6 +10,8 @@ interface AdminCouponsFilterBarProps {
   onLifecycleChange: (value: string) => void;
   discountType: string;
   onDiscountTypeChange: (value: string) => void;
+  targetingMode?: string;
+  onTargetingModeChange?: (value: string) => void;
   isActive: string;
   onIsActiveChange: (value: string) => void;
   ordering: string;
@@ -25,6 +27,8 @@ export default function AdminCouponsFilterBar({
   onLifecycleChange,
   discountType,
   onDiscountTypeChange,
+  targetingMode = "all",
+  onTargetingModeChange,
   isActive,
   onIsActiveChange,
   ordering,
@@ -36,7 +40,7 @@ export default function AdminCouponsFilterBar({
     <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm mb-6 space-y-3">
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         {/* Search input */}
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-60">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
             type="text"
@@ -83,6 +87,26 @@ export default function AdminCouponsFilterBar({
             <option value="PERCENTAGE">Percentage (%)</option>
             <option value="FIXED_AMOUNT">Fixed Amount (₹)</option>
           </select>
+
+          {/* Targeting Mode filter */}
+          {onTargetingModeChange && (
+            <select
+              value={targetingMode}
+              onChange={(e) => onTargetingModeChange(e.target.value)}
+              aria-label="Filter by targeting mode"
+              className="text-xs font-medium py-2 px-3 border border-stone-300 rounded-lg bg-stone-50 hover:bg-stone-100 text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-900"
+            >
+              <option value="all">All Targeting</option>
+              <option value="ALL_PRODUCTS">All Products</option>
+              <option value="SPECIFIC_PRODUCTS">Specific Products</option>
+              <option value="SPECIFIC_CATEGORIES">Specific Categories</option>
+              <option value="SPECIFIC_COLLECTIONS">Specific Collections</option>
+              <option value="PRODUCTS_AND_CATEGORIES">Products & Categories</option>
+              <option value="PRODUCTS_AND_COLLECTIONS">Products & Collections</option>
+              <option value="CATEGORIES_AND_COLLECTIONS">Categories & Collections</option>
+              <option value="MIXED">Mixed Targets</option>
+            </select>
+          )}
 
           {/* Active status filter */}
           <select

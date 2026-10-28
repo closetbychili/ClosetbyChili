@@ -32,7 +32,7 @@ export default function ProductCard({
           />
         ) : (
           /* Editorial Fallback Texture */
-          <div className="absolute inset-0 bg-gradient-to-br from-[#f8f1ec] via-[#f1e6df] to-[#e8dad1] flex flex-col items-center justify-center p-6 text-center transition-transform duration-700 group-hover:scale-105">
+          <div className="absolute inset-0 bg-linear-to-br from-[#f8f1ec] via-[#f1e6df] to-[#e8dad1] flex flex-col items-center justify-center p-6 text-center transition-transform duration-700 group-hover:scale-105">
             {/* Subtle woven texture pattern */}
             <div
               className="absolute inset-0 opacity-[0.06]"
@@ -47,7 +47,7 @@ export default function ProductCard({
                 CBC
               </span>
             </div>
-            <p className="relative text-[9px] uppercase tracking-[0.25em] text-ink/40 font-medium max-w-[120px]">
+            <p className="relative text-[9px] uppercase tracking-[0.25em] text-ink/40 font-medium max-w-30">
               {product.detail}
             </p>
           </div>
@@ -63,6 +63,7 @@ export default function ProductCard({
         {/* Wishlist Heart Button */}
         <button
           type="button"
+          suppressHydrationWarning
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           onClick={(e) => {
             e.preventDefault();

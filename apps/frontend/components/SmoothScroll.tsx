@@ -9,8 +9,8 @@ interface SmoothScrollProps {
 
 /**
  * SmoothScroll component powered by Lenis.
- * Provides a buttery-smooth luxury scrolling experience across all devices
- * while preserving native scroll accessibility and preventing conflicts in overlay drawers.
+ * Provides a buttery-smooth scrolling experience across the entire application,
+ * including storefront pages and administrative console routes.
  */
 export default function SmoothScroll({ children }: SmoothScrollProps) {
   return (

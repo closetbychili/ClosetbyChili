@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.orders.coupon_views import CouponValidateView
 from apps.orders.views import CheckoutView
 
 
@@ -43,6 +44,7 @@ def api_v1_root(request: Any) -> Response:
 urlpatterns = [
     path("", api_v1_root, name="api-v1-root"),
     path("checkout/", CheckoutView.as_view(), name="checkout-create"),
+    path("coupons/validate/", CouponValidateView.as_view(), name="coupon-validate"),
     path("catalog/", include("apps.catalog.urls")),
     path("cart/", include("apps.cart.urls")),
     path("orders/", include("apps.orders.urls")),

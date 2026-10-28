@@ -3,6 +3,7 @@ import {
   getProductImages,
   mapCategoryToUi,
   mapProductToUi,
+  resolveMediaUrl,
 } from '@/lib/adapters/catalog-adapter';
 import type { Category, ProductDetail, ProductListItem } from '@/lib/api/types';
 
@@ -172,6 +173,30 @@ describe('Catalog Data Adapters', () => {
       expect(uiItem.subtitle).toBe('Everyday cuts & relaxed silhouettes');
       expect(uiItem.image).toBe('/assets/hero/hero-2.webp');
       expect(uiItem.href).toBe('/products?category=kurtis');
+    });
+  });
+
+  describe('resolveMediaUrl', () => {
+    it('returns undefined for undefined or null input', () => {
+      expect(resolveMediaUrl(undefined)).toBeUndefined();
+      expect(resolveMediaUrl(null)).toBeUndefined();
+    });
+
+    it('returns absolute http/https URLs as-is', () => {
+      expect(resolveMediaUrl('https://res.cloudinary.com/demo/image.jpg')).toBe(
+        'https://res.cloudinary.com/demo/image.jpg'
+      );
+    });
+
+    it('returns local /assets/ URLs as-is', () => {
+      expect(resolveMediaUrl('/assets/products/kurti-1.jpg')).toBe(
+        '/assets/products/kurti-1.jpg'
+      );
+    });
+
+    it('prefixes /media/ paths with backend server origin', () => {
+      const resolved = resolveMediaUrl('/media/products/test.jpg');
+      expect(resolved).toMatch(/^https?:\/\/.*\/media\/products\/test\.jpg$/);
     });
   });
 });

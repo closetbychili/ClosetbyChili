@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Loader2, AlertCircle, Tag } from "lucide-react";
 import type {
   AdminCoupon,
   AdminCreateCouponPayload,
   AdminUpdateCouponPayload,
   AdminCouponDiscountType,
+  AdminCouponTargetingMode,
+  AdminCouponTargetItem,
 } from "@/lib/api/admin";
+import { getAdminCouponDetail } from "@/lib/api/admin";
+import AdminCouponTargetingSelector from "./AdminCouponTargetingSelector";
 
 interface AdminCouponFormModalProps {
   isOpen: boolean;
@@ -87,6 +91,40 @@ function AdminCouponFormInner({
     couponToEdit ? couponToEdit.is_first_order_only : false
   );
 
+  // Targeting states
+  const [targetingMode, setTargetingMode] = useState<AdminCouponTargetingMode>(
+    couponToEdit?.targeting_mode || "ALL_PRODUCTS"
+  );
+  const [selectedProducts, setSelectedProducts] = useState<AdminCouponTargetItem[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<AdminCouponTargetItem[]>([]);
+  const [selectedCollections, setSelectedCollections] = useState<AdminCouponTargetItem[]>([]);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(Boolean(couponToEdit?.id));
+
+  // Edit-mode hydration of targets
+  useEffect(() => {
+    if (!couponToEdit?.id) return;
+    let cancelled = false;
+    getAdminCouponDetail(couponToEdit.id)
+      .then((detail) => {
+        if (!cancelled) {
+          if (detail.targeting_mode) setTargetingMode(detail.targeting_mode);
+          if (detail.applicable_products) setSelectedProducts(detail.applicable_products);
+          if (detail.applicable_categories) setSelectedCategories(detail.applicable_categories);
+          if (detail.applicable_collections) setSelectedCollections(detail.applicable_collections);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load coupon targeting details", err);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingDetail(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [couponToEdit?.id]);
+
   // Submission & error states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -124,6 +162,40 @@ function AdminCouponFormInner({
       }
     }
 
+    // Targeting client validation
+    if (targetingMode === "SPECIFIC_PRODUCTS" && selectedProducts.length === 0) {
+      errors.targeting = "At least one product must be selected for Specific Products targeting.";
+    } else if (targetingMode === "SPECIFIC_CATEGORIES" && selectedCategories.length === 0) {
+      errors.targeting = "At least one category must be selected for Specific Categories targeting.";
+    } else if (targetingMode === "SPECIFIC_COLLECTIONS" && selectedCollections.length === 0) {
+      errors.targeting = "At least one collection must be selected for Specific Collections targeting.";
+    } else if (
+      targetingMode === "PRODUCTS_AND_CATEGORIES" &&
+      selectedProducts.length === 0 &&
+      selectedCategories.length === 0
+    ) {
+      errors.targeting = "At least one product or category must be selected.";
+    } else if (
+      targetingMode === "PRODUCTS_AND_COLLECTIONS" &&
+      selectedProducts.length === 0 &&
+      selectedCollections.length === 0
+    ) {
+      errors.targeting = "At least one product or collection must be selected.";
+    } else if (
+      targetingMode === "CATEGORIES_AND_COLLECTIONS" &&
+      selectedCategories.length === 0 &&
+      selectedCollections.length === 0
+    ) {
+      errors.targeting = "At least one category or collection must be selected.";
+    } else if (
+      targetingMode === "MIXED" &&
+      selectedProducts.length === 0 &&
+      selectedCategories.length === 0 &&
+      selectedCollections.length === 0
+    ) {
+      errors.targeting = "At least one target (product, category, or collection) must be selected.";
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -139,6 +211,10 @@ function AdminCouponFormInner({
         discount_type: discountType,
         discount_value: discountValue,
         currency: currency.trim().toUpperCase() || "INR",
+        targeting_mode: targetingMode,
+        product_ids: selectedProducts.map((p) => p.id),
+        category_ids: selectedCategories.map((c) => c.id),
+        collection_ids: selectedCollections.map((col) => col.id),
         min_order_subtotal: minOrderSubtotal ? minOrderSubtotal : null,
         max_discount_amount:
           discountType === "PERCENTAGE" && maxDiscountAmount ? maxDiscountAmount : null,
@@ -209,7 +285,7 @@ function AdminCouponFormInner({
       </div>
 
       {/* Form Body (Scrollable) */}
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 overscroll-contain">
         {/* General Error Banner */}
         {generalError && (
           <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm">
@@ -480,6 +556,32 @@ function AdminCouponFormInner({
           </div>
         </div>
 
+        {/* Row 4.5: Targeting Rules & Catalog Multi-select */}
+        <AdminCouponTargetingSelector
+          mode={targetingMode}
+          onModeChange={(newMode) => {
+            setTargetingMode(newMode);
+            if (fieldErrors.targeting) {
+              setFieldErrors((prev) => ({ ...prev, targeting: "" }));
+            }
+          }}
+          selectedProducts={selectedProducts}
+          onProductsChange={setSelectedProducts}
+          selectedCategories={selectedCategories}
+          onCategoriesChange={setSelectedCategories}
+          selectedCollections={selectedCollections}
+          onCollectionsChange={setSelectedCollections}
+          error={
+            fieldErrors.targeting ||
+            fieldErrors.targeting_mode ||
+            fieldErrors.product_ids ||
+            fieldErrors.category_ids ||
+            fieldErrors.collection_ids ||
+            null
+          }
+          isLoadingDetail={isLoadingDetail}
+        />
+
         {/* Row 5: Flags (First Order Only & Active) */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-stone-50 rounded-xl border border-stone-200">
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -557,7 +659,12 @@ export default function AdminCouponFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain"
+    >
       <AdminCouponFormInner
         key={couponToEdit?.id ?? "create-new-coupon"}
         couponToEdit={couponToEdit}

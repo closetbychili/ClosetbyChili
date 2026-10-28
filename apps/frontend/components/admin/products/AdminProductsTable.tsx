@@ -536,10 +536,13 @@ export default function AdminProductsTable({
       {/* Confirmation Modal */}
       {actionModal.isOpen && actionModal.product && (
         <div
+          role="dialog"
+          aria-modal="true"
+          data-lenis-prevent="true"
           data-testid="lifecycle-confirm-modal"
-          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overscroll-contain"
         >
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#EBE2D8] space-y-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#EBE2D8] space-y-4 overscroll-contain">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-[#1F1B17]">
                 {actionModal.type === "publish"

@@ -102,6 +102,17 @@ class CartSerializer(serializers.ModelSerializer):
         decimal_places=2,
         read_only=True,
     )
+    discount = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+    total = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        read_only=True,
+    )
+    coupon_code = serializers.CharField(read_only=True, allow_null=True)
     user_id = serializers.UUIDField(source="user.id", read_only=True, default=None)
 
     class Meta:
@@ -113,6 +124,9 @@ class CartSerializer(serializers.ModelSerializer):
             "items",
             "item_count",
             "subtotal",
+            "discount",
+            "total",
+            "coupon_code",
             "is_active",
             "created_at",
             "updated_at",

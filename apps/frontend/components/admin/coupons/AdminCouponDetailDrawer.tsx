@@ -12,11 +12,21 @@ import {
   User,
   Loader2,
   AlertCircle,
+  Layers,
+  Package,
+  FolderTree,
+  CheckCircle2,
+  Clock,
+  RotateCcw,
+  ShoppingBag,
+  ShieldCheck,
 } from "lucide-react";
 import {
   getAdminCouponDetail,
+  getAdminCouponRedemptions,
   type AdminCouponDetail,
   type AdminCoupon,
+  type AdminCouponRedemption,
 } from "@/lib/api/admin";
 
 interface AdminCouponDetailDrawerProps {
@@ -37,6 +47,12 @@ export default function AdminCouponDetailDrawer({
   const [coupon, setCoupon] = useState<AdminCouponDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redemption history state
+  const [redemptions, setRedemptions] = useState<AdminCouponRedemption[]>([]);
+  const [redemptionsLoading, setRedemptionsLoading] = useState(false);
+  const [redemptionsFilter, setRedemptionsFilter] = useState<string>("ALL");
+  const [redemptionsTotal, setRedemptionsTotal] = useState(0);
 
   useEffect(() => {
     if (!isOpen || !couponId) {
@@ -71,6 +87,40 @@ export default function AdminCouponDetailDrawer({
     };
   }, [isOpen, couponId]);
 
+  useEffect(() => {
+    if (!isOpen || !couponId) {
+      return;
+    }
+
+    let isMounted = true;
+    async function loadRedemptions() {
+      try {
+        setRedemptionsLoading(true);
+        const res = await getAdminCouponRedemptions(couponId!, {
+          state: redemptionsFilter !== "ALL" ? redemptionsFilter : undefined,
+          page_size: 20,
+        });
+        if (isMounted) {
+          setRedemptions(res.results || []);
+          setRedemptionsTotal(res.count ?? (res.results ? res.results.length : 0));
+        }
+      } catch {
+        if (isMounted) {
+          setRedemptions([]);
+        }
+      } finally {
+        if (isMounted) {
+          setRedemptionsLoading(false);
+        }
+      }
+    }
+
+    loadRedemptions();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, couponId, redemptionsFilter]);
+
   if (!isOpen) return null;
 
   const formatCurrency = (val: string | null | undefined, currency = "INR") => {
@@ -101,9 +151,14 @@ export default function AdminCouponDetailDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 overflow-hidden bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain"
+    >
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-xl bg-white shadow-2xl border-l border-stone-200 flex flex-col">
+        <div className="w-screen max-w-xl bg-white shadow-2xl border-l border-stone-200 flex flex-col overscroll-contain">
           {/* Drawer Header */}
           <div className="px-6 py-5 border-b border-stone-200 bg-stone-50 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -143,7 +198,7 @@ export default function AdminCouponDetailDrawer({
           </div>
 
           {/* Drawer Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
             {isLoading ? (
               <div className="py-20 flex flex-col items-center justify-center text-stone-400 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-stone-900" />
@@ -208,23 +263,32 @@ export default function AdminCouponDetailDrawer({
                   )}
                 </div>
 
-                {/* Section 2: Validity & Redemptions */}
+                {/* Section 2: Usage Limits & Capacity */}
                 <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
-                  <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                    Validity & Eligibility Rules
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-stone-500" />
+                      Usage & Capacity
+                    </h3>
+                    <span className="text-[11px] font-semibold text-stone-700 bg-stone-200/80 px-2 py-0.5 rounded">
+                      {coupon.total_redemptions ?? coupon.usage_count ?? 0} Finalized
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-xs text-stone-400 block">Start Date</span>
-                      <span className="font-medium text-stone-800">
-                        {formatDate(coupon.start_date)}
+                    <div className="p-2.5 bg-white rounded-lg border border-stone-200">
+                      <span className="text-[11px] text-stone-400 block font-medium">Finalized Redemptions</span>
+                      <span className="text-base font-bold text-stone-900">
+                        {coupon.total_redemptions ?? coupon.usage_count ?? 0}
                       </span>
                     </div>
 
-                    <div>
-                      <span className="text-xs text-stone-400 block">End Date</span>
-                      <span className="font-medium text-stone-800">
-                        {formatDate(coupon.end_date)}
+                    <div className="p-2.5 bg-white rounded-lg border border-stone-200">
+                      <span className="text-[11px] text-stone-400 block font-medium">Remaining Capacity</span>
+                      <span className="text-base font-bold text-emerald-700">
+                        {coupon.remaining_capacity !== null && coupon.remaining_capacity !== undefined
+                          ? coupon.remaining_capacity
+                          : "Unlimited"}
                       </span>
                     </div>
 
@@ -243,12 +307,104 @@ export default function AdminCouponDetailDrawer({
                           : "Unlimited"}
                       </span>
                     </div>
+
+                    <div>
+                      <span className="text-xs text-stone-400 block">Start Date</span>
+                      <span className="font-medium text-stone-800">
+                        {formatDate(coupon.start_date)}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-xs text-stone-400 block">End Date</span>
+                      <span className="font-medium text-stone-800">
+                        {formatDate(coupon.end_date)}
+                      </span>
+                    </div>
                   </div>
 
                   {coupon.is_first_order_only && (
                     <div className="flex items-center gap-2 p-2 bg-purple-50 border border-purple-200 rounded-lg text-xs font-semibold text-purple-700">
                       <Sparkles className="w-4 h-4 shrink-0" />
                       <span>Restricted to First-Time Customers Only</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 2.5: Catalog Targeting & Scope */}
+                <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-stone-500" />
+                      Catalog Targeting & Scope
+                    </h3>
+                    <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-stone-200/80 text-stone-800">
+                      {coupon.targeting_mode}
+                    </span>
+                  </div>
+
+                  {coupon.targeting_mode === "ALL_PRODUCTS" ? (
+                    <p className="text-xs text-stone-600 bg-white p-2.5 rounded-lg border border-stone-200">
+                      Storewide coupon: qualifies all published catalog products meeting subtotal and date conditions.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 text-xs">
+                      {coupon.applicable_products && coupon.applicable_products.length > 0 && (
+                        <div>
+                          <span className="text-stone-400 font-medium block mb-1">
+                            Products ({coupon.applicable_products.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicable_products.map((p) => (
+                              <span
+                                key={p.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-stone-900 text-white rounded text-[11px]"
+                              >
+                                <Package className="w-3 h-3 text-stone-400" />
+                                {p.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {coupon.applicable_categories && coupon.applicable_categories.length > 0 && (
+                        <div>
+                          <span className="text-stone-400 font-medium block mb-1">
+                            Categories ({coupon.applicable_categories.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicable_categories.map((c) => (
+                              <span
+                                key={c.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-900 text-white rounded text-[11px]"
+                              >
+                                <FolderTree className="w-3 h-3 text-indigo-300" />
+                                {c.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {coupon.applicable_collections && coupon.applicable_collections.length > 0 && (
+                        <div>
+                          <span className="text-stone-400 font-medium block mb-1">
+                            Collections ({coupon.applicable_collections.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.applicable_collections.map((col) => (
+                              <span
+                                key={col.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-800 text-white rounded text-[11px]"
+                              >
+                                <Sparkles className="w-3 h-3 text-amber-300" />
+                                {col.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -280,7 +436,95 @@ export default function AdminCouponDetailDrawer({
                   )}
                 </div>
 
-                {/* Section 4: Audit Trail History */}
+                {/* Section 4: Durable Redemption History */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4 text-stone-500" />
+                      <h3 className="text-xs font-bold text-stone-700 uppercase tracking-wider">
+                        Redemption History ({redemptionsTotal})
+                      </h3>
+                    </div>
+                    {/* Filter tabs */}
+                    <div className="flex items-center gap-1 bg-stone-100 p-0.5 rounded-lg border border-stone-200 text-[11px]">
+                      {(["ALL", "REDEEMED", "RESERVED", "RELEASED"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setRedemptionsFilter(mode)}
+                          className={`px-2 py-0.5 rounded font-medium transition ${
+                            redemptionsFilter === mode
+                              ? "bg-white text-stone-900 shadow-xs"
+                              : "text-stone-500 hover:text-stone-800"
+                          }`}
+                        >
+                          {mode === "ALL" ? "All" : mode === "REDEEMED" ? "Finalized" : mode === "RESERVED" ? "Reserved" : "Released"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {redemptionsLoading ? (
+                    <div className="flex items-center justify-center py-6 text-stone-400 text-xs gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Loading redemptions...</span>
+                    </div>
+                  ) : redemptions.length > 0 ? (
+                    <div className="space-y-2">
+                      {redemptions.map((red) => (
+                        <div
+                          key={red.id}
+                          className="p-3 bg-stone-50 border border-stone-200 rounded-xl text-xs space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`font-bold px-2 py-0.5 rounded text-[11px] inline-flex items-center gap-1 ${
+                                red.state === "REDEEMED"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : red.state === "RESERVED"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-stone-200 text-stone-700"
+                              }`}
+                            >
+                              {red.state === "REDEEMED" && <CheckCircle2 className="w-3 h-3" />}
+                              {red.state === "RESERVED" && <Clock className="w-3 h-3" />}
+                              {red.state === "RELEASED" && <RotateCcw className="w-3 h-3" />}
+                              {red.state === "REDEEMED" ? "Finalized" : red.state === "RESERVED" ? "Reserved (In Checkout)" : "Released"}
+                            </span>
+                            <span className="font-semibold text-stone-900 font-mono">
+                              {formatCurrency(red.discount_amount, red.currency)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-stone-600 text-[11px]">
+                            <span>
+                              Order:{" "}
+                              <strong className="text-stone-800 font-mono">
+                                {red.order_number || "None / In Progress"}
+                              </strong>
+                            </span>
+                            <span className="text-stone-400">
+                              {formatDate(red.finalized_at || red.reserved_at)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1 border-t border-stone-200/60">
+                            <span>Customer: <strong className="text-stone-700">{red.customer_email_masked || red.customer_display}</strong></span>
+                            {red.release_reason && (
+                              <span className="text-rose-600 italic">Reason: {red.release_reason}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-stone-400 italic py-2 text-center bg-stone-50 rounded-lg border border-stone-200/60">
+                      No redemptions found under this filter.
+                    </p>
+                  )}
+                </div>
+
+                {/* Section 5: Audit Trail History */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <History className="w-4 h-4 text-stone-500" />

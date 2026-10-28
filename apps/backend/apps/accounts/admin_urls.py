@@ -1,6 +1,11 @@
 from django.urls import path
 
 from apps.accounts.admin_views import AdminDashboardOverviewView, AdminVerifyAuthView
+from apps.accounts.admin_customers_views import (
+    AdminCustomerDetailView,
+    AdminCustomerListView,
+    AdminCustomerNotesView,
+)
 from apps.inventory.admin_views import (
     AdminInventoryAdjustView,
     AdminInventoryAlertAcknowledgeView,
@@ -49,11 +54,17 @@ from apps.orders.admin_views import (
     AdminShipmentTrackingUpdateView,
     AdminShipmentTransitionView,
 )
+from apps.orders.coupon_reports_views import (
+    AdminCouponReportOverviewView,
+    AdminCouponReportPerformanceView,
+    AdminCouponReportRedemptionsView,
+)
 from apps.orders.coupon_views import (
     AdminCouponActivateView,
     AdminCouponDeactivateView,
     AdminCouponDetailView,
     AdminCouponListCreateView,
+    AdminCouponRedemptionListView,
 )
 from apps.payments.admin_views import (
     AdminPaymentDetailView,
@@ -68,9 +79,20 @@ urlpatterns = [
         AdminDashboardOverviewView.as_view(),
         name="admin-dashboard-overview",
     ),
+    path("customers/", AdminCustomerListView.as_view(), name="admin-customers-list"),
+    path("customers/<uuid:pk>/", AdminCustomerDetailView.as_view(), name="admin-customers-detail"),
+    path(
+        "customers/<uuid:customer_id>/notes/",
+        AdminCustomerNotesView.as_view(),
+        name="admin-customers-notes",
+    ),
+    path("coupons/reports/overview/", AdminCouponReportOverviewView.as_view(), name="admin-coupons-reports-overview"),
+    path("coupons/reports/performance/", AdminCouponReportPerformanceView.as_view(), name="admin-coupons-reports-performance"),
+    path("coupons/reports/redemptions/", AdminCouponReportRedemptionsView.as_view(), name="admin-coupons-reports-redemptions"),
     path("coupons/", AdminCouponListCreateView.as_view(), name="admin-coupons-list-create"),
     path("coupons/<uuid:pk>/activate/", AdminCouponActivateView.as_view(), name="admin-coupons-activate"),
     path("coupons/<uuid:pk>/deactivate/", AdminCouponDeactivateView.as_view(), name="admin-coupons-deactivate"),
+    path("coupons/<uuid:pk>/redemptions/", AdminCouponRedemptionListView.as_view(), name="admin-coupons-redemptions"),
     path("coupons/<uuid:pk>/", AdminCouponDetailView.as_view(), name="admin-coupons-detail"),
     path("shipments/", AdminShipmentListView.as_view(), name="admin-shipments-list"),
     path("shipments/<str:shipment_id>/tracking/", AdminShipmentTrackingUpdateView.as_view(), name="admin-shipments-tracking"),

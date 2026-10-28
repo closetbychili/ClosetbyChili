@@ -13,6 +13,11 @@ export default function CartDrawer() {
     cart,
     itemCount,
     subtotal,
+    discount,
+    total,
+    couponCode,
+    applyCoupon,
+    removeCoupon,
     isDrawerOpen,
     closeDrawer,
     updateQuantity,
@@ -24,10 +29,21 @@ export default function CartDrawer() {
 
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Coupon state
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>("CHILI10");
-  const [couponSuccess, setCouponSuccess] = useState(true);
+  // Coupon input state
+  const [couponInput, setCouponInput] = useState(couponCode || "");
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  // Pilgrim-style collapsible price breakdown dropdown
+  const [isPriceExpanded, setIsPriceExpanded] = useState(false);
+
+  useEffect(() => {
+    if (couponCode) {
+      setCouponInput(couponCode);
+    } else {
+      setCouponInput("");
+    }
+  }, [couponCode]);
 
   // Close on Escape key press
   useEffect(() => {
@@ -56,29 +72,57 @@ export default function CartDrawer() {
 
   const items = cart?.items || [];
   const parsedSubtotal = parseFloat(subtotal) || 0;
+  const voucherDiscount = parseFloat(discount || "0") || 0;
+  const finalPayable = total
+    ? parseFloat(total)
+    : Math.max(0, parsedSubtotal - voucherDiscount);
 
-  // Free shipping progress calculations
+  // Free shipping progress calculations (Target: ₹2,999)
   const FREE_SHIPPING_GOAL = 2999;
   const isFreeShipping = parsedSubtotal >= FREE_SHIPPING_GOAL;
   const progressPercent = Math.min(
     100,
     Math.round((parsedSubtotal / FREE_SHIPPING_GOAL) * 100)
   );
-  const remainingForFreeShipping = Math.max(0, FREE_SHIPPING_GOAL - parsedSubtotal);
+  const remainingForFreeShipping = Math.max(
+    0,
+    FREE_SHIPPING_GOAL - parsedSubtotal
+  );
 
-  // Voucher discount calculation
-  const couponDiscount = appliedCoupon ? Math.round(parsedSubtotal * 0.1) : 0;
-  const finalPayable = Math.max(0, parsedSubtotal - couponDiscount);
-  const calculatedSavings = Math.round(parsedSubtotal * 0.28) + couponDiscount;
+  // Dynamic MRP savings calculation
+  const calculatedMrpSavings = Math.round(parsedSubtotal * 0.284);
+  const totalCombinedSavings = calculatedMrpSavings + voucherDiscount;
+  const mrpTotal = finalPayable + totalCombinedSavings;
+  const discountPercentage =
+    mrpTotal > 0 ? Math.round((totalCombinedSavings / mrpTotal) * 100) : 0;
 
-  const handleApplyCoupon = () => {
-    const clean = couponCode.trim().toUpperCase();
-    if (clean === "CHILI10" || clean === "MUSE10" || clean.length > 2) {
-      setAppliedCoupon(clean || "CHILI10");
-      setCouponSuccess(true);
-    } else {
-      setAppliedCoupon(null);
-      setCouponSuccess(false);
+  const handleApplyCoupon = async () => {
+    const clean = couponInput.trim().toUpperCase();
+    if (!clean) return;
+    setCouponError(null);
+    setIsApplyingCoupon(true);
+    try {
+      await applyCoupon(clean);
+      setCouponError(null);
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : "Invalid coupon code.");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    setCouponError(null);
+    setIsApplyingCoupon(true);
+    try {
+      await removeCoupon();
+      setCouponInput("");
+    } catch (err) {
+      setCouponError(
+        err instanceof Error ? err.message : "Failed to remove coupon."
+      );
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -88,93 +132,83 @@ export default function CartDrawer() {
   };
 
   return (
-    <div className="fixed inset-0 z-150 flex justify-end">
+    <div className="fixed inset-0 z-50 flex justify-end">
       {/* ── Fixed Backdrop Overlay ────────────────────────────── */}
       <div
         id="drawer-backdrop"
         onClick={closeDrawer}
         aria-hidden="true"
-        className="fixed inset-0 bg-inverse-surface/60 backdrop-blur-xs transition-opacity duration-300 animate-fade-in cursor-pointer"
+        className="fixed inset-0 bg-black/60 transition-opacity duration-300 animate-fade-in cursor-pointer"
       />
 
-      {/* ── Slide-Out Cart Drawer ─────────────────────────────── */}
+      {/* ── Slide-Out Sleek Shopping Bag Drawer ──────────────── */}
       <aside
         id="bag-drawer"
         ref={drawerRef}
         role="dialog"
         aria-label="Shopping Bag Drawer"
         aria-modal="true"
-        className="relative z-10 w-full sm:w-117.5 md:w-122.5 max-w-full h-full bg-surface-card text-on-surface shadow-2xl flex flex-col justify-between overflow-hidden animate-slide-in-right border-l border-outline-variant/30"
+        className="relative z-50 h-full w-full sm:w-120 max-w-full bg-surface-card text-on-surface shadow-2xl flex flex-col justify-between overflow-hidden animate-slide-in-right border-l border-border-sand/40"
       >
-        {/* ── 1. DRAWER HEADER ───────────────────────────────── */}
-        <div className="shrink-0 bg-surface-card px-6 pt-5 pb-4 shadow-sm z-10 border-b border-outline-variant/30">
-          <div className="flex items-center justify-between pb-3">
-            <div className="flex items-baseline gap-2.5">
-              <h2 className="font-headline-md text-headline-md text-on-surface tracking-tight">
+        {/* ── 1. CLEAN DRAWER HEADER ─────────────────────────── */}
+        <div className="shrink-0 bg-surface-card px-5 pt-4 pb-3 border-b border-border-sand/40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-[17px] sm:text-[18px] font-semibold text-on-surface tracking-tight">
                 Shopping Bag
               </h2>
               <span
                 id="bag-count-badge"
-                className="font-label-caps text-label-caps text-primary font-bold tracking-widest"
+                className="text-[12px] text-text-muted font-normal"
               >
                 ({itemCount} {itemCount === 1 ? "Item" : "Items"})
               </span>
             </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                id="close-drawer-btn"
-                onClick={closeDrawer}
-                aria-label="Close Shopping Bag"
-                className="w-9 h-9 flex items-center justify-center bg-surface-container-low text-on-surface hover:bg-primary-container hover:text-on-primary transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              id="close-drawer-btn"
+              onClick={closeDrawer}
+              aria-label="Close Shopping Bag"
+              className="w-7 h-7 flex items-center justify-center text-text-muted hover:text-on-surface hover:bg-surface-container rounded-full transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[19px]">close</span>
+            </button>
           </div>
 
-          {/* Free Shipping Dynamic Progress Tier */}
-          <div className="bg-surface-container-low p-3.5 space-y-2 mt-1 border border-outline-variant/20">
-            <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface">
-              <span className="flex items-center gap-1.5 font-medium text-terracotta">
+          {/* Minimal Sleek Free Shipping Bar */}
+          <div className="bg-surface-container-low/80 rounded-xs px-3.5 py-2 mt-2.5 space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] sm:text-[12px] text-on-surface">
+              <span className="flex items-center gap-1.5 font-medium">
                 <span
-                  className="material-symbols-outlined text-[17px] text-primary"
+                  className="material-symbols-outlined text-[15px] text-primary"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   local_shipping
                 </span>
                 {isFreeShipping ? (
                   <span className="text-emerald-800 font-semibold">
-                    Free Express Delivery &amp; Packaging Unlocked!
+                    Free Express Delivery Unlocked!
                   </span>
                 ) : (
                   <span>
                     Add{" "}
-                    <span className="font-bold text-primary font-price-regular text-body-sm">
+                    <span className="font-bold text-primary font-price-regular">
                       ₹{remainingForFreeShipping.toLocaleString("en-IN")}
                     </span>{" "}
-                    more to unlock Express Delivery
+                    more for Free Express Delivery
                   </span>
                 )}
               </span>
-              <span className="font-label-caps text-label-caps text-on-surface-variant font-semibold">
+              <span className="font-label-caps text-[11px] text-text-muted font-semibold">
                 {progressPercent}%
               </span>
             </div>
-
-            {/* Progress Bar Track */}
-            <div className="w-full h-1.5 bg-surface-container-highest overflow-hidden">
+            <div className="w-full h-1 bg-surface-container-highest overflow-hidden rounded-full">
               <div
-                className="h-full bg-linear-to-r from-terracotta via-primary-container to-secondary-fixed-dim transition-all duration-700 ease-in-out"
+                className="h-full bg-primary transition-all duration-700 ease-in-out"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-
-            <p className="font-label-caps text-[10px] tracking-wider text-text-muted flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim inline-block" />
-              Complimentary domestic shipping on orders above ₹2,999
-            </p>
           </div>
         </div>
 
@@ -192,291 +226,344 @@ export default function CartDrawer() {
           </div>
         )}
 
-        {/* ── 2. BAG ITEMS LIST (SCROLLABLE AREA) ─────────────── */}
+        {/* ── 2. REFINED CART ITEMS LIST ────────────────────── */}
         <div
-          className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+          className="flex-1 overflow-y-auto px-5 py-3 space-y-3 divide-y divide-border-sand/40"
           data-lenis-prevent
         >
           {items.length === 0 ? (
             /* Empty State */
-            <div className="h-full flex flex-col items-center justify-center text-center py-16 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-[32px]">
+            <div className="h-full flex flex-col items-center justify-center text-center py-12 space-y-3">
+              <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-[28px]">
                   shopping_bag
                 </span>
               </div>
               <div className="space-y-1">
-                <p className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                <p className="font-headline-sm text-[16px] font-semibold text-on-surface">
                   Your bag is empty
                 </p>
-                <p className="font-body-sm text-body-sm text-text-muted max-w-xs">
+                <p className="text-[12px] text-text-muted max-w-xs">
                   Explore our luxury handcrafted ethnic silhouettes and find your statement piece.
                 </p>
               </div>
               <Link
                 href="/products"
                 onClick={closeDrawer}
-                className="mt-3 inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-widest hover:bg-primary-container transition-colors shadow-md cursor-pointer"
+                className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-on-primary font-label-caps text-[11px] uppercase tracking-widest hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
               >
                 <span>Shop Collections</span>
-                <span className="material-symbols-outlined text-[16px]">east</span>
+                <span className="material-symbols-outlined text-[15px]">east</span>
               </Link>
             </div>
           ) : (
             /* Populated Items */
-            <div className="space-y-4">
-              {items.map((item) => {
-                const product = item.variant.product;
-                const imageUrl =
-                  PRODUCT_IMAGE_MAP[product.slug] ||
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuDQoAbBdXqUQcuZ9y3LcGYtk3_Rq9dTVsqCnk0_Qn7f4muvE5Dgdoi4PQPuT1qb2TS0mDjI5mfiL6bc3r5AThNP39D-4TIrBUNohIQ2B-Ogc01eOcNTrkimHchXGx7OQJ-dvGzGxggkBG0REbSvDtJ1IZoErp0LQ6EaBJrLu1mg9Bti_1vyIbpKi1LiaJPJwhlik9bDzdtgjJCCAcAtWYXp4ZfMwx6VCpph9GpAEu6sgdRnZvq5JCph5A";
-                const unitPriceNum = parseFloat(item.unit_price) || 0;
-                const lineTotalNum = parseFloat(item.line_total) || 0;
-                const originalUnitPrice = Math.round(unitPriceNum * 1.38);
+            items.map((item) => {
+              const product = item.variant.product;
+              const imageUrl =
+                PRODUCT_IMAGE_MAP[product.slug] ||
+                "https://lh3.googleusercontent.com/aida-public/AB6AXuDQoAbBdXqUQcuZ9y3LcGYtk3_Rq9dTVsqCnk0_Qn7f4muvE5Dgdoi4PQPuT1qb2TS0mDjI5mfiL6bc3r5AThNP39D-4TIrBUNohIQ2B-Ogc01eOcNTrkimHchXGx7OQJ-dvGzGxggkBG0REbSvDtJ1IZoErp0LQ6EaBJrLu1mg9Bti_1vyIbpKi1LiaJPJwhlik9bDzdtgjJCCAcAtWYXp4ZfMwx6VCpph9GpAEu6sgdRnZvq5JCph5A";
+              const unitPriceNum = parseFloat(item.unit_price) || 0;
+              const lineTotalNum =
+                parseFloat(item.line_total) || unitPriceNum * item.quantity;
+              const originalTotal = Math.round(
+                unitPriceNum * 1.38 * item.quantity
+              );
 
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-surface p-3.5 flex gap-4 transition-all duration-300 relative group border border-outline-variant/30"
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-24 h-32 shrink-0 bg-surface-container relative overflow-hidden">
-                      <Image
-                        src={imageUrl}
-                        alt={product.name}
-                        fill
-                        sizes="96px"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <span className="absolute top-1 left-1 bg-primary text-on-primary font-label-caps text-[9px] px-1.5 py-0.5 tracking-wider font-semibold">
-                        {product.category_name || "COUTURE"}
-                      </span>
-                    </div>
+              return (
+                <div
+                  key={item.id}
+                  className="pt-3 first:pt-0 flex gap-3.5 transition-all duration-300 relative group"
+                >
+                  {/* Thumbnail */}
+                  <div className="w-20 h-24 sm:w-22 sm:h-26 shrink-0 bg-surface-container rounded-xs overflow-hidden relative border border-border-sand/40">
+                    <Image
+                      src={imageUrl}
+                      alt={product.name}
+                      fill
+                      sizes="88px"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
 
-                    {/* Details */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-start justify-between gap-2">
-                          <Link
-                            href={`/products/${product.slug}`}
-                            onClick={closeDrawer}
-                            className="font-headline-sm text-[16px] leading-snug text-on-surface truncate font-semibold hover:text-primary transition-colors block"
-                          >
-                            {product.name}
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.id)}
-                            disabled={isLoading}
-                            aria-label={`Remove ${product.name} from bag`}
-                            className="text-on-surface-variant hover:text-primary transition-colors p-0.5 cursor-pointer"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">
-                              delete_outline
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Variant Attributes */}
-                        <p className="font-body-sm text-[12px] text-on-surface-variant mt-1 leading-tight">
-                          {item.variant.color && (
-                            <>
-                              Color:{" "}
-                              <span className="text-on-surface font-medium capitalize">
-                                {item.variant.color}
-                              </span>
-                            </>
-                          )}
-                          {item.variant.color && item.variant.size && " • "}
-                          {item.variant.size && (
-                            <>
-                              Size:{" "}
-                              <span className="text-on-surface font-medium">
-                                {item.variant.size}
-                              </span>
-                            </>
-                          )}
-                        </p>
-
-                        <p className="font-label-caps text-[10px] text-terracotta tracking-wider uppercase mt-0.5">
-                          SKU: {item.variant.sku}
-                        </p>
+                  {/* Details */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <Link
+                          href={`/products/${product.slug}`}
+                          onClick={closeDrawer}
+                          className="font-medium text-[13px] sm:text-[14px] leading-snug text-on-surface truncate hover:text-primary transition-colors block"
+                        >
+                          {product.name}
+                        </Link>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${product.name} from bag`}
+                          onClick={() => removeItem(item.id)}
+                          disabled={isLoading}
+                          className="text-text-muted hover:text-primary transition-colors p-0.5 shrink-0 cursor-pointer disabled:opacity-50"
+                        >
+                          <span className="material-symbols-outlined text-[17px]">
+                            delete_outline
+                          </span>
+                        </button>
                       </div>
 
-                      {/* Quantity & Pricing Row */}
-                      <div className="flex items-end justify-between mt-3 pt-2 border-t border-outline-variant/20">
-                        {/* Quantity Counter */}
-                        <div className="flex items-center bg-surface-container-low px-1 py-0.5 space-x-2 border border-outline-variant/40">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
-                            }
-                            disabled={isLoading || item.quantity <= 1}
-                            aria-label="Decrease quantity"
-                            className="w-6 h-6 flex items-center justify-center text-on-surface hover:text-primary transition-colors text-sm font-bold cursor-pointer disabled:opacity-30"
-                          >
-                            −
-                          </button>
-                          <span className="font-price-regular text-body-sm text-on-surface font-semibold px-1">
-                            {item.quantity}
+                      <p className="text-[11px] text-text-muted mt-0.5 leading-normal">
+                        {item.variant.color && (
+                          <span>
+                            Color: <span className="text-on-surface font-medium capitalize">{item.variant.color}</span>
                           </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            disabled={isLoading}
-                            aria-label="Increase quantity"
-                            className="w-6 h-6 flex items-center justify-center text-on-surface hover:text-primary transition-colors text-sm font-bold cursor-pointer"
-                          >
-                            +
-                          </button>
-                        </div>
+                        )}
+                        {item.variant.color && item.variant.size && " • "}
+                        {item.variant.size && (
+                          <span>
+                            Size: <span className="text-on-surface font-medium">{item.variant.size}</span>
+                          </span>
+                        )}
+                      </p>
 
-                        {/* Price Presentation */}
-                        <div className="text-right">
-                          <div className="flex items-baseline justify-end gap-1.5">
-                            <span className="font-price-original text-price-original text-text-muted line-through">
-                              ₹{(originalUnitPrice * item.quantity).toLocaleString("en-IN")}
-                            </span>
-                            <span className="font-price-regular text-price-regular text-primary font-bold">
-                              ₹{lineTotalNum.toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.id)}
-                            className="font-label-caps text-[10px] text-on-surface-variant hover:text-primary uppercase tracking-wider underline underline-offset-2 transition-colors inline-block mt-0.5 cursor-pointer"
-                          >
-                            Save for Later
-                          </button>
+                      <p className="font-label-caps text-[10px] text-text-muted tracking-wider uppercase mt-0.5">
+                        SKU: {item.variant.sku}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 pt-1">
+                      {/* Clean Minimalist Stepper */}
+                      <div className="flex items-center border border-border-sand/80 rounded-xs bg-surface h-7 px-0.5 space-x-1">
+                        <button
+                          type="button"
+                          aria-label="Decrease quantity"
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity - 1)
+                          }
+                          disabled={isLoading || item.quantity <= 1}
+                          className="w-5 h-5 flex items-center justify-center text-on-surface hover:text-primary text-xs transition-colors font-medium cursor-pointer disabled:opacity-30"
+                        >
+                          −
+                        </button>
+                        <span className="font-price-regular text-[12px] text-on-surface font-semibold px-1">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label="Increase quantity"
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity + 1)
+                          }
+                          disabled={isLoading}
+                          className="w-5 h-5 flex items-center justify-center text-on-surface hover:text-primary text-xs transition-colors font-medium cursor-pointer disabled:opacity-50"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Pricing presentation */}
+                      <div className="text-right">
+                        <div className="flex items-baseline justify-end gap-1.5">
+                          <span className="text-[11px] text-text-muted line-through font-price-original">
+                            ₹{originalTotal.toLocaleString("en-IN")}
+                          </span>
+                          <span className="text-[13px] sm:text-[14px] text-primary font-bold font-price-regular">
+                            ₹{lineTotalNum.toLocaleString("en-IN")}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })
           )}
         </div>
 
-        {/* ── 3. DRAWER FOOTER (STICKY BOTTOM SUMMARY) ──────── */}
+        {/* ── 3. SLEEK STICKY BOTTOM SUMMARY (PILGRIM-STYLE COLLAPSIBLE) ─── */}
         {items.length > 0 && (
-          <div className="shrink-0 bg-surface-card px-6 pt-3 pb-6 shadow-2xl z-20 space-y-3.5 border-t border-outline-variant/30">
-            {/* Voucher / Coupon Expansion */}
-            <div className="relative">
-              <div className="flex items-center justify-between bg-surface-container-low px-3 py-2 border border-outline-variant/40">
+          <div className="shrink-0 bg-surface-card px-5 pt-3 pb-3.5 border-t border-border-sand/50 shadow-2xl z-20 space-y-2.5">
+            {/* Clean Single-Line Voucher Entry */}
+            <div>
+              <div className="flex items-center justify-between bg-surface-container-low/70 border border-border-sand/40 rounded-xs px-3 py-1.5">
                 <div className="flex items-center gap-2 flex-1">
-                  <span className="material-symbols-outlined text-[17px] text-terracotta">
+                  <span className="material-symbols-outlined text-[16px] text-text-muted">
                     sell
                   </span>
                   <input
                     type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    placeholder="Apply Coupon / Muse Voucher"
-                    className="bg-transparent font-label-caps text-[11px] tracking-wider uppercase text-on-surface placeholder:text-text-muted focus:outline-none w-full"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    placeholder="APPLY COUPON / MUSE VOUCHER"
+                    disabled={isApplyingCoupon || isLoading}
+                    className="bg-transparent font-label-caps text-[11px] tracking-wider uppercase text-on-surface placeholder:text-text-muted focus:outline-none w-full disabled:opacity-50"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={handleApplyCoupon}
-                  className="font-label-caps text-label-caps text-primary hover:text-primary-container uppercase font-bold tracking-widest px-2 py-1 hover:bg-surface transition-colors cursor-pointer"
-                >
-                  Apply
-                </button>
+                {couponCode ? (
+                  <button
+                    type="button"
+                    aria-label="Remove coupon"
+                    onClick={handleRemoveCoupon}
+                    disabled={isApplyingCoupon || isLoading}
+                    className="font-label-caps text-[11px] text-text-muted hover:text-error uppercase font-bold tracking-wider px-2 py-0.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isApplyingCoupon ? "..." : "REMOVE"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={isApplyingCoupon || isLoading || !couponInput.trim()}
+                    className="font-label-caps text-[11px] text-primary hover:text-primary-container uppercase font-bold tracking-wider px-2 py-0.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isApplyingCoupon ? "..." : "APPLY"}
+                  </button>
+                )}
               </div>
-
-              {appliedCoupon && couponSuccess && (
-                <p className="font-label-caps text-[10px] text-primary mt-1 tracking-wider uppercase">
-                  Code &lsquo;{appliedCoupon}&rsquo; activated for 10% couture discount!
+              {couponError && (
+                <p className="font-label-caps text-[11px] text-rose-700 mt-1 tracking-wider font-semibold">
+                  {couponError}
+                </p>
+              )}
+              {couponCode && !couponError && (
+                <p className="font-label-caps text-[10px] text-emerald-800 mt-1 tracking-wider uppercase font-semibold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px] text-emerald-700">check_circle</span>
+                  <span>CODE &apos;{couponCode}&apos; APPLIED ({voucherDiscount > 0 ? `₹${voucherDiscount.toLocaleString("en-IN")} SAVED` : "ACTIVE"})</span>
                 </p>
               )}
             </div>
 
-            {/* Financial Calculation Breakdown */}
-            <div className="space-y-1.5 pt-1 text-body-sm font-body-sm">
-              <div className="flex justify-between text-on-surface-variant">
-                <span>Subtotal</span>
-                <span className="font-price-regular text-body-sm font-semibold text-on-surface">
-                  ₹{parsedSubtotal.toLocaleString("en-IN")}
+            {/* Pilgrim-style Savings Pill Badge */}
+            {totalCombinedSavings > 0 && (
+              <div className="flex justify-center pt-0.5">
+                <span className="inline-flex items-center gap-1 px-3 py-0.5 bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-[11px] font-medium rounded-full shadow-xs">
+                  <span>Woohoo! ₹{totalCombinedSavings.toLocaleString("en-IN")} saved so far!</span>
                 </span>
               </div>
+            )}
 
-              {couponDiscount > 0 && (
-                <div className="flex justify-between text-primary font-medium">
-                  <span>Voucher Savings ({appliedCoupon})</span>
-                  <span>-₹{couponDiscount.toLocaleString("en-IN")}</span>
+            {/* Pilgrim-style Dropdown Price Section */}
+            <div className="bg-surface-container-low/60 border border-border-sand/50 rounded-xs p-2.5 space-y-2">
+              {/* Accordion Toggle Header */}
+              <button
+                type="button"
+                onClick={() => setIsPriceExpanded(!isPriceExpanded)}
+                aria-expanded={isPriceExpanded}
+                className="w-full flex items-center justify-between text-left cursor-pointer group"
+              >
+                <div className="flex items-center gap-1 text-[13px] font-semibold text-on-surface group-hover:text-primary transition-colors">
+                  <span>Estimated Total</span>
+                  <span
+                    className={`material-symbols-outlined text-[17px] text-text-muted transition-transform duration-200 ${
+                      isPriceExpanded ? "rotate-180" : ""
+                    }`}
+                  >
+                    expand_more
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[15px] font-bold text-on-surface font-price-regular">
+                    ₹{finalPayable.toLocaleString("en-IN")}
+                  </span>
+                  {totalCombinedSavings > 0 && (
+                    <span className="text-[11px] text-text-muted line-through font-price-original">
+                      ₹{mrpTotal.toLocaleString("en-IN")}
+                    </span>
+                  )}
+                  {discountPercentage > 0 && (
+                    <span className="text-[11px] font-semibold text-emerald-700">
+                      ({discountPercentage}% OFF)
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {/* Collapsible Detailed Breakdown */}
+              {isPriceExpanded && (
+                <div className="pt-2 border-t border-border-sand/40 space-y-1.5 text-[12px] text-on-surface-variant animate-fade-in">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span className="font-price-regular font-medium text-on-surface">
+                      ₹{parsedSubtotal.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  {voucherDiscount > 0 && (
+                    <div className="flex justify-between text-emerald-800 font-medium">
+                      <span>Voucher Savings ({couponCode})</span>
+                      <span className="font-price-regular font-semibold">
+                        -₹{voucherDiscount.toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <span>Estimated GST &amp; Luxury Cess</span>
+                    <span className="text-text-muted">Included</span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span>Shipping</span>
+                    <span className="font-semibold text-emerald-800">FREE</span>
+                  </div>
+
+                  {totalCombinedSavings > 0 && (
+                    <div className="flex justify-between text-primary font-semibold pt-1 border-t border-border-sand/30 text-[11px]">
+                      <span>Total Savings</span>
+                      <span>₹{totalCombinedSavings.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
                 </div>
               )}
-
-              <div className="flex justify-between text-on-surface-variant">
-                <span>Estimated GST &amp; Luxury Cess</span>
-                <span className="text-terracotta font-medium">Included</span>
-              </div>
-
-              <div className="flex justify-between text-on-surface-variant items-center">
-                <span className="flex items-center gap-1">
-                  Shipping
-                  <span className="px-1.5 py-0.5 bg-secondary-fixed text-on-secondary-fixed font-label-caps text-[9px] font-bold">
-                    COMPLIMENTARY
-                  </span>
-                </span>
-                <span className="font-price-regular text-body-sm font-bold text-primary">
-                  FREE
-                </span>
-              </div>
-
-              <div className="flex justify-between items-baseline pt-2 border-t border-outline-variant/30">
-                <div>
-                  <span className="font-headline-sm text-[18px] text-on-surface font-semibold tracking-tight">
-                    Grand Total
-                  </span>
-                  <p className="font-label-caps text-[10px] text-primary tracking-wider uppercase">
-                    You save ₹{calculatedSavings.toLocaleString("en-IN")} total
-                  </p>
-                </div>
-                <span className="font-headline-sm text-headline-sm text-primary font-bold">
-                  ₹{finalPayable.toLocaleString("en-IN")}
-                </span>
-              </div>
             </div>
 
-            {/* Main CTA Checkout Actions */}
-            <div className="space-y-2 pt-1">
+            {/* Pilgrim-style Proceed Button with Payment Method Badges */}
+            <div className="space-y-1.5 pt-0.5">
               <button
                 type="button"
                 onClick={handleProceedToCheckout}
-                className="w-full py-4 bg-primary hover:bg-primary-container text-on-primary font-label-caps text-label-caps tracking-widest uppercase font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                className="w-full py-3 bg-[#8b000a] hover:bg-[#6D1826] text-white font-medium text-[13px] tracking-wide rounded-xs flex items-center justify-between px-4 shadow-sm transition-colors cursor-pointer"
               >
-                <span>Proceed to Checkout</span>
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
+                <span className="flex items-center gap-1.5 font-semibold">
+                  <span>Proceed to Pay</span>
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </span>
+                {/* Overlapping payment method icons */}
+                <div className="flex items-center -space-x-1.5 shrink-0">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#002e6e] text-[8px] font-bold shadow-xs border border-white">
+                    UPI
+                  </span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5f259f] text-white text-[8px] font-bold shadow-xs border border-white">
+                    पे
+                  </span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#00b9f5] text-white text-[7px] font-bold shadow-xs border border-white">
+                    Paytm
+                  </span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-[#1a1f71] text-[8px] font-bold shadow-xs border border-white">
+                    VISA
+                  </span>
+                </div>
               </button>
 
-              <div className="flex items-center justify-center pt-0.5">
+              <div className="flex items-center justify-center">
                 <Link
                   href="/cart"
                   onClick={closeDrawer}
-                  className="font-label-caps text-label-caps uppercase text-on-surface-variant hover:text-primary tracking-widest transition-colors font-medium cursor-pointer"
+                  className="font-label-caps text-[10px] uppercase text-text-muted hover:text-primary tracking-widest transition-colors font-medium py-0.5 cursor-pointer"
                 >
                   View Full Shopping Bag →
                 </Link>
               </div>
             </div>
 
-            {/* Trust Strip */}
-            <div className="pt-2 bg-surface-container-low p-2.5 text-center border border-outline-variant/20">
-              <p className="font-label-caps text-[9px] uppercase tracking-widest text-text-muted flex items-center justify-center gap-2">
+            {/* Minimal 1-Line Trust Note */}
+            <div className="pt-1 border-t border-border-sand/30 text-center">
+              <p className="text-[10px] text-text-muted flex items-center justify-center gap-3">
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[13px] text-secondary">
                     verified
                   </span>
                   100% Authentic Indian Craft
                 </span>
-                <span>•</span>
+                <span className="opacity-40">•</span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[13px] text-secondary">
                     local_mall

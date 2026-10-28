@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Cinzel, Montserrat } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
@@ -13,6 +13,7 @@ const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 const montserrat = Montserrat({
@@ -25,6 +26,14 @@ import { CartProvider } from "@/components/CartContext";
 import { AuthProvider } from "@/components/AuthProvider";
 import CartDrawer from "@/components/CartDrawer";
 import SmoothScroll from "@/components/SmoothScroll";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: "#8b000a",
+};
 
 export const metadata: Metadata = {
   title: "Closet by Chili | Bold. Feminine. Timeless.",
@@ -47,7 +56,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${bodoniModa.variable} ${cinzel.variable} ${montserrat.variable} antialiased`}>
+      <body
+        suppressHydrationWarning
+        className={`${bodoniModa.variable} ${cinzel.variable} ${montserrat.variable} antialiased`}
+      >
         <SmoothScroll>
           <AuthProvider>
             <CartProvider>

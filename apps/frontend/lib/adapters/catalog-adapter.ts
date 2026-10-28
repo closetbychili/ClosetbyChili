@@ -65,6 +65,25 @@ export const PRODUCT_GALLERY_MAP: Record<string, string[]> = {
 };
 
 /**
+ * Resolves media URLs to ensure relative media paths (e.g., /media/products/...)
+ * are properly accessible from the frontend client.
+ */
+export function resolveMediaUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/media/')) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    try {
+      const origin = new URL(apiUrl).origin;
+      return `${origin}${url}`;
+    } catch {
+      return url;
+    }
+  }
+  return url;
+}
+
+/**
  * Resolves gallery images for a ProductDetail object (Sprint 0.3 database-driven).
  * Falls back to legacy PRODUCT_GALLERY_MAP / PRODUCT_IMAGE_MAP if no database images exist.
  */
@@ -72,9 +91,9 @@ export function getProductImages(product: ProductDetail): string[] {
   if (product.images && product.images.length > 0) {
     return [...product.images]
       .sort((a, b) => a.ordering - b.ordering)
-      .map((img) => img.image_url);
+      .map((img) => resolveMediaUrl(img.image_url) || img.image_url);
   }
-  return getProductGallery(product.slug);
+  return getProductGallery(product.slug).map((url) => resolveMediaUrl(url) || url);
 }
 
 /**
@@ -132,10 +151,12 @@ export function mapProductToUi(
   const resolvedBadge =
     badge || (isNew ? 'New' : isBestseller ? 'Bestseller' : undefined);
 
-  const resolvedImage =
+  const rawImage =
     product.primary_image?.image_url ||
     PRODUCT_IMAGE_MAP[product.slug] ||
     undefined;
+
+  const resolvedImage = resolveMediaUrl(rawImage);
 
   const originalPrice = parsedPrice > 0 ? Math.round(parsedPrice * 1.3) : undefined;
 
@@ -155,6 +176,12 @@ export function mapProductToUi(
  * Adapts a backend Category DTO into a UI CategoryItem.
  */
 export function mapCategoryToUi(category: Category): CategoryItem {
+  const rawCatImage =
+    category.image_url ||
+    category.image ||
+    CATEGORY_IMAGE_MAP[category.slug] ||
+    undefined;
+
   return {
     id: category.id,
     name: category.name,
@@ -163,11 +190,7 @@ export function mapCategoryToUi(category: Category): CategoryItem {
       CATEGORY_SUBTITLE_MAP[category.slug] ||
       category.description ||
       undefined,
-    image:
-      category.image_url ||
-      category.image ||
-      CATEGORY_IMAGE_MAP[category.slug] ||
-      undefined,
+    image: resolveMediaUrl(rawCatImage),
     imageAlt: category.image_alt || category.name,
     href: `/products?category=${category.slug}`,
   };

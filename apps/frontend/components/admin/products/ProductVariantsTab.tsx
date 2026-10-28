@@ -443,9 +443,10 @@ export default function ProductVariantsTab({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overscroll-contain"
         >
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#EBE2D8] animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#EBE2D8] animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto overscroll-contain">
             <div className="flex items-center justify-between pb-3 border-b border-[#F5EFEA]">
               <h3 className="text-sm font-semibold text-[#1F1B17]">
                 {editingVariant ? `Edit Variant: ${editingVariant.sku}` : "Add New Variant"}
@@ -783,7 +784,8 @@ export default function ProductVariantsTab({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs overscroll-contain"
         >
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-[#EBE2D8] animate-in fade-in zoom-in-95">
             <div className="w-10 h-10 rounded-full bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-center mx-auto mb-3 text-[#DC2626]">

@@ -1,6 +1,7 @@
 import { apiFetch } from "./client";
 import { supabase } from "@/lib/supabase/client";
 import type { PaginatedResponse } from "./types";
+export type { PaginatedResponse };
 
 export interface AdminUser {
   id: string;
@@ -2397,6 +2398,24 @@ export type AdminCouponLifecycleStatus =
   | "EXPIRED"
   | "INACTIVE";
 
+export type AdminCouponTargetingMode =
+  | "ALL_PRODUCTS"
+  | "SPECIFIC_PRODUCTS"
+  | "SPECIFIC_CATEGORIES"
+  | "SPECIFIC_COLLECTIONS"
+  | "PRODUCTS_AND_CATEGORIES"
+  | "PRODUCTS_AND_COLLECTIONS"
+  | "CATEGORIES_AND_COLLECTIONS"
+  | "MIXED";
+
+export interface AdminCouponTargetItem {
+  id: string;
+  name: string;
+  slug: string;
+  status?: string;
+  is_active?: boolean;
+}
+
 export interface AdminCouponAuditLogItem {
   id: string;
   event_type: "CREATED" | "UPDATED" | "ACTIVATED" | "DEACTIVATED";
@@ -2415,6 +2434,11 @@ export interface AdminCoupon {
   discount_type: AdminCouponDiscountType;
   discount_value: string;
   currency: string;
+  targeting_mode: AdminCouponTargetingMode;
+  target_summary?: string;
+  applicable_products_count?: number;
+  applicable_categories_count?: number;
+  applicable_collections_count?: number;
   min_order_subtotal: string | null;
   max_discount_amount: string | null;
   start_date: string;
@@ -2425,13 +2449,49 @@ export interface AdminCoupon {
   per_customer_limit: number | null;
   is_first_order_only: boolean;
   usage_count: number | null;
+  total_redemptions?: number;
+  remaining_capacity?: number | null;
+  active_reservations_count?: number;
   created_at: string;
   updated_at: string;
   created_by_email?: string | null;
   updated_by_email?: string | null;
 }
 
+export interface AdminCouponRedemption {
+  id: string;
+  coupon_id: string;
+  coupon_code: string;
+  coupon_name: string;
+  customer_id: string;
+  customer_email_masked: string;
+  customer_display: string;
+  order_id: string | null;
+  order_number: string | null;
+  state: "RESERVED" | "REDEEMED" | "RELEASED";
+  discount_amount: string;
+  currency: string;
+  idempotency_key: string | null;
+  reserved_at: string;
+  expires_at: string | null;
+  finalized_at: string | null;
+  released_at: string | null;
+  release_reason: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCouponRedemptionQueryParams {
+  page?: number;
+  page_size?: number;
+  state?: "RESERVED" | "REDEEMED" | "RELEASED" | string;
+  search?: string;
+}
+
 export interface AdminCouponDetail extends AdminCoupon {
+  applicable_products: AdminCouponTargetItem[];
+  applicable_categories: AdminCouponTargetItem[];
+  applicable_collections: AdminCouponTargetItem[];
   audit_logs: AdminCouponAuditLogItem[];
 }
 
@@ -2441,6 +2501,7 @@ export interface AdminCouponQueryParams {
   search?: string;
   is_active?: string | boolean;
   discount_type?: AdminCouponDiscountType | string;
+  targeting_mode?: AdminCouponTargetingMode | string;
   lifecycle?: "scheduled" | "currently_valid" | "expired" | "inactive" | string;
   ordering?: string;
 }
@@ -2452,6 +2513,10 @@ export interface AdminCreateCouponPayload {
   discount_type: AdminCouponDiscountType;
   discount_value: string | number;
   currency?: string;
+  targeting_mode?: AdminCouponTargetingMode;
+  product_ids?: string[];
+  category_ids?: string[];
+  collection_ids?: string[];
   min_order_subtotal?: string | number | null;
   max_discount_amount?: string | number | null;
   start_date: string;
@@ -2469,6 +2534,10 @@ export interface AdminUpdateCouponPayload {
   discount_type?: AdminCouponDiscountType;
   discount_value?: string | number;
   currency?: string;
+  targeting_mode?: AdminCouponTargetingMode;
+  product_ids?: string[];
+  category_ids?: string[];
+  collection_ids?: string[];
   min_order_subtotal?: string | number | null;
   max_discount_amount?: string | number | null;
   start_date?: string;
@@ -2495,6 +2564,9 @@ export async function getAdminCoupons(
     }
     if (params.discount_type && params.discount_type !== "ALL" && params.discount_type !== "all") {
       query.set("discount_type", params.discount_type);
+    }
+    if (params.targeting_mode && params.targeting_mode !== "ALL" && params.targeting_mode !== "all") {
+      query.set("targeting_mode", params.targeting_mode);
     }
     if (params.lifecycle && params.lifecycle !== "ALL" && params.lifecycle !== "all") {
       query.set("lifecycle", params.lifecycle);
@@ -2595,5 +2667,458 @@ export async function deactivateAdminCoupon(
   });
 }
 
+export async function getAdminCouponRedemptions(
+  couponId: string,
+  params?: AdminCouponRedemptionQueryParams,
+  token?: string
+): Promise<PaginatedResponse<AdminCouponRedemption>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.state && params.state !== "ALL" && params.state !== "all") {
+      query.set("state", params.state);
+    }
+    if (params.search && params.search.trim()) {
+      query.set("search", params.search.trim());
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/coupons/${encodeURIComponent(couponId)}/redemptions/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCouponRedemption>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+export interface AdminCouponReportOverview {
+  date_range: {
+    start_date: string | null;
+    end_date: string | null;
+  };
+  coupons_created?: number;
+  coupons_created_count?: number;
+  active_coupons?: number;
+  active_coupons_count?: number;
+  successful_redemptions_count: number;
+  reserved_redemptions_count: number;
+  released_redemptions_count: number;
+  total_discount_granted: string;
+  paid_orders_count?: number;
+  paid_orders_revenue?: string;
+  total_paid_revenue?: string;
+  gross_subtotal_before_discount?: string;
+  distinct_customers_count: number;
+  average_discount_per_redemption: string;
+  average_paid_order_value?: string;
+  average_order_value_before_discount?: string;
+  average_order_value_after_discount?: string;
+  total_configured_capacity?: number | null;
+  total_remaining_capacity?: number | null;
+  global_capacity_metrics?: {
+    total_configured_capacity?: number | null;
+    total_redemptions_used?: number;
+    total_remaining_capacity?: number | null;
+    unlimited_coupons_count?: number;
+  } | null;
+  orders_by_status?: Record<string, number>;
+  orders_by_order_status?: Record<string, number>;
+  orders_by_payment_status?: Record<string, number>;
+}
+
+export interface AdminCouponPerformanceItem {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  lifecycle_status: "scheduled" | "currently_valid" | "expired" | "inactive";
+  discount_type: AdminCouponDiscountType;
+  discount_value: string;
+  currency: string;
+  usage_limit: number | null;
+  per_customer_limit: number | null;
+  start_date: string;
+  end_date: string | null;
+  successful_redemptions_count: number;
+  distinct_customers_count: number;
+  paid_order_count: number;
+  paid_order_revenue: string;
+  total_discount_amount: string;
+  gross_subtotal_before_discount: string;
+  average_order_value_before_discount: string;
+  average_order_value_after_discount: string;
+  remaining_capacity: number | null;
+  last_redemption_at: string | null;
+}
+
+export interface AdminCouponPerformanceParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+  is_active?: string | boolean;
+  discount_type?: string;
+  lifecycle_status?: string;
+  ordering?: string;
+}
+
+export interface AdminCouponRedemptionReportItem {
+  id: string;
+  coupon_id: string;
+  coupon_code: string;
+  coupon_name: string;
+  order_id: string | null;
+  order_number: string | null;
+  customer_email_masked: string;
+  state: "RESERVED" | "REDEEMED" | "RELEASED";
+  discount_amount: string;
+  currency: string;
+  created_at: string;
+  finalized_at: string | null;
+  released_at: string | null;
+  release_reason: string;
+  order_status: string | null;
+  payment_status: string | null;
+}
+
+export interface AdminCouponRedemptionsReportParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+  state?: string;
+  order_status?: string;
+  payment_status?: string;
+  ordering?: string;
+}
+
+export async function getAdminCouponReportsOverview(
+  params?: { start_date?: string; end_date?: string },
+  token?: string
+): Promise<AdminCouponReportOverview> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params?.start_date) query.set("start_date", params.start_date);
+  if (params?.end_date) query.set("end_date", params.end_date);
+
+  const qs = query.toString();
+  const endpoint = `/admin/coupons/reports/overview/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<AdminCouponReportOverview>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function getAdminCouponReportsPerformance(
+  params?: AdminCouponPerformanceParams,
+  token?: string
+): Promise<PaginatedResponse<AdminCouponPerformanceItem>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.search && params.search.trim()) query.set("search", params.search.trim());
+    if (params.start_date) query.set("start_date", params.start_date);
+    if (params.end_date) query.set("end_date", params.end_date);
+    if (params.is_active !== undefined && params.is_active !== "" && params.is_active !== "all") {
+      query.set("is_active", String(params.is_active));
+    }
+    if (params.discount_type && params.discount_type !== "ALL" && params.discount_type !== "all") {
+      query.set("discount_type", params.discount_type);
+    }
+    if (params.lifecycle_status && params.lifecycle_status !== "ALL" && params.lifecycle_status !== "all") {
+      query.set("lifecycle_status", params.lifecycle_status);
+    }
+    if (params.ordering && params.ordering.trim()) {
+      query.set("ordering", params.ordering.trim());
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/coupons/reports/performance/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCouponPerformanceItem>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function getAdminCouponReportsRedemptions(
+  params?: AdminCouponRedemptionsReportParams,
+  token?: string
+): Promise<PaginatedResponse<AdminCouponRedemptionReportItem>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.search && params.search.trim()) query.set("search", params.search.trim());
+    if (params.start_date) query.set("start_date", params.start_date);
+    if (params.end_date) query.set("end_date", params.end_date);
+    if (params.state && params.state !== "ALL" && params.state !== "all") {
+      query.set("state", params.state);
+    }
+    if (params.order_status && params.order_status !== "ALL" && params.order_status !== "all") {
+      query.set("order_status", params.order_status);
+    }
+    if (params.payment_status && params.payment_status !== "ALL" && params.payment_status !== "all") {
+      query.set("payment_status", params.payment_status);
+    }
+    if (params.ordering && params.ordering.trim()) {
+      query.set("ordering", params.ordering.trim());
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/coupons/reports/redemptions/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCouponRedemptionReportItem>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export interface AdminCustomer {
+  id: string;
+  email: string;
+  display_name: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  total_order_count: number;
+  successful_paid_order_count: number;
+  total_paid_spend: string;
+  latest_order_date: string | null;
+  currency: string;
+}
+
+export interface AdminCustomerAddress {
+  id: string;
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2: string;
+  landmark: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  address_type: "HOME" | "OFFICE" | "OTHER";
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCustomerOrderShipment {
+  id: string;
+  status: string;
+  status_display: string;
+  carrier: string;
+  tracking_number: string;
+  tracking_url: string;
+  dispatched_at: string | null;
+  delivered_at: string | null;
+}
+
+export interface AdminCustomerOrderHistoryItem {
+  id: string;
+  order_number: string;
+  status: string;
+  status_display: string;
+  payment_status: string;
+  payment_status_display: string;
+  currency: string;
+  subtotal: string;
+  discount: string;
+  shipping_amount: string;
+  tax_amount: string;
+  total: string;
+  coupon_code: string;
+  item_count: number;
+  shipment: AdminCustomerOrderShipment | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCustomerPurchaseSummary {
+  total_orders: number;
+  paid_orders: number;
+  pending_orders: number;
+  cancelled_orders: number;
+  total_paid_spend: string;
+  average_order_value: string;
+  latest_order_date: string | null;
+  currency: string;
+}
+
+export interface AdminCustomerAccountSummary {
+  id: string;
+  email: string;
+  display_name: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  supabase_user_id: string;
+}
+
+export interface AdminCustomerDetail extends AdminCustomer {
+  supabase_user_id: string;
+  total_orders: number;
+  paid_orders: number;
+  pending_orders: number;
+  cancelled_orders: number;
+  average_order_value: string;
+  account?: AdminCustomerAccountSummary;
+  purchase_summary?: AdminCustomerPurchaseSummary;
+  addresses: AdminCustomerAddress[];
+  orders: {
+    count: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+    results: AdminCustomerOrderHistoryItem[];
+  };
+}
+
+export interface AdminCustomerQueryParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  sort?: string;
+  date_from?: string;
+  date_to?: string;
+  has_orders?: string | boolean;
+  status?: string;
+  role?: string;
+}
+
+export async function getAdminCustomers(
+  params?: AdminCustomerQueryParams,
+  token?: string
+): Promise<PaginatedResponse<AdminCustomer>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (params) {
+    if (params.page) query.set("page", String(params.page));
+    if (params.page_size) query.set("page_size", String(params.page_size));
+    if (params.search && params.search.trim()) query.set("search", params.search.trim());
+    if (params.sort && params.sort.trim()) query.set("sort", params.sort.trim());
+    if (params.date_from) query.set("date_from", params.date_from);
+    if (params.date_to) query.set("date_to", params.date_to);
+    if (params.has_orders !== undefined && params.has_orders !== "" && params.has_orders !== "all") {
+      query.set("has_orders", String(params.has_orders));
+    }
+    if (params.status && params.status !== "all") {
+      query.set("status", params.status);
+    }
+    if (params.role && params.role !== "all") {
+      query.set("role", params.role);
+    }
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/customers/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCustomer>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function getAdminCustomerDetail(
+  customerId: string,
+  options?: { page?: number; page_size?: number },
+  token?: string
+): Promise<AdminCustomerDetail> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (options) {
+    if (options.page) query.set("page", String(options.page));
+    if (options.page_size) query.set("page_size", String(options.page_size));
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<AdminCustomerDetail>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export interface AdminCustomerNote {
+  id: string;
+  customer_id: string;
+  author_id: string | null;
+  author_name: string;
+  author_email: string;
+  body: string;
+  created_at: string;
+}
+
+export async function getAdminCustomerNotes(
+  customerId: string,
+  options?: { page?: number; page_size?: number },
+  token?: string
+): Promise<PaginatedResponse<AdminCustomerNote>> {
+  const accessToken = await resolveAccessToken(token);
+  const query = new URLSearchParams();
+
+  if (options) {
+    if (options.page) query.set("page", String(options.page));
+    if (options.page_size) query.set("page_size", String(options.page_size));
+  }
+
+  const qs = query.toString();
+  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/notes/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<PaginatedResponse<AdminCustomerNote>>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+export async function createAdminCustomerNote(
+  customerId: string,
+  body: string,
+  token?: string
+): Promise<AdminCustomerNote> {
+  const accessToken = await resolveAccessToken(token);
+  const endpoint = `/admin/customers/${encodeURIComponent(customerId)}/notes/`;
+
+  return apiFetch<AdminCustomerNote>(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ body }),
+  });
+}
 
 

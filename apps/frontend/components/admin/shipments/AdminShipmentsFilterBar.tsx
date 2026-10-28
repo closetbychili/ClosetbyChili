@@ -90,7 +90,7 @@ export default function AdminShipmentsFilterBar({
     <div className="bg-white rounded-xl border border-[#EBE2D8] p-4 mb-6 shadow-sm space-y-3">
       {/* Top Row: Search and Action Controls */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[280px]">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-70">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C7A78]" />
             <input

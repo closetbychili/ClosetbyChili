@@ -726,9 +726,10 @@ export default function AdminCollectionsClient() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in overscroll-contain"
         >
-          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95">
+          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 overscroll-contain">
             <div className="flex items-center justify-between p-5 border-b border-[#EBE2D8] bg-[#FAF6F2]/50">
               <h2 className="text-sm font-semibold text-[#1F1B17]">
                 {editingCollection
@@ -886,9 +887,10 @@ export default function AdminCollectionsClient() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in overscroll-contain"
         >
-          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-2xl w-full overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[85vh]">
+          <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-2xl w-full overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[85vh] overscroll-contain">
             <div className="flex items-center justify-between p-5 border-b border-[#EBE2D8] bg-[#FAF6F2]/50 shrink-0">
               <div>
                 <h2 className="text-sm font-semibold text-[#1F1B17]">
@@ -1022,7 +1024,8 @@ export default function AdminCollectionsClient() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in"
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in overscroll-contain"
         >
           <div className="bg-white rounded-2xl border border-[#EBE2D8] shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 space-y-4">
             <div className="flex items-center gap-3">
