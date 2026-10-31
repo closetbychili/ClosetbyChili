@@ -261,6 +261,9 @@ def verify_razorpay_payment(
                 currency=order.currency,
             )
 
+        from apps.orders.notifications import trigger_order_confirmation_notification
+        transaction.on_commit(lambda: trigger_order_confirmation_notification(order=order))
+
         return order
 
 
@@ -358,6 +361,8 @@ def process_razorpay_webhook(
                                 discount_amount=order.discount,
                                 currency=order.currency,
                             )
+                        from apps.orders.notifications import trigger_order_confirmation_notification
+                        transaction.on_commit(lambda: trigger_order_confirmation_notification(order=order))
                         return {"status": "paid", "order_number": order.order_number}
 
     elif event == "payment.failed":

@@ -16,3 +16,4 @@ PyJWT>=2.10,<3.0
 cryptography>=44,<47
 razorpay>=2.0,<3.0
 cloudinary>=1.41.0,<2.0
+resend>=2.6.0,<3.0

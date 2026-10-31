@@ -1,0 +1,105 @@
+{% extends "orders/emails/base_email.html" %}
+
+{% block title %}Order #{{ order.order_number }} Update: {{ status_display }} — Closet by Chilli{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <p style="font-size: 16px; margin: 0 0 12px 0;">Dear {{ customer_name }},</p>
+  <h1 style="font-size: 22px; color: #8b000a; margin: 0 0 8px 0; font-weight: 700;">
+    {% if new_status == "SHIPPED" %}
+      Your order is on the way!
+    {% elif new_status == "DELIVERED" %}
+      Your order has been delivered!
+    {% elif new_status == "PROCESSING" %}
+      Your garments are being tailored
+    {% elif new_status == "CANCELLED" %}
+      Order cancellation notice
+    {% else %}
+      Update on Order #{{ order.order_number }}
+    {% endif %}
+  </h1>
+  <p style="color: #766d66; font-size: 14px; margin: 0 0 20px 0;">
+    The status of your Closet by Chilli order <strong>#{{ order.order_number }}</strong> has been updated.
+  </p>
+</div>
+
+<!-- Status Banner Box -->
+<table style="width: 100%; border-collapse: collapse; background-color: #fcf9f8; border: 1px solid #e6ded6; border-radius: 6px; margin-bottom: 24px;" cellpadding="14">
+  <tr>
+    <td style="width: 25%; font-size: 13px; color: #766d66;">Order Number:</td>
+    <td style="font-size: 14px; font-weight: 600; color: #1c1b1f;">#{{ order.order_number }}</td>
+  </tr>
+  <tr>
+    <td style="font-size: 13px; color: #766d66;">New Status:</td>
+    <td style="font-size: 14px;">
+      {% if new_status == "CONFIRMED" or new_status == "DELIVERED" %}
+        <span class="badge badge-confirmed">{{ status_display }}</span>
+      {% elif new_status == "PROCESSING" %}
+        <span class="badge badge-processing">{{ status_display }}</span>
+      {% elif new_status == "SHIPPED" %}
+        <span class="badge badge-shipped">{{ status_display }}</span>
+      {% elif new_status == "CANCELLED" %}
+        <span class="badge badge-cancelled">{{ status_display }}</span>
+      {% else %}
+        <span class="badge">{{ status_display }}</span>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<!-- Status Explanation -->
+<div style="background-color: #ffffff; border-left: 4px solid #8b000a; padding: 14px 18px; margin-bottom: 24px; background-color: #fcf9f8;">
+  <p style="font-size: 14px; color: #1c1b1f; margin: 0; line-height: 1.5;">
+    {{ status_explanation }}
+  </p>
+</div>
+
+<!-- Shipment Tracking Details (if available) -->
+{% if carrier or tracking_number or tracking_url %}
+<div style="background-color: #f0f7ff; border: 1px solid #c2dbff; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
+  <h2 style="font-size: 14px; color: #1a73e8; margin: 0 0 12px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+    Shipment Tracking
+  </h2>
+  <table style="width: 100%; border-collapse: collapse;" cellpadding="4">
+    {% if carrier %}
+    <tr>
+      <td style="font-size: 13px; color: #5f6368; width: 30%;">Carrier:</td>
+      <td style="font-size: 13px; font-weight: 600; color: #1c1b1f;">{{ carrier }}</td>
+    </tr>
+    {% endif %}
+    {% if tracking_number %}
+    <tr>
+      <td style="font-size: 13px; color: #5f6368;">Tracking Number:</td>
+      <td style="font-size: 13px; font-weight: 600; color: #1c1b1f;">{{ tracking_number }}</td>
+    </tr>
+    {% endif %}
+  </table>
+  {% if tracking_url %}
+  <div style="margin-top: 14px;">
+    <a href="{{ tracking_url }}" style="display: inline-block; background-color: #1a73e8; color: #ffffff !important; font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 18px; border-radius: 4px;" target="_blank">
+      Track Package &rarr;
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Relevant Next Steps -->
+<div style="background-color: #fcf9f8; border: 1px solid #e6ded6; border-radius: 6px; padding: 18px; margin-bottom: 24px;">
+  <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #766d66; margin: 0 0 8px 0;">What Happens Next</h3>
+  <p style="font-size: 13px; color: #1c1b1f; margin: 0; line-height: 1.5;">
+    {{ next_steps }}
+  </p>
+</div>
+
+<!-- Order Summary Snippet -->
+<div style="font-size: 13px; color: #766d66; margin-bottom: 20px;">
+  <p style="margin: 0 0 4px 0;">Order Total: <strong>₹{{ order.total }} {{ order.currency }}</strong> ({{ order.item_count }} items)</p>
+</div>
+
+<!-- Call to action button -->
+<div style="text-align: center; margin: 24px 0 16px 0;">
+  <a href="{{ order_details_url }}" class="button" target="_blank">View Order History</a>
+</div>
+{% endblock %}
+

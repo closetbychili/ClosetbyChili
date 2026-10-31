@@ -65,3 +65,12 @@ services:
 
       - key: SUPABASE_JWT_SECRET
         sync: false
+
+      - key: RESEND_API_KEY
+        sync: false
+
+      - key: RESEND_FROM_EMAIL
+        value: Closet by Chilli <orders@yourdomain.com>
+
+      - key: FRONTEND_BASE_URL
+        value: https://closetby-chili.vercel.app
