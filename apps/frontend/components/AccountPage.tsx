@@ -34,6 +34,7 @@ import {
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/components/AuthProvider";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import { updateCurrentProfile } from "@/lib/api/auth";
 import { ApiClientError } from "@/lib/api/client";
 import {
@@ -102,7 +103,9 @@ const emptyAddressForm: CreateAddressPayload = {
 export default function AccountPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, session, loading, signOut } = useAuth();
+  const { user, session, supabaseUser, loading, signOut } = useAuth();
+  const [mainImgError, setMainImgError] = useState(false);
+  const [sidebarImgError, setSidebarImgError] = useState(false);
 
   const tabParam = searchParams.get("tab") as ActiveSection | null;
   const initialTab: ActiveSection =
@@ -210,6 +213,10 @@ export default function AccountPage() {
   const initials = useMemo(() => {
     return getInitials(fullName, user?.email ?? "C");
   }, [fullName, user]);
+
+  const avatarUrl = useMemo(() => {
+    return resolveAvatarUrl(user, supabaseUser, session);
+  }, [user, supabaseUser, session]);
 
   // Profile completion calculation
   const completionPercent = useMemo(() => {
@@ -469,8 +476,18 @@ export default function AccountPage() {
                 {/* User Completion Header */}
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-primary border border-outline-variant/40 font-headline-md text-2xl font-bold">
-                      {initials}
+                    <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-primary border border-outline-variant/40 font-headline-md text-2xl font-bold overflow-hidden shadow-sm">
+                      {avatarUrl && !sidebarImgError ? (
+                        <img
+                          src={avatarUrl}
+                          alt={fullName}
+                          referrerPolicy="no-referrer"
+                          onError={() => setSidebarImgError(true)}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <h2 className="font-headline-sm text-headline-sm text-on-surface leading-tight truncate">
@@ -736,8 +753,18 @@ export default function AccountPage() {
                     {/* Upper Avatar + Basic Information */}
                     <div className="flex flex-col md:flex-row items-start gap-8 lg:gap-10" id="basic-info">
                       {/* Large Circular Avatar Display */}
-                      <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-surface-container-low border border-outline-variant/40 flex items-center justify-center shrink-0 mx-auto md:mx-0 shadow-sm text-primary font-headline-lg text-4xl">
-                        {initials}
+                      <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-surface-container-low border border-outline-variant/40 flex items-center justify-center shrink-0 mx-auto md:mx-0 shadow-sm text-primary font-headline-lg text-4xl overflow-hidden">
+                        {avatarUrl && !mainImgError ? (
+                          <img
+                            src={avatarUrl}
+                            alt={fullName}
+                            referrerPolicy="no-referrer"
+                            onError={() => setMainImgError(true)}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          initials
+                        )}
                       </div>
 
                       {/* Basic Information Table / Grid */}

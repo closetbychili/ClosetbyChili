@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthProvider";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 interface MobileBottomNavProps {
   onSearchClick?: () => void;
@@ -12,7 +14,9 @@ interface MobileBottomNavProps {
 export default function MobileBottomNav({ onSearchClick }: MobileBottomNavProps) {
   const pathname = usePathname();
   const { itemCount, openDrawer } = useCart();
-  const { user } = useAuth();
+  const { user, supabaseUser, session } = useAuth();
+  const [imgError, setImgError] = useState(false);
+  const avatarUrl = resolveAvatarUrl(user, supabaseUser, session);
 
   const isHome = pathname === "/";
   const isCouture = pathname.startsWith("/categories") || pathname.startsWith("/products");
@@ -103,12 +107,24 @@ export default function MobileBottomNav({ onSearchClick }: MobileBottomNavProps)
             isAccount ? "text-primary font-semibold" : "text-on-surface-variant hover:text-primary"
           }`}
         >
-          <span
-            className="material-symbols-outlined text-[22px]"
-            style={{ fontVariationSettings: isAccount ? "'FILL' 1" : "'FILL' 0" }}
-          >
-            person
-          </span>
+          {user && avatarUrl && !imgError ? (
+            <div className="w-5.5 h-5.5 rounded-full overflow-hidden shrink-0 border border-outline-variant/60 my-0.5">
+              <img
+                src={avatarUrl}
+                alt="Account"
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
+          ) : (
+            <span
+              className="material-symbols-outlined text-[22px]"
+              style={{ fontVariationSettings: isAccount ? "'FILL' 1" : "'FILL' 0" }}
+            >
+              person
+            </span>
+          )}
           <span className="font-label-caps text-[9.5px] tracking-wider uppercase mt-0.5">
             {user ? "Account" : "Sign In"}
           </span>

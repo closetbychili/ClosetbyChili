@@ -11,6 +11,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
 class CurrentUserSerializer(serializers.ModelSerializer):
     profile = CustomerProfileSerializer(read_only=True)
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -20,10 +21,24 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "email",
             "role",
             "profile",
+            "avatar_url",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
+
+    def get_avatar_url(self, obj: User) -> str:
+        request = self.context.get("request")
+        if request and isinstance(getattr(request, "auth", None), dict):
+            claims = request.auth
+            user_metadata = claims.get("user_metadata") or {}
+            return (
+                user_metadata.get("avatar_url")
+                or user_metadata.get("picture")
+                or claims.get("picture")
+                or ""
+            )
+        return ""
 
 
 class AdminUserSerializer(serializers.ModelSerializer):

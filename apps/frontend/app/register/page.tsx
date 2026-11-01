@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -12,7 +13,9 @@ export default function RegisterPage() {
   return (
     <>
       <Header />
-      <AuthForm mode="register" />
+      <Suspense fallback={<div className="min-h-screen bg-[#FAF7F5]" />}>
+        <AuthForm mode="register" />
+      </Suspense>
       <Footer />
     </>
   );

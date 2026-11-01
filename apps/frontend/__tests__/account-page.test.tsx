@@ -166,4 +166,68 @@ describe("AccountPage Redesign Integration", () => {
       expect(mockSignOut).toHaveBeenCalled();
     });
   });
+
+  it("renders Google profile picture in both sidebar and main profile when avatar_url is provided", () => {
+    const userWithAvatar: authApi.CurrentUser = {
+      ...mockUser,
+      avatar_url: "https://lh3.googleusercontent.com/a/mock-user-pfp",
+    };
+
+    vi.spyOn(authHook, "useAuth").mockReturnValue({
+      user: userWithAvatar,
+      session: {
+        access_token: "mock-token",
+        user: {
+          id: "sb-123",
+          user_metadata: {
+            avatar_url: "https://lh3.googleusercontent.com/a/mock-user-pfp",
+          },
+        },
+      } as any,
+      loading: false,
+      signOut: mockSignOut,
+      supabaseUser: {
+        id: "sb-123",
+        user_metadata: {
+          avatar_url: "https://lh3.googleusercontent.com/a/mock-user-pfp",
+        },
+      } as any,
+      refreshUser: vi.fn(),
+    });
+
+    render(<AccountPage />);
+
+    const avatars = screen.getAllByRole("img", { name: "Rhea Sharma" });
+    expect(avatars.length).toBe(2);
+    expect(avatars[0]).toHaveAttribute("src", "https://lh3.googleusercontent.com/a/mock-user-pfp");
+    expect(avatars[1]).toHaveAttribute("src", "https://lh3.googleusercontent.com/a/mock-user-pfp");
+  });
+
+  it("falls back to initials when avatar image encounters an error", () => {
+    const userWithAvatar: authApi.CurrentUser = {
+      ...mockUser,
+      avatar_url: "https://lh3.googleusercontent.com/a/broken-image",
+    };
+
+    vi.spyOn(authHook, "useAuth").mockReturnValue({
+      user: userWithAvatar,
+      session: { access_token: "mock-token" } as any,
+      loading: false,
+      signOut: mockSignOut,
+      supabaseUser: null,
+      refreshUser: vi.fn(),
+    });
+
+    render(<AccountPage />);
+
+    const avatars = screen.getAllByRole("img", { name: "Rhea Sharma" });
+    expect(avatars.length).toBe(2);
+
+    // Trigger image error on both images
+    fireEvent.error(avatars[0]);
+    fireEvent.error(avatars[1]);
+
+    // Should now show initials "RS"
+    expect(screen.getAllByText("RS").length).toBeGreaterThanOrEqual(1);
+  });
 });
