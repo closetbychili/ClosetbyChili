@@ -57,7 +57,7 @@ describe("Google OAuth Integration — AuthForm", () => {
     expect(googleBtn).toBeInTheDocument();
   });
 
-  it("initiates Google OAuth with correct provider and callback redirectTo URL", async () => {
+  it("initiates Google OAuth with dynamically generated callback redirectTo URL using window.location.origin", async () => {
     mockSignInWithOAuth.mockResolvedValueOnce({ data: { url: "https://accounts.google.com" }, error: null });
 
     render(<AuthForm mode="login" />);
@@ -70,14 +70,64 @@ describe("Google OAuth Integration — AuthForm", () => {
         expect.objectContaining({
           provider: "google",
           options: expect.objectContaining({
-            redirectTo: expect.stringContaining("/auth/callback?next=%2Faccount"),
+            redirectTo: `${window.location.origin}/auth/callback`,
           }),
         })
       );
     });
   });
 
-  it("preserves safe internal next destination parameter in callback redirectTo URL", async () => {
+  it("verifies local development redirects to http://localhost:3000/auth/callback", async () => {
+    const originalLocation = window.location;
+    delete (window as unknown as { location?: unknown }).location;
+    (window as unknown as { location: unknown }).location = new URL("http://localhost:3000/login");
+
+    mockSignInWithOAuth.mockResolvedValueOnce({ data: { url: "https://accounts.google.com" }, error: null });
+
+    render(<AuthForm mode="login" />);
+    const googleBtn = screen.getByRole("button", { name: /continue with google/i });
+    fireEvent.click(googleBtn);
+
+    await waitFor(() => {
+      expect(mockSignInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: "google",
+          options: expect.objectContaining({
+            redirectTo: "http://localhost:3000/auth/callback",
+          }),
+        })
+      );
+    });
+
+    (window as unknown as { location: unknown }).location = originalLocation;
+  });
+
+  it("verifies production deployment redirects to https://closetby-chili.vercel.app/auth/callback", async () => {
+    const originalLocation = window.location;
+    delete (window as unknown as { location?: unknown }).location;
+    (window as unknown as { location: unknown }).location = new URL("https://closetby-chili.vercel.app/login");
+
+    mockSignInWithOAuth.mockResolvedValueOnce({ data: { url: "https://accounts.google.com" }, error: null });
+
+    render(<AuthForm mode="login" />);
+    const googleBtn = screen.getByRole("button", { name: /continue with google/i });
+    fireEvent.click(googleBtn);
+
+    await waitFor(() => {
+      expect(mockSignInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: "google",
+          options: expect.objectContaining({
+            redirectTo: "https://closetby-chili.vercel.app/auth/callback",
+          }),
+        })
+      );
+    });
+
+    (window as unknown as { location: unknown }).location = originalLocation;
+  });
+
+  it("preserves safe internal next destination parameter in sessionStorage without corrupting callback redirectTo URL", async () => {
     mockSearchParams = new URLSearchParams("next=/checkout");
     mockSignInWithOAuth.mockResolvedValueOnce({ data: { url: "https://accounts.google.com" }, error: null });
 
@@ -90,10 +140,11 @@ describe("Google OAuth Integration — AuthForm", () => {
         expect.objectContaining({
           provider: "google",
           options: expect.objectContaining({
-            redirectTo: expect.stringContaining("/auth/callback?next=%2Fcheckout"),
+            redirectTo: `${window.location.origin}/auth/callback`,
           }),
         })
       );
+      expect(sessionStorage.getItem("auth_redirect_next")).toBe("/checkout");
     });
   });
 
@@ -204,6 +255,33 @@ describe("Google OAuth Integration — AuthCallbackPage", () => {
       expect(mockReplace).toHaveBeenCalledWith(
         expect.stringContaining("/login?error=Invalid%20authorization%20code%20or%20PKCE%20verifier")
       );
+    });
+  });
+
+  it("retrieves stored destination from sessionStorage and cleans up storage after code exchange", async () => {
+    sessionStorage.setItem("auth_redirect_next", "/checkout");
+    mockSearchParams = new URLSearchParams("code=valid-pkce-auth-code");
+    const fakeSession = { access_token: "jwt-token-456", user: { id: "sb-user-2", email: "google2@example.com" } };
+    mockExchangeCodeForSession.mockResolvedValueOnce({
+      data: { session: fakeSession },
+      error: null,
+    });
+    vi.mocked(authApi.getCurrentUser).mockResolvedValueOnce({
+      id: "django-user-2",
+      supabase_user_id: "sb-user-2",
+      email: "google2@example.com",
+      role: "customer",
+      profile: { display_name: "Google Muse 2", phone: "" },
+      created_at: "2026-11-01T00:00:00Z",
+      updated_at: "2026-11-01T00:00:00Z",
+    });
+
+    render(<AuthCallbackPage />);
+
+    await waitFor(() => {
+      expect(mockExchangeCodeForSession).toHaveBeenCalledWith("valid-pkce-auth-code");
+      expect(mockReplace).toHaveBeenCalledWith("/checkout");
+      expect(sessionStorage.getItem("auth_redirect_next")).toBeNull();
     });
   });
 });

@@ -146,13 +146,21 @@ export default function AuthForm({ mode: initialMode }: { mode: Mode }) {
     setOauthLoading(true);
 
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
       const rawNext = searchParams?.get("next") || searchParams?.get("redirect");
       const targetNext =
         rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.startsWith("/\\")
           ? rawNext
           : "/account";
-      const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(targetNext)}`;
+
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("auth_redirect_next", targetNext);
+        } catch {
+          // Ignore sessionStorage availability errors in strict sandbox environments
+        }
+      }
+
+      const callbackUrl = `${window.location.origin}/auth/callback`;
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,

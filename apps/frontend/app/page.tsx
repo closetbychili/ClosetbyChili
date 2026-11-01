@@ -4,11 +4,9 @@ import ShopByCategory from "@/components/ShopByCategory";
 import NewArrivals from "@/components/NewArrivals";
 import EditorialFeature from "@/components/EditorialFeature";
 import Bestsellers from "@/components/Bestsellers";
-import BrandEssence from "@/components/BrandEssence";
 import WholesaleB2B from "@/components/WholesaleB2B";
 import SocialSalon from "@/components/SocialSalon";
 import Footer from "@/components/Footer";
-import MobileBottomNav from "@/components/MobileBottomNav";
 
 import { getProducts, getCategories } from "@/lib/api/catalog";
 import { mapProductToUi, mapCategoryToUi } from "@/lib/adapters/catalog-adapter";
@@ -24,7 +22,7 @@ export default async function Home() {
   try {
     const [naRes, bsRes, catRes] = await Promise.allSettled([
       getProducts({ collection: "new-arrivals", page_size: 4 }, { next: { revalidate: 60 } }),
-      getProducts({ collection: "bestsellers", page_size: 3 }, { next: { revalidate: 60 } }),
+      getProducts({ collection: "bestsellers", page_size: 4 }, { next: { revalidate: 60 } }),
       getCategories({ page_size: 100, storefront: true }, { next: { revalidate: 60 } }),
     ]);
 
@@ -52,7 +50,7 @@ export default async function Home() {
         .map((p) => mapProductToUi(p, "Bestseller"));
     } else {
       const fallbackBs = await getProducts(
-        { page_size: 3 },
+        { page_size: 4 },
         { next: { revalidate: 60 } }
       ).catch(() => null);
       if (fallbackBs?.results?.length) {
@@ -92,10 +90,7 @@ export default async function Home() {
           {/* ── Section 5: Most Loved / Best-Sellers (3-Col Spotlight from DB) ── */}
           <Bestsellers products={bestsellers} />
 
-          {/* ── Section 6: Craft & Brand Essence Strip (4 Value Pillars) ── */}
-          <BrandEssence />
-
-          {/* ── Section 7: Wholesale & B2B Pathway (Boutique Concierge) ── */}
+          {/* ── Section 6: Wholesale & B2B Pathway (Boutique Concierge) ── */}
           <WholesaleB2B />
 
           {/* ── Section 8: Instagram & Social Editorial Gallery (The Social Salon) ── */}
@@ -105,9 +100,6 @@ export default async function Home() {
 
       {/* ── Footer with Links, Newsletter, and Payment Badges ── */}
       <Footer />
-
-      {/* ── Mobile Fixed Bottom Navigation Bar (Hidden on Desktop) ── */}
-      <MobileBottomNav />
     </div>
   );
 }

@@ -120,7 +120,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           {/* ── You May Also Like / Recommended Silhouettes ──── */}
           {relatedProducts.length > 0 && (
-            <section className="max-w-360 mx-auto w-full px-4 sm:px-6 lg:px-12 py-16">
+            <section className="max-w-360 mx-auto w-full px-4 sm:px-6 lg:px-12 pt-4 sm:pt-8 pb-12 sm:pb-16 border-t border-neutral-100">
               <div className="flex flex-col sm:flex-row items-baseline justify-between mb-8 gap-3">
                 <div>
                   <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-semibold">

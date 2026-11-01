@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useCart } from "@/components/CartContext";
 import type { ProductDetail, ProductVariantSummary } from "@/lib/api/types";
 
@@ -349,39 +348,10 @@ export default function HMProductDetailSection({
 
   return (
     <>
-      {/* ── Breadcrumb Navigation ────────────────────────────────────── */}
-      <nav
-        aria-label="Breadcrumb"
-        className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-12 py-3 text-[11px] tracking-wide text-neutral-500 uppercase flex items-center space-x-2 border-b border-neutral-100"
-      >
-        <Link href="/" className="hover:text-neutral-900 transition-colors">
-          Home
-        </Link>
-        <span>/</span>
-        <Link href="/products" className="hover:text-neutral-900 transition-colors">
-          Collections
-        </Link>
-        {product.category && (
-          <>
-            <span>/</span>
-            <Link
-              href={`/products?category=${product.category.slug}`}
-              className="hover:text-neutral-900 transition-colors"
-            >
-              {product.category.name}
-            </Link>
-          </>
-        )}
-        <span>/</span>
-        <span className="text-neutral-900 font-medium truncate max-w-xs sm:max-w-none">
-          {product.name}
-        </span>
-      </nav>
-
       {/* ── Main Product Detail Section ──────────────────────────────── */}
       <div
         ref={containerRef}
-        className="w-full max-w-[1720px] mx-auto px-0 sm:px-6 lg:px-12 pt-0 sm:pt-6 pb-20 relative min-h-[75vh]"
+        className="w-full max-w-[1720px] mx-auto px-0 sm:px-6 lg:px-12 pt-0 sm:pt-6 pb-4 sm:pb-8 relative"
         data-purpose="product-detail-layout"
       >
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-14 items-start">
@@ -399,19 +369,28 @@ export default function HMProductDetailSection({
                 {/* ── Mobile View: Horizontally Sliding Carousel (< lg) ── */}
                 <div
                   data-testid="mobile-image-carousel"
-                  className="lg:hidden relative w-full overflow-hidden select-none"
+                  className="lg:hidden relative w-full"
                 >
                   <div
                     ref={mobileCarouselRef}
                     onScroll={handleMobileScroll}
-                    className="flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth touch-pan-x"
-                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    data-lenis-prevent-horizontal="true"
+                    className="flex w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-none"
+                    style={{
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                      touchAction: "pan-x pan-y",
+                      WebkitOverflowScrolling: "touch",
+                      overscrollBehaviorX: "contain",
+                      overscrollBehaviorY: "auto",
+                    }}
                   >
                     {images.map((imgSrc, idx) => (
                       <div
                         key={`mobile-${imgSrc}-${idx}`}
                         onClick={() => setZoomIndex(idx)}
                         className="w-full shrink-0 snap-center relative aspect-[3/4] bg-neutral-100 cursor-zoom-in"
+                        style={{ touchAction: "pan-x pan-y" }}
                       >
                         <Image
                           src={imgSrc}
@@ -419,7 +398,8 @@ export default function HMProductDetailSection({
                           fill
                           priority={idx === 0}
                           sizes="100vw"
-                          className="w-full h-full object-cover object-center"
+                          draggable={false}
+                          className="w-full h-full object-cover object-center pointer-events-none select-none"
                         />
                       </div>
                     ))}

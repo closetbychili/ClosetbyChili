@@ -11,6 +11,7 @@ export interface HeroSlide {
 
 export interface ProductItem {
   id: string;
+  slug?: string;
   name: string;
   detail: string;
   price: number;
@@ -18,6 +19,12 @@ export interface ProductItem {
   badge?: string;
   image?: string;
   href: string;
+  swatches?: { name: string; color: string; border?: boolean }[];
+  extraColors?: number;
+  defaultVariantId?: string;
+  variants?: { id: string; size: string; color: string; inStock?: boolean }[];
+  rating?: number;
+  reviewsCount?: number;
 }
 
 export interface CategoryItem {
