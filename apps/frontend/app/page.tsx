@@ -8,7 +8,6 @@ import BrandEssence from "@/components/BrandEssence";
 import WholesaleB2B from "@/components/WholesaleB2B";
 import SocialSalon from "@/components/SocialSalon";
 import Footer from "@/components/Footer";
-import MobileBottomNav from "@/components/MobileBottomNav";
 
 import { getProducts, getCategories } from "@/lib/api/catalog";
 import { mapProductToUi, mapCategoryToUi } from "@/lib/adapters/catalog-adapter";
@@ -105,9 +104,6 @@ export default async function Home() {
 
       {/* ── Footer with Links, Newsletter, and Payment Badges ── */}
       <Footer />
-
-      {/* ── Mobile Fixed Bottom Navigation Bar (Hidden on Desktop) ── */}
-      <MobileBottomNav />
     </div>
   );
 }

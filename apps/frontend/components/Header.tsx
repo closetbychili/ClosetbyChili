@@ -264,6 +264,33 @@ export default function Header() {
                 </span>
               </Link>
 
+              {/* Sign In / Account Link (Positioned between Wishlist and Bag) */}
+              <Link
+                href={user ? "/account" : "/login"}
+                data-path="account"
+                aria-label={user ? "Account" : "Sign In"}
+                className="relative p-1 text-on-surface hover:text-primary transition-colors flex items-center gap-1.5 focus:outline-none"
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-surface-container border border-outline-variant/50 flex items-center justify-center overflow-hidden">
+                  {user && avatarUrl && !headerImgError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={user.profile?.display_name || "Account"}
+                      referrerPolicy="no-referrer"
+                      onError={() => setHeaderImgError(true)}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                      person
+                    </span>
+                  )}
+                </div>
+                <span className="hidden lg:inline-block font-label-caps text-[11px] tracking-wider uppercase font-semibold">
+                  {user ? "Account" : "Sign In"}
+                </span>
+              </Link>
+
               {/* Shopping Bag Button (Triggers Drawer) */}
               <button
                 type="button"
@@ -280,33 +307,6 @@ export default function Header() {
                   {itemCount}
                 </span>
               </button>
-
-              {/* Sign In / Account Link */}
-              <Link
-                href={user ? "/account" : "/login"}
-                data-path="account"
-                aria-label="Account"
-                className="hidden sm:flex items-center gap-1.5 pl-1 text-on-surface hover:text-primary transition-colors focus:outline-none"
-              >
-                <div className="w-8 h-8 rounded-full bg-surface-container border border-outline-variant/50 flex items-center justify-center overflow-hidden">
-                  {user && avatarUrl && !headerImgError ? (
-                    <img
-                      src={avatarUrl}
-                      alt={user.profile?.display_name || "Account"}
-                      referrerPolicy="no-referrer"
-                      onError={() => setHeaderImgError(true)}
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
-                      person
-                    </span>
-                  )}
-                </div>
-                <span className="font-label-caps text-[11px] tracking-wider uppercase font-semibold">
-                  {user ? "Account" : "Sign In"}
-                </span>
-              </Link>
             </div>
           </div>
         </div>
