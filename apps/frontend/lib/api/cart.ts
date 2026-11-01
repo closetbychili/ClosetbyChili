@@ -130,6 +130,28 @@ export function createEmptyCart(): Cart {
 }
 
 /**
+ * Checks whether an error is a cart session expiration or not found error.
+ */
+export function isCartSessionExpiredError(err: unknown): boolean {
+  if (err instanceof ApiClientError) {
+    if (err.status === 404) {
+      const code = (err.code || "").toUpperCase();
+      if (code === "CART_SESSION_EXPIRED" || code === "CART_NOT_FOUND") {
+        return true;
+      }
+      const msg = err.message.toLowerCase();
+      if (
+        (msg.includes("cart") && (msg.includes("expired") || msg.includes("not exist") || msg.includes("invalid"))) ||
+        msg.includes("session")
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
  * Fetches the active cart for the current session or authenticated user.
  */
 export async function getCart(token?: string): Promise<Cart> {
@@ -140,8 +162,10 @@ export async function getCart(token?: string): Promise<Cart> {
     });
     return handleCartResponse(res);
   } catch (err) {
-    if (err instanceof ApiClientError && (err.status === 404 || err.code === 'CART_NOT_FOUND')) {
-      clearStoredCartSession();
+    if (isCartSessionExpiredError(err)) {
+      if (!token) {
+        clearStoredCartSession();
+      }
       return createEmptyCart();
     }
     throw err;
@@ -150,18 +174,28 @@ export async function getCart(token?: string): Promise<Cart> {
 
 /**
  * Adds an item to the active cart.
+ * Automatically recovers once if the stored guest cart session has expired.
  */
 export async function addToCart(
   payload: AddToCartPayload,
-  token?: string
+  token?: string,
+  retryOnExpired = true
 ): Promise<Cart> {
-  const res = await apiFetch<Cart>('/cart/items/', {
-    method: 'POST',
-    headers: await getCartHeaders(token),
-    body: JSON.stringify(payload),
-    cache: 'no-store',
-  });
-  return handleCartResponse(res);
+  try {
+    const res = await apiFetch<Cart>('/cart/items/', {
+      method: 'POST',
+      headers: await getCartHeaders(token),
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    });
+    return handleCartResponse(res);
+  } catch (err) {
+    if (!token && retryOnExpired && isCartSessionExpiredError(err)) {
+      clearStoredCartSession();
+      return addToCart(payload, token, false);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -172,13 +206,21 @@ export async function updateCartItem(
   payload: UpdateCartItemPayload,
   token?: string
 ): Promise<Cart> {
-  const res = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
-    method: 'PATCH',
-    headers: await getCartHeaders(token),
-    body: JSON.stringify(payload),
-    cache: 'no-store',
-  });
-  return handleCartResponse(res);
+  try {
+    const res = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
+      method: 'PATCH',
+      headers: await getCartHeaders(token),
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    });
+    return handleCartResponse(res);
+  } catch (err) {
+    if (!token && isCartSessionExpiredError(err)) {
+      clearStoredCartSession();
+      return createEmptyCart();
+    }
+    throw err;
+  }
 }
 
 /**
@@ -188,24 +230,40 @@ export async function removeCartItem(
   itemId: string,
   token?: string
 ): Promise<Cart> {
-  const res = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
-    method: 'DELETE',
-    headers: await getCartHeaders(token),
-    cache: 'no-store',
-  });
-  return handleCartResponse(res);
+  try {
+    const res = await apiFetch<Cart>(`/cart/items/${itemId}/`, {
+      method: 'DELETE',
+      headers: await getCartHeaders(token),
+      cache: 'no-store',
+    });
+    return handleCartResponse(res);
+  } catch (err) {
+    if (!token && isCartSessionExpiredError(err)) {
+      clearStoredCartSession();
+      return createEmptyCart();
+    }
+    throw err;
+  }
 }
 
 /**
  * Clears all items from the current cart.
  */
 export async function clearCart(token?: string): Promise<Cart> {
-  const res = await apiFetch<Cart>('/cart/', {
-    method: 'DELETE',
-    headers: await getCartHeaders(token),
-    cache: 'no-store',
-  });
-  return handleCartResponse(res);
+  try {
+    const res = await apiFetch<Cart>('/cart/', {
+      method: 'DELETE',
+      headers: await getCartHeaders(token),
+      cache: 'no-store',
+    });
+    return handleCartResponse(res);
+  } catch (err) {
+    if (!token && isCartSessionExpiredError(err)) {
+      clearStoredCartSession();
+      return createEmptyCart();
+    }
+    throw err;
+  }
 }
 
 /**
@@ -252,26 +310,42 @@ export async function applyCartCoupon(
   code: string,
   token?: string
 ): Promise<Cart> {
-  const headers = await getCartHeaders(token);
-  const res = await apiFetch<Cart>('/cart/coupon/', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ code }),
-    cache: 'no-store',
-  });
-  return handleCartResponse(res);
+  try {
+    const headers = await getCartHeaders(token);
+    const res = await apiFetch<Cart>('/cart/coupon/', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ code }),
+      cache: 'no-store',
+    });
+    return handleCartResponse(res);
+  } catch (err) {
+    if (!token && isCartSessionExpiredError(err)) {
+      clearStoredCartSession();
+      return createEmptyCart();
+    }
+    throw err;
+  }
 }
 
 /**
  * Removes the coupon from the active cart.
  */
 export async function removeCartCoupon(token?: string): Promise<Cart> {
-  const headers = await getCartHeaders(token);
-  const res = await apiFetch<Cart>('/cart/coupon/', {
-    method: 'DELETE',
-    headers,
-    cache: 'no-store',
-  });
-  return handleCartResponse(res);
+  try {
+    const headers = await getCartHeaders(token);
+    const res = await apiFetch<Cart>('/cart/coupon/', {
+      method: 'DELETE',
+      headers,
+      cache: 'no-store',
+    });
+    return handleCartResponse(res);
+  } catch (err) {
+    if (!token && isCartSessionExpiredError(err)) {
+      clearStoredCartSession();
+      return createEmptyCart();
+    }
+    throw err;
+  }
 }
 

@@ -140,7 +140,7 @@ class ProductViewSet(
             .select_related("category")
             .prefetch_related(
                 "collections",
-                "variants",
+                "variants__inventory",
                 "product_collections",
                 "images",
             )

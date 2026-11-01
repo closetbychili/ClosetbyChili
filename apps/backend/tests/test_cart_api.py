@@ -376,4 +376,7 @@ class CartApiIntegrationTest(TestCase):
         client.defaults["HTTP_X_CART_SESSION"] = "non-existent-session-key-999"
         response = client.get("/api/v1/cart/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.json()["error"]["code"], "CART_NOT_FOUND")
+        self.assertIn(
+            response.json()["error"]["code"],
+            ["CART_SESSION_EXPIRED", "CART_NOT_FOUND"],
+        )

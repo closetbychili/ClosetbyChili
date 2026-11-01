@@ -146,8 +146,11 @@ class Product(models.Model):
         db_table = "catalog_products"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["slug"], name="idx_product_slug"),
             models.Index(fields=["status"], name="idx_product_status"),
+            models.Index(
+                fields=["status", "is_active", "-created_at"],
+                name="idx_prod_status_act_created",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -182,6 +185,12 @@ class ProductCollection(models.Model):
     class Meta:
         db_table = "catalog_product_collections"
         ordering = ["ordering"]
+        indexes = [
+            models.Index(
+                fields=["collection", "is_active", "ordering"],
+                name="idx_prodcol_col_act_ord",
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["product", "collection"],

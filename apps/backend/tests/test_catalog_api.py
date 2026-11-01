@@ -442,18 +442,45 @@ class ProductQueryEfficiencyTest(TestCase):
 
     def test_product_list_query_count_is_bounded(self):
         """
-        Verify that listing 5 products with category + collection + variant + images does not
-        produce O(N) queries. The select_related/prefetch_related in
-        ProductViewSet.get_queryset() collapses all fetches into exactly 6 queries:
+        Verify that listing 5 products with category + collection + variant + inventory + images
+        does not produce O(N) queries. The select_related/prefetch_related in
+        ProductViewSet.get_queryset() collapses all fetches into exactly 7 queries:
           1. COUNT for pagination
           2. SELECT products (with category via LEFT JOIN / select_related)
           3. SELECT collections (prefetch_related via JOIN through ProductCollection)
           4. SELECT variants (prefetch_related)
-          5. SELECT product_collections (prefetch_related)
-          6. SELECT images (prefetch_related)
+          5. SELECT inventory (prefetch_related via variants__inventory in single batch)
+          6. SELECT product_collections (prefetch_related)
+          7. SELECT images (prefetch_related)
         This is constant regardless of the number of products in the result set.
         """
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             r = self.client.get("/api/v1/catalog/products/")
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(r.json()["count"], 5)
+
+    def test_product_detail_query_count_is_bounded(self):
+        """
+        Verify that retrieving product detail does not execute extra queries for variants
+        or inventory. ProductDetailSerializer.get_variants() uses the prefetched variants
+        and inventory instead of triggering additional queries via .filter().
+        Collapses into exactly 5 queries:
+          1. SELECT product (with category via LEFT JOIN / select_related)
+          2. SELECT collections (prefetch_related)
+          3. SELECT variants (prefetch_related)
+          4. SELECT inventory (prefetch_related via variants__inventory)
+          5. SELECT product_collections (prefetch_related)
+          6. SELECT images (prefetch_related)
+        """
+        # Add 3 variants to product 0 to verify variant count does not increase query count
+        p0 = Product.objects.get(slug="product-query-0")
+        make_variant(p0, "SKU-Q0-M", "1099.00")
+        make_variant(p0, "SKU-Q0-L", "1199.00")
+
+        with self.assertNumQueries(6):
+            r = self.client.get("/api/v1/catalog/products/product-query-0/")
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(r.json()["variants"]), 3)
+        self.assertEqual(r.json()["variants"][0]["sku"], "SKU-Q0")
+        self.assertEqual(r.json()["variants"][1]["sku"], "SKU-Q0-L")
+        self.assertEqual(r.json()["variants"][2]["sku"], "SKU-Q0-M")

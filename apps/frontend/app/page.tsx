@@ -20,18 +20,52 @@ export default async function Home() {
   let categories: CategoryItem[] | undefined;
 
   try {
+    // 1. Fetch initial collections and categories concurrently
     const [naRes, bsRes, catRes] = await Promise.allSettled([
       getProducts({ collection: "new-arrivals", page_size: 4 }, { next: { revalidate: 60 } }),
       getProducts({ collection: "bestsellers", page_size: 4 }, { next: { revalidate: 60 } }),
       getCategories({ page_size: 100, storefront: true }, { next: { revalidate: 60 } }),
     ]);
 
-    // Handle New Arrivals
+    // Handle Categories
+    if (catRes.status === "fulfilled" && catRes.value?.results?.length > 0) {
+      categories = catRes.value.results.map((c) => mapCategoryToUi(c));
+    }
+
+    // Process primary results
     if (naRes.status === "fulfilled" && naRes.value?.results?.length > 0) {
       newArrivals = naRes.value.results
         .filter((p) => p.status === "active" && p.is_active)
         .map((p) => mapProductToUi(p, "New"));
-    } else {
+    }
+
+    if (bsRes.status === "fulfilled" && bsRes.value?.results?.length > 0) {
+      bestsellers = bsRes.value.results
+        .filter((p) => p.status === "active" && p.is_active)
+        .map((p) => mapProductToUi(p, "Bestseller"));
+    }
+
+    // 2. Identify fallback requirements to avoid redundant or sequential waterfalls
+    const naNeedsFallback = !newArrivals || newArrivals.length === 0;
+    const bsNeedsFallback = !bestsellers || bestsellers.length === 0;
+
+    if (naNeedsFallback && bsNeedsFallback) {
+      // Both sections require fallbacks: fetch a single 8-item batch concurrently to avoid duplicate queries
+      const fallbackRes = await getProducts(
+        { page_size: 8, ordering: "-created_at" },
+        { next: { revalidate: 60 } }
+      ).catch(() => null);
+
+      if (fallbackRes?.results?.length) {
+        const active = fallbackRes.results.filter(
+          (p) => p.status === "active" && p.is_active
+        );
+        newArrivals = active.slice(0, 4).map((p) => mapProductToUi(p, "New"));
+        // Use subsequent items for bestsellers if available, otherwise reuse active
+        const bsSlice = active.length > 4 ? active.slice(4, 8) : active.slice(0, 4);
+        bestsellers = bsSlice.map((p) => mapProductToUi(p, "Bestseller"));
+      }
+    } else if (naNeedsFallback) {
       const fallbackNa = await getProducts(
         { page_size: 4, ordering: "-created_at" },
         { next: { revalidate: 60 } }
@@ -41,16 +75,9 @@ export default async function Home() {
           .filter((p) => p.status === "active" && p.is_active)
           .map((p) => mapProductToUi(p, "New"));
       }
-    }
-
-    // Handle Bestsellers
-    if (bsRes.status === "fulfilled" && bsRes.value?.results?.length > 0) {
-      bestsellers = bsRes.value.results
-        .filter((p) => p.status === "active" && p.is_active)
-        .map((p) => mapProductToUi(p, "Bestseller"));
-    } else {
+    } else if (bsNeedsFallback) {
       const fallbackBs = await getProducts(
-        { page_size: 4 },
+        { page_size: 4, ordering: "-created_at" },
         { next: { revalidate: 60 } }
       ).catch(() => null);
       if (fallbackBs?.results?.length) {
@@ -58,11 +85,6 @@ export default async function Home() {
           .filter((p) => p.status === "active" && p.is_active)
           .map((p) => mapProductToUi(p, "Bestseller"));
       }
-    }
-
-    // Handle Categories
-    if (catRes.status === "fulfilled" && catRes.value?.results?.length > 0) {
-      categories = catRes.value.results.map((c) => mapCategoryToUi(c));
     }
   } catch (err) {
     console.error("Failed to load products/categories from DB for homepage:", err);

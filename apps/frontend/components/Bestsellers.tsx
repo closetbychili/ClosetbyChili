@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Check, Loader2, Star } from "lucide-react";
 import { getProducts, getProduct } from "@/lib/api/catalog";
 import { mapProductToUi } from "@/lib/adapters/catalog-adapter";
@@ -13,6 +14,7 @@ export default function Bestsellers({
 }: {
   products?: ProductItem[];
 }) {
+  const router = useRouter();
   const isCustomProvided = initialProducts !== undefined;
   const [products, setProducts] = useState<ProductItem[] | undefined>(initialProducts);
   const [loading, setLoading] = useState<boolean>(!isCustomProvided);
@@ -34,7 +36,6 @@ export default function Bestsellers({
     }
 
     let isMounted = true;
-    setLoading(true);
 
     getProducts({ collection: "bestsellers", page_size: 4 })
       .then((res) => {
@@ -72,16 +73,23 @@ export default function Bestsellers({
     }));
   };
 
+  const isValidVariantId = (id: string | null | undefined, productId?: string): boolean => {
+    if (!id) return false;
+    if (productId && id === productId) return false;
+    if (/^(na|bs|cat|prod|stitch)-\d+/i.test(id)) return false;
+    return true;
+  };
+
   const resolveVariantId = async (product: ProductItem): Promise<string | null> => {
     // 1. Check in-memory resolved map
-    if (resolvedVariantMap[product.id]) {
+    if (resolvedVariantMap[product.id] && isValidVariantId(resolvedVariantMap[product.id], product.id)) {
       return resolvedVariantMap[product.id];
     }
 
     // 2. Check if product already has defaultVariantId
-    if (product.defaultVariantId) {
+    if (isValidVariantId(product.defaultVariantId, product.id)) {
       setResolvedVariantMap((prev) => ({ ...prev, [product.id]: product.defaultVariantId! }));
-      return product.defaultVariantId;
+      return product.defaultVariantId!;
     }
 
     // 3. Check if product already has variants array
@@ -89,9 +97,9 @@ export default function Bestsellers({
       const match =
         product.variants.find((v) => v.inStock !== false) ||
         product.variants[0];
-      if (match?.id) {
-        setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match.id }));
-        return match.id;
+      if (isValidVariantId(match?.id, product.id)) {
+        setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match!.id }));
+        return match!.id;
       }
     }
 
@@ -105,9 +113,9 @@ export default function Bestsellers({
           const match =
             active.find((v) => v.is_in_stock !== false) ||
             active[0];
-          if (match?.id) {
-            setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match.id }));
-            return match.id;
+          if (isValidVariantId(match?.id, product.id)) {
+            setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match!.id }));
+            return match!.id;
           }
         }
       } catch (err) {
@@ -128,7 +136,7 @@ export default function Bestsellers({
     try {
       const variantId = await resolveVariantId(product);
       if (!variantId) {
-        window.location.href = product.href;
+        router.push(product.href);
         return;
       }
 
