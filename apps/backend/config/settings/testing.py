@@ -66,3 +66,11 @@ CLOUDINARY_CLOUD_NAME = "test_cloud"
 CLOUDINARY_API_KEY = "test_api_key"
 CLOUDINARY_API_SECRET = "test_api_secret"
 CLOUDINARY_FOLDER = "closet-by-chilli/products"
+
+# ============================================================
+# Resend Email Configuration (Testing — Sprint A6.3)
+# ============================================================
+RESEND_API_KEY = ""
+RESEND_FROM_EMAIL = "Closet by Chilli <test@closetbychilli.com>"
+FRONTEND_BASE_URL = "http://testserver"
+EMAIL_DELIVERY_FALLBACK_SYNC = False

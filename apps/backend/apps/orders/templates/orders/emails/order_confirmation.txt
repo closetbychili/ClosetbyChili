@@ -1,0 +1,45 @@
+{% extends "orders/emails/base_email.txt" %}
+
+{% block content %}
+Dear {{ customer_name }},
+
+THANK YOU FOR YOUR ORDER #{{ order.order_number }}
+We are pleased to confirm that your order has been received and payment verified.
+
+------------------------------------------------------------
+ORDER DETAILS:
+Order Number: #{{ order.order_number }}
+Order Date:   {{ order_date }}
+Payment:      {{ order.payment_status }} (Verified)
+Status:       {{ order.status }}
+------------------------------------------------------------
+
+PURCHASED ITEMS:
+{% for item in items %}
+* {{ item.product_name }}{% if item.variant_name %} ({{ item.variant_name }}){% endif %}
+  Qty: {{ item.quantity }} | Unit Price: Rs. {{ item.unit_price }} | Total: Rs. {{ item.line_total }}
+{% endfor %}
+
+------------------------------------------------------------
+PRICING BREAKDOWN:
+Subtotal:       Rs. {{ order.subtotal }}
+{% if order.discount > 0 %}Discount:       - Rs. {{ order.discount }}{% if order.coupon_code %} (Coupon: {{ order.coupon_code }}){% endif %}
+{% endif %}Shipping:       {% if order.shipping_amount > 0 %}Rs. {{ order.shipping_amount }}{% else %}Complimentary{% endif %}
+{% if order.tax_amount > 0 %}Estimated Tax:  Rs. {{ order.tax_amount }}
+{% endif %}------------------------------------------------------------
+TOTAL:          Rs. {{ order.total }} {{ order.currency }}
+------------------------------------------------------------
+
+{% if shipping_address %}
+DELIVERY ADDRESS:
+{{ shipping_address.full_name }}
+{{ shipping_address.address_line1 }}{% if shipping_address.address_line2 %}, {{ shipping_address.address_line2 }}{% endif %}
+{{ shipping_address.city }}{% if shipping_address.state %}, {{ shipping_address.state }}{% endif %} - {{ shipping_address.postal_code }}
+Phone: {{ shipping_address.phone }}
+------------------------------------------------------------
+{% endif %}
+
+View your order online:
+{{ order_details_url }}
+{% endblock %}
+

@@ -13,6 +13,7 @@ export interface CurrentUser {
   email: string;
   role: "customer" | "wholesale_customer" | "staff" | "admin";
   profile: CustomerProfile;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
 }

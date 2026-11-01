@@ -199,6 +199,16 @@ def transition_order_status(
             actor_email or "system",
         )
 
+        if audit_log and note != "Auto-advanced to Processing for parcel dispatch":
+            from apps.orders.notifications import trigger_order_status_notification
+            transaction.on_commit(
+                lambda: trigger_order_status_notification(
+                    order=locked_order,
+                    audit_log=audit_log,
+                    note=note,
+                )
+            )
+
         return locked_order, audit_log
 
 
@@ -291,5 +301,15 @@ def cancel_order_admin(
             actor_email or "system",
             combined_note,
         )
+
+        if audit_log:
+            from apps.orders.notifications import trigger_order_status_notification
+            transaction.on_commit(
+                lambda: trigger_order_status_notification(
+                    order=locked_order,
+                    audit_log=audit_log,
+                    note=combined_note,
+                )
+            )
 
         return locked_order, audit_log

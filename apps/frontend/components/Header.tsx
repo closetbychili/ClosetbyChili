@@ -5,10 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthProvider";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 export default function Header() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, session, supabaseUser, signOut } = useAuth();
+  const [headerImgError, setHeaderImgError] = useState(false);
+  const [drawerImgError, setDrawerImgError] = useState(false);
+  const avatarUrl = resolveAvatarUrl(user, supabaseUser, session);
   const { itemCount, subtotal, openDrawer } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -284,10 +288,20 @@ export default function Header() {
                 aria-label="Account"
                 className="hidden sm:flex items-center gap-1.5 pl-1 text-on-surface hover:text-primary transition-colors focus:outline-none"
               >
-                <div className="w-8 h-8 rounded-full bg-surface-container border border-outline-variant/50 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
-                    person
-                  </span>
+                <div className="w-8 h-8 rounded-full bg-surface-container border border-outline-variant/50 flex items-center justify-center overflow-hidden">
+                  {user && avatarUrl && !headerImgError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={user.profile?.display_name || "Account"}
+                      referrerPolicy="no-referrer"
+                      onError={() => setHeaderImgError(true)}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                      person
+                    </span>
+                  )}
                 </div>
                 <span className="font-label-caps text-[11px] tracking-wider uppercase font-semibold">
                   {user ? "Account" : "Sign In"}
@@ -462,7 +476,19 @@ export default function Header() {
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2.5 py-2 text-on-surface hover:text-primary transition-colors text-body-md"
                 >
-                  <span className="material-symbols-outlined text-[20px] text-primary">account_circle</span>
+                  {user && avatarUrl && !drawerImgError ? (
+                    <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-outline-variant/50">
+                      <img
+                        src={avatarUrl}
+                        alt={user.profile?.display_name || "Account"}
+                        referrerPolicy="no-referrer"
+                        onError={() => setDrawerImgError(true)}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
+                  ) : (
+                    <span className="material-symbols-outlined text-[20px] text-primary">account_circle</span>
+                  )}
                   <span>{user ? "My Account & Orders" : "Sign In / Register"}</span>
                 </Link>
 

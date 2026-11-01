@@ -1,0 +1,131 @@
+{% extends "orders/emails/base_email.html" %}
+
+{% block title %}Order Confirmation #{{ order.order_number }} — Closet by Chilli{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <p style="font-size: 16px; margin: 0 0 12px 0;">Dear {{ customer_name }},</p>
+  <h1 style="font-size: 22px; color: #8b000a; margin: 0 0 8px 0; font-weight: 700;">Thank you for your order</h1>
+  <p style="color: #766d66; font-size: 14px; margin: 0 0 20px 0;">
+    We are pleased to confirm that your order <strong>#{{ order.order_number }}</strong> has been received and verified. Our atelier team will begin preparing your garments.
+  </p>
+</div>
+
+<!-- Order Summary Box -->
+<table style="width: 100%; border-collapse: collapse; background-color: #fcf9f8; border: 1px solid #e6ded6; border-radius: 6px; margin-bottom: 24px;" cellpadding="12">
+  <tr>
+    <td style="font-size: 13px; color: #766d66; width: 25%;">Order Number:</td>
+    <td style="font-size: 13px; font-weight: 600; color: #1c1b1f;">#{{ order.order_number }}</td>
+  </tr>
+  <tr>
+    <td style="font-size: 13px; color: #766d66;">Order Date:</td>
+    <td style="font-size: 13px; font-weight: 600; color: #1c1b1f;">{{ order_date }}</td>
+  </tr>
+  <tr>
+    <td style="font-size: 13px; color: #766d66;">Payment Status:</td>
+    <td style="font-size: 13px;">
+      {% if order.payment_status == "PAID" %}
+        <span class="badge badge-paid">PAID (Verified via Razorpay)</span>
+      {% else %}
+        <span class="badge badge-processing">{{ order.payment_status }}</span>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="font-size: 13px; color: #766d66;">Order Status:</td>
+    <td style="font-size: 13px;">
+      <span class="badge badge-confirmed">{{ order.status }}</span>
+    </td>
+  </tr>
+</table>
+
+<!-- Purchased Items Table -->
+<h2 style="font-size: 16px; margin: 0 0 12px 0; color: #1c1b1f; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Order Summary</h2>
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;" cellpadding="10">
+  <thead>
+    <tr style="border-bottom: 2px solid #e6ded6; background-color: #f6f3f2; text-align: left;">
+      <th style="font-size: 12px; font-weight: 600; color: #766d66; text-transform: uppercase;">Item</th>
+      <th style="font-size: 12px; font-weight: 600; color: #766d66; text-transform: uppercase; text-align: center;">Qty</th>
+      <th style="font-size: 12px; font-weight: 600; color: #766d66; text-transform: uppercase; text-align: right;">Unit Price</th>
+      <th style="font-size: 12px; font-weight: 600; color: #766d66; text-transform: uppercase; text-align: right;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+      <tr style="border-bottom: 1px solid #e6ded6;">
+        <td style="font-size: 13px; color: #1c1b1f;">
+          <strong>{{ item.product_name }}</strong>
+          {% if item.variant_name %}
+            <div style="font-size: 12px; color: #766d66;">Variant: {{ item.variant_name }}</div>
+          {% endif %}
+          {% if item.sku %}
+            <div style="font-size: 11px; color: #a59d97;">SKU: {{ item.sku }}</div>
+          {% endif %}
+        </td>
+        <td style="font-size: 13px; color: #1c1b1f; text-align: center;">{{ item.quantity }}</td>
+        <td style="font-size: 13px; color: #1c1b1f; text-align: right;">₹{{ item.unit_price }}</td>
+        <td style="font-size: 13px; font-weight: 600; color: #1c1b1f; text-align: right;">₹{{ item.line_total }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Price Breakdown Table -->
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;" cellpadding="6">
+  <tr>
+    <td style="font-size: 13px; color: #766d66; text-align: right; width: 70%;">Subtotal:</td>
+    <td style="font-size: 13px; color: #1c1b1f; text-align: right; width: 30%;">₹{{ order.subtotal }}</td>
+  </tr>
+  {% if order.discount > 0 %}
+  <tr>
+    <td style="font-size: 13px; color: #137333; text-align: right;">
+      Discount {% if order.coupon_code %}(Coupon: {{ order.coupon_code }}){% endif %}:
+    </td>
+    <td style="font-size: 13px; color: #137333; text-align: right;">- ₹{{ order.discount }}</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td style="font-size: 13px; color: #766d66; text-align: right;">Shipping:</td>
+    <td style="font-size: 13px; color: #1c1b1f; text-align: right;">
+      {% if order.shipping_amount > 0 %}
+        ₹{{ order.shipping_amount }}
+      {% else %}
+        <span style="color: #137333; font-weight: 500;">Complimentary</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% if order.tax_amount > 0 %}
+  <tr>
+    <td style="font-size: 13px; color: #766d66; text-align: right;">Estimated Tax:</td>
+    <td style="font-size: 13px; color: #1c1b1f; text-align: right;">₹{{ order.tax_amount }}</td>
+  </tr>
+  {% endif %}
+  <tr style="border-top: 2px solid #8b000a;">
+    <td style="font-size: 16px; font-weight: 700; color: #8b000a; text-align: right; padding-top: 10px;">Total:</td>
+    <td style="font-size: 16px; font-weight: 700; color: #8b000a; text-align: right; padding-top: 10px;">₹{{ order.total }} {{ order.currency }}</td>
+  </tr>
+</table>
+
+<!-- Shipping Details (if available) -->
+{% if shipping_address %}
+<div style="background-color: #fcf9f8; border: 1px solid #e6ded6; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
+  <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #766d66; margin: 0 0 8px 0;">Delivery Address</h3>
+  <p style="font-size: 13px; color: #1c1b1f; margin: 0; line-height: 1.5;">
+    <strong>{{ shipping_address.full_name }}</strong><br>
+    {{ shipping_address.address_line1 }}{% if shipping_address.address_line2 %}, {{ shipping_address.address_line2 }}{% endif %}<br>
+    {{ shipping_address.city }}{% if shipping_address.state %}, {{ shipping_address.state }}{% endif %} - {{ shipping_address.postal_code }}<br>
+    {% if shipping_address.country %}{{ shipping_address.country }}<br>{% endif %}
+    {% if shipping_address.phone %}Phone: {{ shipping_address.phone }}{% endif %}
+  </p>
+</div>
+{% endif %}
+
+<!-- Call to action button -->
+<div style="text-align: center; margin: 28px 0 16px 0;">
+  <a href="{{ order_details_url }}" class="button" target="_blank">View Your Order</a>
+</div>
+<p style="text-align: center; font-size: 12px; color: #766d66; margin: 0;">
+  You can also track your orders anytime under <a href="{{ order_details_url }}" style="color: #8b000a;">My Account &rarr; Orders</a>.
+</p>
+{% endblock %}
+

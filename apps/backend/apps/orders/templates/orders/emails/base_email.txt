@@ -1,0 +1,12 @@
+============================================================
+CLOSET BY CHILLI — ATELIER
+Couture • Luxury Silhouettes • Atelier
+============================================================
+
+{% block content %}{% endblock %}
+
+============================================================
+Need assistance? Contact our concierge at care@closetbychilli.com.
+© {{ current_year }} Closet by Chilli. All rights reserved.
+============================================================
+

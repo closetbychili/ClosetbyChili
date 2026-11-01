@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{% block title %}Closet by Chilli{% endblock %}</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #fcf9f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1c1b1f;
+      line-height: 1.6;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #fcf9f8;
+      padding: 30px 10px;
+    }
+    .main-table {
+      background-color: #ffffff;
+      margin: 0 auto;
+      max-width: 600px;
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e6ded6;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+    .header {
+      background-color: #8b000a;
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .header-logo {
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-decoration: none;
+      display: inline-block;
+      margin: 0;
+    }
+    .header-tagline {
+      color: #ffdad6;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 6px;
+      margin-bottom: 0;
+    }
+    .content {
+      padding: 32px 28px;
+    }
+    .footer {
+      background-color: #f6f3f2;
+      border-top: 1px solid #e6ded6;
+      padding: 24px 28px;
+      text-align: center;
+      font-size: 12px;
+      color: #766d66;
+      line-height: 1.5;
+    }
+    .footer a {
+      color: #8b000a;
+      text-decoration: none;
+    }
+    .button {
+      display: inline-block;
+      background-color: #8b000a;
+      color: #ffffff !important;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 12px 26px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin: 18px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-paid, .badge-confirmed, .badge-delivered {
+      background-color: #e6f4ea;
+      color: #137333;
+      border: 1px solid #ceead6;
+    }
+    .badge-processing {
+      background-color: #fef7e0;
+      color: #b06000;
+      border: 1px solid #feefc3;
+    }
+    .badge-shipped {
+      background-color: #e8f0fe;
+      color: #1a73e8;
+      border: 1px solid #d2e3fc;
+    }
+    .badge-cancelled, .badge-failed {
+      background-color: #fce8e6;
+      color: #c5221f;
+      border: 1px solid #fad2cf;
+    }
+    .divider {
+      height: 1px;
+      background-color: #e6ded6;
+      margin: 24px 0;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <table class="main-table" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td class="header">
+          <a href="{{ frontend_url }}" class="header-logo">CLOSET BY CHILLI</a>
+          <p class="header-tagline">Couture &bull; Luxury Silhouettes &bull; Atelier</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="content">
+          {% block content %}{% endblock %}
+        </td>
+      </tr>
+      <tr>
+        <td class="footer">
+          <p style="margin: 0 0 8px 0;"><strong>Closet by Chilli Atelier</strong></p>
+          <p style="margin: 0 0 8px 0;">Handcrafted silhouettes and signature collections.</p>
+          <p style="margin: 0 0 8px 0;">Need assistance? Contact our client care at <a href="mailto:care@closetbychilli.com">care@closetbychilli.com</a>.</p>
+          <p style="margin: 8px 0 0 0; color: #a59d97; font-size: 11px;">&copy; {{ current_year }} Closet by Chilli. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
+

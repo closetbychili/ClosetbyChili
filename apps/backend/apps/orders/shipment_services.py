@@ -268,6 +268,17 @@ def update_shipment_tracking(
             metadata=metadata_diff,
         )
 
+        if locked_shipment.status == Shipment.Status.SHIPPED and (
+            "new_tracking_number" in metadata_diff or "new_tracking_url" in metadata_diff or "new_carrier" in metadata_diff
+        ):
+            from apps.orders.notifications import trigger_shipment_tracking_updated_notification
+            transaction.on_commit(
+                lambda: trigger_shipment_tracking_updated_notification(
+                    shipment=locked_shipment,
+                    audit_log=audit_log,
+                )
+            )
+
         return locked_shipment, audit_log
 
 

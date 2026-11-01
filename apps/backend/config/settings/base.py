@@ -289,3 +289,16 @@ try:
 except Exception:
     pass
 
+# ============================================================
+# Resend Email Configuration (Sprint A6.3)
+# ============================================================
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.environ.get(
+    "RESEND_FROM_EMAIL", "Closet by Chilli <orders@closetbychilli.com>"
+)
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+EMAIL_DELIVERY_FALLBACK_SYNC = os.environ.get(
+    "EMAIL_DELIVERY_FALLBACK_SYNC", "False"
+).lower() in ("true", "1")
+
+

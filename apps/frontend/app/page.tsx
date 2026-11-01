@@ -30,27 +30,35 @@ export default async function Home() {
 
     // Handle New Arrivals
     if (naRes.status === "fulfilled" && naRes.value?.results?.length > 0) {
-      newArrivals = naRes.value.results.map((p) => mapProductToUi(p, "New"));
+      newArrivals = naRes.value.results
+        .filter((p) => p.status === "active" && p.is_active)
+        .map((p) => mapProductToUi(p, "New"));
     } else {
       const fallbackNa = await getProducts(
         { page_size: 4, ordering: "-created_at" },
         { next: { revalidate: 60 } }
       ).catch(() => null);
       if (fallbackNa?.results?.length) {
-        newArrivals = fallbackNa.results.map((p) => mapProductToUi(p, "New"));
+        newArrivals = fallbackNa.results
+          .filter((p) => p.status === "active" && p.is_active)
+          .map((p) => mapProductToUi(p, "New"));
       }
     }
 
     // Handle Bestsellers
     if (bsRes.status === "fulfilled" && bsRes.value?.results?.length > 0) {
-      bestsellers = bsRes.value.results.map((p) => mapProductToUi(p, "Bestseller"));
+      bestsellers = bsRes.value.results
+        .filter((p) => p.status === "active" && p.is_active)
+        .map((p) => mapProductToUi(p, "Bestseller"));
     } else {
       const fallbackBs = await getProducts(
         { page_size: 3 },
         { next: { revalidate: 60 } }
       ).catch(() => null);
       if (fallbackBs?.results?.length) {
-        bestsellers = fallbackBs.results.map((p) => mapProductToUi(p, "Bestseller"));
+        bestsellers = fallbackBs.results
+          .filter((p) => p.status === "active" && p.is_active)
+          .map((p) => mapProductToUi(p, "Bestseller"));
       }
     }
 

@@ -336,4 +336,7 @@ def reconcile_order_payment(
             captured_payment.get("id"),
         )
 
+        from apps.orders.notifications import trigger_order_confirmation_notification
+        transaction.on_commit(lambda: trigger_order_confirmation_notification(order=locked_order))
+
         return locked_order, "RECONCILED", success_note

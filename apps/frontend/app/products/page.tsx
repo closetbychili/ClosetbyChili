@@ -76,7 +76,9 @@ export default async function ProductsPage({
       getCollections({ page_size: 50 }, { next: { revalidate: 60 } }),
     ]);
 
-    products = productsRes.results.map((p) => mapProductToUi(p));
+    products = productsRes.results
+      .filter((p) => p.status === "active" && p.is_active)
+      .map((p) => mapProductToUi(p));
     totalCount = productsRes.count;
 
     categories = categoriesRes.results

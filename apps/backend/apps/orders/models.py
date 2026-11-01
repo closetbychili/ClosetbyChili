@@ -955,3 +955,73 @@ class CouponRedemption(models.Model):
     def __str__(self) -> str:
         return f"Redemption {self.id} for {self.coupon.code} [{self.state}] by User {self.customer_id}"
 
+
+
+class OrderNotification(models.Model):
+    """
+    Durable, append-only record of outgoing order email notifications.
+    Acts as an outbox to ensure at-most-once delivery, prevent duplicate emails,
+    track retry state, and preserve history for auditing and troubleshooting.
+    """
+
+    class EventType(models.TextChoices):
+        ORDER_CONFIRMATION = "order_confirmation", "Order Confirmation"
+        ORDER_STATUS_CHANGED = "order_status_changed", "Order Status Changed"
+        SHIPMENT_DISPATCHED = "shipment_dispatched", "Shipment Dispatched"
+        SHIPMENT_TRACKING_UPDATED = "shipment_tracking_updated", "Shipment Tracking Updated"
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        SENT = "SENT", "Sent"
+        FAILED = "FAILED", "Failed"
+        SKIPPED = "SKIPPED", "Skipped"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(
+        "orders.Order",
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    event_type = models.CharField(
+        max_length=50,
+        choices=EventType.choices,
+        db_index=True,
+    )
+    idempotency_key = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        help_text="Unique key ensuring idempotency per logical business event.",
+    )
+    recipient_email = models.EmailField(db_index=True)
+    recipient_name = models.CharField(max_length=255, blank=True, default="")
+    subject = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    resend_email_id = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    error_message = models.TextField(blank=True, default="")
+    retry_count = models.PositiveIntegerField(default=0)
+    max_retries = models.PositiveIntegerField(default=3)
+    payload = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Context data for email rendering (carrier, tracking, status transitions, etc.).",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "orders_notifications"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["order", "event_type"], name="idx_notif_order_event"),
+            models.Index(fields=["status", "created_at"], name="idx_notif_status_created"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.event_type} for Order {self.order.order_number} to {self.recipient_email} [{self.status}]"

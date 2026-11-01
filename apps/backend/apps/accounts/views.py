@@ -12,7 +12,9 @@ class CurrentUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return Response(CurrentUserSerializer(request.user).data)
+        return Response(
+            CurrentUserSerializer(request.user, context={"request": request}).data
+        )
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         profile = request.user.profile
@@ -20,5 +22,6 @@ class CurrentUserView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            CurrentUserSerializer(request.user).data, status=status.HTTP_200_OK
+            CurrentUserSerializer(request.user, context={"request": request}).data,
+            status=status.HTTP_200_OK,
         )
