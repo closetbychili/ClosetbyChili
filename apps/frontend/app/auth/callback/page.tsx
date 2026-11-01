@@ -29,8 +29,20 @@ function AuthCallbackContent() {
       const errorParam = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
       const code = searchParams.get("code");
-      const rawNext = searchParams.get("next");
+      const storedNext =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem("auth_redirect_next")
+          : null;
+      const rawNext = searchParams.get("next") || storedNext;
       const targetNext = sanitizeNextUrl(rawNext);
+
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem("auth_redirect_next");
+        } catch {
+          // ignore sessionStorage cleanup error
+        }
+      }
 
       // 1. Handle error returned by OAuth provider (e.g. user cancelled Google sign-in)
       if (errorParam || errorDescription) {

@@ -135,6 +135,57 @@ export const CATEGORY_IMAGE_MAP: Record<string, string> = {
   dupattas: '/assets/hero/hero-5.webp',
 };
 
+export const PRODUCT_SWATCH_MAP: Record<string, { swatches: { name: string; color: string; border?: boolean }[]; extraColors?: number }> = {
+  'sunflower-block-print-kurti': {
+    swatches: [
+      { name: "Sunflower Yellow", color: "#e5a93b" },
+      { name: "Mustard Gold", color: "#c68b24" },
+      { name: "Off White", color: "#f8f6f0", border: true },
+    ],
+    extraColors: 2,
+  },
+  'chikankari-embroidered-kurti': {
+    swatches: [
+      { name: "Powder Pink", color: "#e4b7b2" },
+      { name: "Sage Mint", color: "#9db8a1" },
+      { name: "Pure Ivory", color: "#ffffff", border: true },
+    ],
+    extraColors: 4,
+  },
+  'royal-silk-anarkali-set': {
+    swatches: [
+      { name: "Royal Navy", color: "#1f2a44" },
+      { name: "Deep Crimson", color: "#8b000a" },
+      { name: "Emerald Green", color: "#1b4d3e" },
+    ],
+    extraColors: 3,
+  },
+  'floral-cotton-2-piece-kurta-set': {
+    swatches: [
+      { name: "Terracotta Rust", color: "#a6533d" },
+      { name: "Onyx Black", color: "#222222" },
+      { name: "Dusty Rose", color: "#c88d94" },
+    ],
+    extraColors: 5,
+  },
+  'ethnic-embroidered-3-piece-suit': {
+    swatches: [
+      { name: "Maroon Wine", color: "#5c1d24" },
+      { name: "Champagne Gold", color: "#d4af37" },
+      { name: "Midnight Blue", color: "#162035" },
+    ],
+    extraColors: 2,
+  },
+  'maxi-ethnic-dress': {
+    swatches: [
+      { name: "Aubergine Purple", color: "#4a2340" },
+      { name: "Teal Green", color: "#1e5357" },
+      { name: "Sand Beige", color: "#ded6c9", border: true },
+    ],
+    extraColors: 3,
+  },
+};
+
 /**
  * Adapts a backend ProductListItem DTO into a UI ProductItem.
  */
@@ -159,9 +210,14 @@ export function mapProductToUi(
   const resolvedImage = resolveMediaUrl(rawImage);
 
   const originalPrice = parsedPrice > 0 ? Math.round(parsedPrice * 1.3) : undefined;
+  const swatchData = PRODUCT_SWATCH_MAP[product.slug];
+
+  const activeVariants = product.variants?.filter((v) => v.is_active !== false) || [];
+  const defaultVar = activeVariants.find((v) => v.is_in_stock !== false) || activeVariants[0];
 
   return {
     id: product.id,
+    slug: product.slug,
     name: product.name,
     detail: product.category ? product.category.name : 'Ethnic Wear',
     price: parsedPrice,
@@ -169,6 +225,17 @@ export function mapProductToUi(
     badge: resolvedBadge,
     image: resolvedImage,
     href: `/products/${product.slug}`,
+    swatches: swatchData?.swatches,
+    extraColors: swatchData?.extraColors,
+    defaultVariantId: product.default_variant_id || defaultVar?.id,
+    variants: activeVariants.map((v) => ({
+      id: v.id,
+      size: v.size,
+      color: v.color,
+      inStock: v.is_in_stock !== false && v.stock_status !== "out_of_stock",
+    })),
+    rating: 4.9,
+    reviewsCount: 48,
   };
 }
 

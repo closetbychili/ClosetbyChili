@@ -573,6 +573,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     min_price = serializers.SerializerMethodField()
     variant_count = serializers.SerializerMethodField()
     primary_image = serializers.SerializerMethodField()
+    default_variant_id = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -588,10 +590,28 @@ class ProductListSerializer(serializers.ModelSerializer):
             "min_price",
             "variant_count",
             "primary_image",
+            "default_variant_id",
+            "variants",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
+
+    def get_default_variant_id(self, obj: Product) -> str | None:
+        """Return the ID of the first active variant (preferring in-stock)."""
+        active_variants = [v for v in obj.variants.all() if v.is_active]
+        if not active_variants:
+            return None
+        for v in active_variants:
+            inv = getattr(v, "inventory", None)
+            if inv is None or getattr(inv, "quantity_available", 1) > 0:
+                return str(v.id)
+        return str(active_variants[0].id)
+
+    def get_variants(self, obj: Product) -> list[dict]:
+        """Return serialized list of active variants for quick-add and size selection."""
+        active_variants = [v for v in obj.variants.all() if v.is_active]
+        return list(ProductVariantSummarySerializer(active_variants, many=True).data)
 
     def get_min_price(self, obj: Product) -> str | None:
         """Calculate the lowest active variant retail price."""

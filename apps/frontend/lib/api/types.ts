@@ -148,6 +148,8 @@ export interface ProductListItem {
   min_price: string | null;
   variant_count: number;
   primary_image?: ProductImage | null;
+  default_variant_id?: string | null;
+  variants?: ProductVariantSummary[];
   created_at: string;
   updated_at: string;
 }

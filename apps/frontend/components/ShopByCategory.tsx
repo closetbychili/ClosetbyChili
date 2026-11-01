@@ -122,72 +122,64 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
   return (
     <section
       id="shop-by-category"
-      className="w-full py-10 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-12 max-w-360 mx-auto"
+      className="w-full pt-6 sm:pt-10 lg:pt-12 pb-2 sm:pb-3 lg:pb-4 px-4 sm:px-6 lg:px-8"
       aria-labelledby="category-carousel-heading"
     >
-      {/* ── Section Header ── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 sm:mb-10">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-            <span className="h-px w-6 bg-primary" />
-            <span className="font-label-caps text-[10px] sm:text-label-caps uppercase text-primary tracking-widest font-semibold">
-              Shop By Category
+      <div className="max-w-[1800px] mx-auto">
+        {/* ── Section Header ── */}
+      <div className="flex items-center justify-between mb-5 sm:mb-8 pb-3 border-b border-outline-variant/20">
+        <h2
+          id="category-carousel-heading"
+          className="font-headline-lg text-2xl sm:text-headline-lg text-on-surface leading-none"
+        >
+          Shop By Category
+        </h2>
+
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link
+            href="/categories"
+            id="browse-all-categories-link"
+            data-path="categories"
+            aria-label="Browse all categories"
+            className="group inline-flex items-center font-label-caps text-[11px] sm:text-label-caps uppercase tracking-[0.16em] text-on-surface-variant hover:text-primary transition-colors font-semibold leading-none"
+          >
+            <span className="relative pb-0.5 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-px after:bg-outline-variant group-hover:after:bg-primary after:transition-colors">
+              Browse All Categories
             </span>
-          </div>
-          <h2 id="category-carousel-heading" className="font-headline-lg text-2xl sm:text-headline-lg text-on-surface">
-            Discover By Category
-          </h2>
-          <p className="font-body-md text-xs sm:text-body-md text-on-surface-variant mt-1 max-w-xl">
-            Explore our signature cuts, fluid drapes, and hand-finished silhouettes.
-          </p>
-        </div>
+          </Link>
 
-        <div className="mt-3 md:mt-0 flex items-center justify-between sm:justify-start gap-4 sm:gap-6">
-          <span className="text-[11px] font-body-sm text-primary italic md:hidden font-medium">
-            Swipe to explore →
-          </span>
-
-          {/* Carousel Arrow Controls */}
-          <div className="hidden sm:flex items-center gap-2">
+          {/* Luxury Segmented Carousel Arrow Controls */}
+          <div className="hidden sm:flex items-center border border-outline-variant/60 rounded-full p-0.5 bg-surface-container-lowest/80 backdrop-blur-xs">
             <button
               type="button"
               id="category-carousel-prev-btn"
               onClick={() => scroll("left")}
               disabled={!canScrollLeft}
               aria-label="Previous categories"
-              className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all ${
                 canScrollLeft
-                  ? "border-outline-variant text-on-surface hover:bg-surface-container hover:border-primary cursor-pointer"
-                  : "border-outline-variant/40 text-on-surface-variant/40 cursor-not-allowed opacity-50"
+                  ? "text-on-surface hover:bg-surface-container hover:text-primary cursor-pointer active:scale-95"
+                  : "text-on-surface-variant/30 cursor-not-allowed"
               }`}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.75]" />
             </button>
+            <span className="w-px h-3.5 bg-outline-variant/40 mx-0.5" aria-hidden="true" />
             <button
               type="button"
               id="category-carousel-next-btn"
               onClick={() => scroll("right")}
               disabled={!canScrollRight}
               aria-label="Next categories"
-              className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all ${
                 canScrollRight
-                  ? "border-outline-variant text-on-surface hover:bg-surface-container hover:border-primary cursor-pointer"
-                  : "border-outline-variant/40 text-on-surface-variant/40 cursor-not-allowed opacity-50"
+                  ? "text-on-surface hover:bg-surface-container hover:text-primary cursor-pointer active:scale-95"
+                  : "text-on-surface-variant/30 cursor-not-allowed"
               }`}
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.75]" />
             </button>
           </div>
-
-          <Link
-            href="/categories"
-            id="browse-all-categories-link"
-            data-path="categories"
-            className="hidden sm:inline-flex items-center gap-2 font-label-caps text-label-caps uppercase tracking-wider text-primary hover:text-on-surface transition-colors font-semibold"
-          >
-            <span>Browse All Categories</span>
-            <span className="material-symbols-outlined text-[16px]">east</span>
-          </Link>
         </div>
       </div>
 
@@ -208,7 +200,7 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUpOrLeave}
             onMouseLeave={handleMouseUpOrLeave}
-            className={`flex items-start gap-3 sm:gap-5 lg:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-12 lg:px-12 select-none scrollbar-none ${
+            className={`flex items-start gap-3 sm:gap-5 lg:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 select-none scrollbar-none ${
               isDragging ? "cursor-grabbing" : "cursor-grab"
             }`}
             style={{
@@ -277,6 +269,7 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
           </div>
         </div>
       )}
+      </div>
     </section>
   );
 }
