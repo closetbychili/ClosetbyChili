@@ -70,10 +70,10 @@ export default async function ProductsPage({
           page: currentPage,
           page_size: pageSize,
         },
-        { next: { revalidate: 30 } }
+        { next: { revalidate: 180 } }
       ),
-      getCategories({ page_size: 50 }, { next: { revalidate: 60 } }),
-      getCollections({ page_size: 50 }, { next: { revalidate: 60 } }),
+      getCategories({ page_size: 50 }, { next: { revalidate: 600 } }),
+      getCollections({ page_size: 50 }, { next: { revalidate: 600 } }),
     ]);
 
     products = productsRes.results

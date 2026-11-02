@@ -9,3 +9,6 @@ class CatalogConfig(AppConfig):
     default_auto_field = "django.db.models.UUIDField"
     name = "apps.catalog"
     verbose_name = "Catalog"
+
+    def ready(self):
+        import apps.catalog.signals  # noqa: F401

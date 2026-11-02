@@ -81,6 +81,11 @@ if not _redis_available and not os.environ.get("FORCE_REDIS"):
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": "closet-by-chilli-dev-cache",
-        }
+        },
+        "reference_cache": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "closet-reference-dev-cache",
+            "TIMEOUT": 300,
+        },
     }
     CELERY_TASK_ALWAYS_EAGER = True

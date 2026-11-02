@@ -253,7 +253,12 @@ CACHES = {
             "socket_timeout": REDIS_SOCKET_TIMEOUT,
             "retry_on_timeout": True,
         },
-    }
+    },
+    "reference_cache": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "closet-reference-cache",
+        "TIMEOUT": 300,  # 5 minutes for reference data (categories/collections)
+    },
 }
 
 # ============================================================
@@ -316,6 +321,11 @@ RESEND_FROM_EMAIL = os.environ.get(
     "RESEND_FROM_EMAIL", "Closet by Chilli <orders@closetbychilli.com>"
 )
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+REVALIDATION_SECRET = os.environ.get("REVALIDATION_SECRET", "")
+FRONTEND_REVALIDATE_URL = os.environ.get(
+    "FRONTEND_REVALIDATE_URL",
+    f"{FRONTEND_BASE_URL}/api/revalidate" if FRONTEND_BASE_URL else "",
+)
 EMAIL_DELIVERY_FALLBACK_SYNC = os.environ.get(
     "EMAIL_DELIVERY_FALLBACK_SYNC", "False"
 ).lower() in ("true", "1")

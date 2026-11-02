@@ -24,6 +24,7 @@ from apps.catalog.models import (
     ProductCollection,
     ProductVariant,
 )
+from apps.inventory.models import InventoryItem
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -484,3 +485,36 @@ class ProductQueryEfficiencyTest(TestCase):
         self.assertEqual(r.json()["variants"][0]["sku"], "SKU-Q0")
         self.assertEqual(r.json()["variants"][1]["sku"], "SKU-Q0-L")
         self.assertEqual(r.json()["variants"][2]["sku"], "SKU-Q0-M")
+
+    def test_product_list_query_count_with_multiple_variants_and_inventory_is_constant(self):
+        """
+        Verify that listing products when each product has multiple variants (20 variants total)
+        with associated InventoryItem records does not increase query count beyond 7 queries.
+        Nested variants__inventory prefetching ensures 0 N+1 queries occur.
+        """
+        for i in range(5):
+            p = Product.objects.get(slug=f"product-query-{i}")
+            for size, stock in [("S", 15), ("M", 3), ("L", 0)]:
+                v = make_variant(p, f"SKU-Q{i}-{size}", "1299.00")
+                InventoryItem.objects.create(
+                    variant=v,
+                    quantity_available=stock,
+                    quantity_reserved=1 if stock > 0 else 0,
+                )
+
+        with self.assertNumQueries(7):
+            r = self.client.get("/api/v1/catalog/products/")
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.json()["count"], 5)
+        # Check first product has 4 variants total and stock statuses are correct
+        first_product_variants = r.json()["results"][0]["variants"]
+        self.assertEqual(len(first_product_variants), 4)
+        s_variant = next(v for v in first_product_variants if v["sku"].endswith("-S"))
+        m_variant = next(v for v in first_product_variants if v["sku"].endswith("-M"))
+        l_variant = next(v for v in first_product_variants if v["sku"].endswith("-L"))
+        self.assertEqual(s_variant["stock_status"], "in_stock")
+        self.assertTrue(s_variant["is_in_stock"])
+        self.assertEqual(m_variant["stock_status"], "low_stock")
+        self.assertTrue(m_variant["is_in_stock"])
+        self.assertEqual(l_variant["stock_status"], "out_of_stock")
+        self.assertFalse(l_variant["is_in_stock"])

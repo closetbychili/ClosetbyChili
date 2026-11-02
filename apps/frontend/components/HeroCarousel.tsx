@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { STITCH_HERO_SLIDES } from "@/lib/homepage-data";
 
 export default function HeroCarousel() {
@@ -65,6 +66,9 @@ export default function HeroCarousel() {
       <div className="relative w-full h-130 sm:h-155 lg:h-170 flex items-center">
         {STITCH_HERO_SLIDES.map((slide, idx) => {
           const isActive = idx === current;
+          // Avoid downloading every slide immediately; only load slide 0 (LCP), active, and adjacent next slide
+          const shouldLoadImage = idx === 0 || idx === current || idx === (current + 1) % totalSlides;
+
           return (
             <div
               key={slide.id}
@@ -73,15 +77,23 @@ export default function HeroCarousel() {
                 isActive ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
               }`}
             >
-              {/* Background Campaign Photograph & Gradients */}
-              <div
-                className="absolute inset-0 bg-cover bg-position-[center_top] sm:bg-center lg:bg-position-[right_35%] bg-no-repeat transition-transform duration-1000 ease-out"
-                style={{ backgroundImage: `url('${slide.image}')` }}
-              >
+              {/* Campaign Photograph using Next.js Image with LCP priority for initial slide */}
+              <div className="absolute inset-0 overflow-hidden">
+                {shouldLoadImage && (
+                  <Image
+                    src={slide.image}
+                    alt={slide.heading.replace(/\n/g, " ")}
+                    fill
+                    priority={idx === 0}
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    sizes="100vw"
+                    className="object-cover object-[center_top] sm:object-center lg:object-[right_35%] transition-transform duration-1000 ease-out"
+                  />
+                )}
                 {/* Desktop Directional Gradient (Keeps photograph clear & vibrant on the right) */}
-                <div className="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%]" />
+                <div className="absolute inset-0 bg-linear-to-r from-page-bg via-page-bg/90 lg:via-page-bg/75 to-transparent w-full lg:w-[60%] z-10 pointer-events-none" />
                 {/* Mobile Bottom Scrim for Text Readability */}
-                <div className="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/85 to-transparent/20 opacity-95 lg:hidden" />
+                <div className="absolute inset-0 bg-linear-to-t from-page-bg via-page-bg/85 to-transparent/20 opacity-95 lg:hidden z-10 pointer-events-none" />
               </div>
 
               {/* Text & CTAs Content Container */}

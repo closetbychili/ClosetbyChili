@@ -43,7 +43,12 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-    }
+    },
+    "reference_cache": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "closet-reference-test-cache",
+        "TIMEOUT": 300,
+    },
 }
 
 # ============================================================
@@ -73,4 +78,6 @@ CLOUDINARY_FOLDER = "closet-by-chilli/products"
 RESEND_API_KEY = ""
 RESEND_FROM_EMAIL = "Closet by Chilli <test@closetbychilli.com>"
 FRONTEND_BASE_URL = "http://testserver"
+REVALIDATION_SECRET = "test-revalidation-secret"
+FRONTEND_REVALIDATE_URL = ""
 EMAIL_DELIVERY_FALLBACK_SYNC = False

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 export default function SocialSalon() {
   const tiles = [
     {
@@ -84,12 +86,13 @@ export default function SocialSalon() {
                 idx === 4 ? "hidden sm:block md:col-span-1" : ""
               }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={tile.image}
                 alt={tile.alt}
                 data-alt={tile.alt}
-                className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-110"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                className="object-cover transition-transform duration-600 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-inverse-surface/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-on-primary">
                 <span className="material-symbols-outlined text-[28px]">

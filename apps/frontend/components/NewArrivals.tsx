@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Plus, Check, Loader2 } from "lucide-react";
 import { getProducts, getProduct } from "@/lib/api/catalog";
@@ -43,13 +44,22 @@ export default function NewArrivals({
     getProducts({ collection: "new-arrivals", page_size: 4 })
       .then((res) => {
         if (!isMounted) return;
-        if (res.results && res.results.length > 0) {
-          setProducts(res.results.map((p) => mapProductToUi(p, "New")));
+        const valid = (res.results || []).filter(
+          (p) => p.status === "active" && p.is_active
+        );
+        if (valid.length >= 4) {
+          setProducts(valid.slice(0, 4).map((p) => mapProductToUi(p, "New")));
         } else {
-          return getProducts({ page_size: 4, ordering: "-created_at" }).then((fallbackRes) => {
-            if (isMounted) {
-              setProducts(fallbackRes.results.map((p) => mapProductToUi(p, "New")));
-            }
+          return getProducts({ page_size: 8, ordering: "-created_at" }).then((fallbackRes) => {
+            if (!isMounted) return;
+            const validFallback = (fallbackRes.results || []).filter(
+              (p) =>
+                p.status === "active" &&
+                p.is_active &&
+                !valid.some((v) => v.id === p.id)
+            );
+            const merged = [...valid, ...validFallback].slice(0, 4);
+            setProducts(merged.map((p) => mapProductToUi(p, "New")));
           });
         }
       })
@@ -286,17 +296,12 @@ export default function NewArrivals({
                     </button>
 
                     {/* Product Image */}
-                    <Link href={product.href} className="block w-full h-full">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                    <Link href={product.href} className="block w-full h-full relative">
+                      <Image
                         src={product.image || "/assets/products/kurti-1.jpg"}
                         alt={product.name}
-                        onError={(e) => {
-                          const target = e.currentTarget as HTMLImageElement;
-                          if (!target.src.includes("/assets/products/kurti-1.jpg")) {
-                            target.src = "/assets/products/kurti-1.jpg";
-                          }
-                        }}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 400px"
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     </Link>

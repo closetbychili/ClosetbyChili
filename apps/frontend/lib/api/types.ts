@@ -188,6 +188,12 @@ export interface RequestOptions extends RequestInit {
     revalidate?: number | false;
     tags?: string[];
   };
+  /**
+   * Request timeout in milliseconds.
+   * Defaults to 8000ms (8s) for ordinary requests, or 60000ms (60s) for FormData file uploads.
+   * Pass 0 to disable timeout.
+   */
+  timeoutMs?: number;
 }
 
 // =============================================================================

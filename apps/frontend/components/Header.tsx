@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 import { useAuth } from "@/components/AuthProvider";
@@ -103,11 +104,13 @@ export default function Header() {
               data-path="home"
               className="flex items-center gap-3 shrink-0 py-1 focus:outline-none"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 alt="Closet by Chili Logo"
                 className="h-10 sm:h-12 md:h-13 w-auto object-contain transition-transform duration-200 hover:scale-[1.02]"
                 src="/assets/brand/logo.png"
+                width={160}
+                height={52}
+                priority
               />
             </Link>
 
@@ -361,11 +364,12 @@ export default function Header() {
           <aside className="relative w-5/6 max-w-sm bg-surface h-full shadow-2xl flex flex-col z-10 overflow-y-auto" data-lenis-prevent>
             {/* Drawer Header */}
             <div className="pt-safe px-4 py-3.5 flex items-center justify-between border-b border-outline-variant/30">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 alt="Closet by Chili Logo"
                 className="h-9 w-auto object-contain"
                 src="/assets/brand/logo.png"
+                width={120}
+                height={36}
               />
               <button
                 type="button"

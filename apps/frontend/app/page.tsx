@@ -12,7 +12,7 @@ import { getProducts, getCategories } from "@/lib/api/catalog";
 import { mapProductToUi, mapCategoryToUi } from "@/lib/adapters/catalog-adapter";
 import type { CategoryItem, ProductItem } from "@/lib/homepage-data";
 
-export const revalidate = 60; // ISR revalidation every 60 seconds
+export const revalidate = 300; // Homepage ISR revalidation every 5 minutes
 
 export default async function Home() {
   let newArrivals: ProductItem[] | undefined;
@@ -22,9 +22,18 @@ export default async function Home() {
   try {
     // 1. Fetch initial collections and categories concurrently
     const [naRes, bsRes, catRes] = await Promise.allSettled([
-      getProducts({ collection: "new-arrivals", page_size: 4 }, { next: { revalidate: 60 } }),
-      getProducts({ collection: "bestsellers", page_size: 4 }, { next: { revalidate: 60 } }),
-      getCategories({ page_size: 100, storefront: true }, { next: { revalidate: 60 } }),
+      getProducts(
+        { collection: "new-arrivals", page_size: 4 },
+        { next: { revalidate: 300, tags: ["homepage"] } }
+      ),
+      getProducts(
+        { collection: "bestsellers", page_size: 4 },
+        { next: { revalidate: 300, tags: ["homepage"] } }
+      ),
+      getCategories(
+        { page_size: 100, storefront: true },
+        { next: { revalidate: 600, tags: ["homepage"] } }
+      ),
     ]);
 
     // Handle Categories
@@ -46,44 +55,61 @@ export default async function Home() {
     }
 
     // 2. Identify fallback requirements to avoid redundant or sequential waterfalls
-    const naNeedsFallback = !newArrivals || newArrivals.length === 0;
-    const bsNeedsFallback = !bestsellers || bestsellers.length === 0;
+    const naNeedsFallback = !newArrivals || newArrivals.length < 4;
+    const bsNeedsFallback = !bestsellers || bestsellers.length < 4;
 
     if (naNeedsFallback && bsNeedsFallback) {
       // Both sections require fallbacks: fetch a single 8-item batch concurrently to avoid duplicate queries
       const fallbackRes = await getProducts(
         { page_size: 8, ordering: "-created_at" },
-        { next: { revalidate: 60 } }
+        { next: { revalidate: 300, tags: ["homepage"] } }
       ).catch(() => null);
 
       if (fallbackRes?.results?.length) {
         const active = fallbackRes.results.filter(
           (p) => p.status === "active" && p.is_active
         );
-        newArrivals = active.slice(0, 4).map((p) => mapProductToUi(p, "New"));
-        // Use subsequent items for bestsellers if available, otherwise reuse active
-        const bsSlice = active.length > 4 ? active.slice(4, 8) : active.slice(0, 4);
-        bestsellers = bsSlice.map((p) => mapProductToUi(p, "Bestseller"));
+        const existingNaIds = new Set((newArrivals || []).map((p) => p.id));
+        const extraNa = active.filter((p) => !existingNaIds.has(p.id));
+        newArrivals = [
+          ...(newArrivals || []),
+          ...extraNa.map((p) => mapProductToUi(p, "New")),
+        ].slice(0, 4);
+
+        const existingBsIds = new Set((bestsellers || []).map((p) => p.id));
+        const extraBs = active.filter((p) => !existingBsIds.has(p.id));
+        bestsellers = [
+          ...(bestsellers || []),
+          ...extraBs.map((p) => mapProductToUi(p, "Bestseller")),
+        ].slice(0, 4);
       }
     } else if (naNeedsFallback) {
       const fallbackNa = await getProducts(
         { page_size: 4, ordering: "-created_at" },
-        { next: { revalidate: 60 } }
+        { next: { revalidate: 300, tags: ["homepage"] } }
       ).catch(() => null);
       if (fallbackNa?.results?.length) {
-        newArrivals = fallbackNa.results
-          .filter((p) => p.status === "active" && p.is_active)
+        const existingIds = new Set((newArrivals || []).map((p) => p.id));
+        const extra = fallbackNa.results
+          .filter(
+            (p) => p.status === "active" && p.is_active && !existingIds.has(p.id)
+          )
           .map((p) => mapProductToUi(p, "New"));
+        newArrivals = [...(newArrivals || []), ...extra].slice(0, 4);
       }
     } else if (bsNeedsFallback) {
       const fallbackBs = await getProducts(
         { page_size: 4, ordering: "-created_at" },
-        { next: { revalidate: 60 } }
+        { next: { revalidate: 300, tags: ["homepage"] } }
       ).catch(() => null);
       if (fallbackBs?.results?.length) {
-        bestsellers = fallbackBs.results
-          .filter((p) => p.status === "active" && p.is_active)
+        const existingIds = new Set((bestsellers || []).map((p) => p.id));
+        const extra = fallbackBs.results
+          .filter(
+            (p) => p.status === "active" && p.is_active && !existingIds.has(p.id)
+          )
           .map((p) => mapProductToUi(p, "Bestseller"));
+        bestsellers = [...(bestsellers || []), ...extra].slice(0, 4);
       }
     }
   } catch (err) {
