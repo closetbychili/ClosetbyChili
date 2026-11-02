@@ -147,6 +147,169 @@ export async function getAdminDashboardOverview(
 }
 
 // =============================================================================
+// Admin Analytics & Business Intelligence API (Sprint A7)
+// =============================================================================
+
+export type AnalyticsPeriodPreset =
+  | "today"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "this_month"
+  | "last_month"
+  | "custom";
+
+export interface AdminAnalyticsParams {
+  period?: AnalyticsPeriodPreset;
+  start_date?: string;
+  end_date?: string;
+  granularity?: "auto" | "day" | "week" | "month";
+  refresh?: boolean;
+}
+
+export interface AnalyticsKpiItem {
+  value: string | number;
+  currency?: string;
+  previous_value?: string | number | null;
+  change_percentage?: number | null;
+  definition?: string;
+  paid_orders_count?: number;
+  total_registered_customers?: number;
+  gross_units?: number;
+  refunded_units?: number;
+}
+
+export interface AnalyticsKpiSummary {
+  gross_sales: AnalyticsKpiItem;
+  net_revenue: AnalyticsKpiItem;
+  total_orders: AnalyticsKpiItem;
+  average_order_value: AnalyticsKpiItem;
+  units_sold: AnalyticsKpiItem;
+  new_customers: AnalyticsKpiItem;
+}
+
+export interface RevenueTimeSeriesPoint {
+  date: string;
+  revenue: string;
+  gross_sales: string;
+  orders_count: number;
+}
+
+export interface OrderAnalyticsData {
+  total_orders: number;
+  paid_orders: number;
+  unpaid_orders: number;
+  cancelled_orders: {
+    count: number;
+    total_value: string;
+    rate_pct: number;
+  };
+  refunded_orders: {
+    count: number;
+    total_value: string;
+    rate_pct: number;
+    refunded_units?: number;
+  };
+  refund_capabilities?: {
+    partial_refunds_supported: boolean;
+    note: string;
+  };
+  status_breakdown: Record<string, number>;
+  payment_status_breakdown: Record<string, number>;
+  payment_amount_breakdown: Record<string, string>;
+}
+
+export interface AnalyticsProductItem {
+  product_id: string | null;
+  product_name: string;
+  units_sold: number;
+  revenue: string;
+  orders_count?: number;
+  available_stock?: number;
+}
+
+export interface ProductPerformanceData {
+  top_by_revenue: AnalyticsProductItem[];
+  top_by_units: AnalyticsProductItem[];
+  slow_moving: AnalyticsProductItem[];
+}
+
+export interface CategoryPerformanceItem {
+  category_id: string | null;
+  category_name: string;
+  category_slug: string;
+  revenue: string;
+  units_sold: number;
+  orders_count: number;
+  contribution_percentage: number;
+}
+
+export interface CustomerAnalyticsData {
+  total_registered_customers: number;
+  new_registered_customers: number;
+  customer_growth_trend: Array<{ date: string; count: number }>;
+  ordering_behavior: {
+    total_unique_buyers: number;
+    returning_buyers_count: number;
+    returning_buyers_percentage: number;
+    first_time_buyers_count: number;
+    first_time_buyers_percentage: number;
+  };
+}
+
+export interface AdminAnalyticsData {
+  period: string;
+  period_label: string;
+  granularity: "day" | "week" | "month" | string;
+  date_range: {
+    current_start: string;
+    current_end: string;
+    previous_start: string;
+    previous_end: string;
+  };
+  kpi_summary: AnalyticsKpiSummary;
+  revenue_time_series: RevenueTimeSeriesPoint[];
+  order_analytics: OrderAnalyticsData;
+  product_performance: ProductPerformanceData;
+  category_performance: CategoryPerformanceItem[];
+  customer_analytics: CustomerAnalyticsData;
+}
+
+/**
+ * Fetch executive analytics, sales time-series, product/category breakdowns,
+ * and customer intelligence for the selected timeframe.
+ */
+export async function getAdminAnalytics(
+  params?: AdminAnalyticsParams,
+  token?: string
+): Promise<AdminAnalyticsData> {
+  let accessToken = token;
+  if (!accessToken) {
+    const { data } = await supabase.auth.getSession();
+    accessToken = data.session?.access_token;
+  }
+  if (!accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const searchParams = new URLSearchParams();
+  if (params?.period) searchParams.set("period", params.period);
+  if (params?.start_date) searchParams.set("start_date", params.start_date);
+  if (params?.end_date) searchParams.set("end_date", params.end_date);
+  if (params?.granularity) searchParams.set("granularity", params.granularity);
+  if (params?.refresh) searchParams.set("refresh", "true");
+
+  const qs = searchParams.toString();
+  const endpoint = `/admin/analytics/${qs ? `?${qs}` : ""}`;
+
+  return apiFetch<AdminAnalyticsData>(endpoint, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+
+// =============================================================================
 // Admin Product Listing API (Sprint A2.1)
 // =============================================================================
 

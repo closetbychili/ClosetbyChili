@@ -41,6 +41,7 @@ from apps.catalog.admin_views import (
     AdminProductVariantListView,
     AdminVariantStockAdjustmentView,
 )
+from apps.orders.admin_analytics_views import AdminAnalyticsView
 from apps.orders.admin_views import (
     AdminOrderCancelView,
     AdminOrderDetailView,
@@ -79,6 +80,7 @@ urlpatterns = [
         AdminDashboardOverviewView.as_view(),
         name="admin-dashboard-overview",
     ),
+    path("analytics/", AdminAnalyticsView.as_view(), name="admin-analytics"),
     path("customers/", AdminCustomerListView.as_view(), name="admin-customers-list"),
     path("customers/<uuid:pk>/", AdminCustomerDetailView.as_view(), name="admin-customers-detail"),
     path(

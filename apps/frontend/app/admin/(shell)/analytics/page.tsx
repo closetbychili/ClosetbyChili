@@ -1,15 +1,11 @@
-import AdminPlaceholderPage from "@/components/admin/AdminPlaceholderPage";
+import AdminAnalyticsClient from "@/components/admin/analytics/AdminAnalyticsClient";
 
 export const metadata = {
-  title: "Analytics & Reports | Admin Console",
+  title: "Analytics & Business Intelligence | Admin Console",
+  description:
+    "Executive metrics, revenue velocity, product performance, and customer acquisition telemetry for Closet by Chilli.",
 };
 
 export default function AdminAnalyticsPage() {
-  return (
-    <AdminPlaceholderPage
-      title="Analytics"
-      description="Gross merchandise value, conversion rates, average order values, and inventory turnover reports."
-      routePath="/admin/analytics"
-    />
-  );
+  return <AdminAnalyticsClient />;
 }
