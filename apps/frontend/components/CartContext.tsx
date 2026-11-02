@@ -161,7 +161,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const handleAddToCart = useCallback(
     async (variantId: string, quantity = 1) => {
       try {
-        setIsLoading(true);
         setError(null);
         const updatedCart = await apiAddToCart(
           {
@@ -186,8 +185,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             : "Could not add item to bag. Please try again.";
         setError(message);
         throw err;
-      } finally {
-        setIsLoading(false);
       }
     },
     [token]

@@ -93,8 +93,10 @@ class Cart(models.Model):
         Authoritative calculated subtotal across all cart items.
         Always computed dynamically from current variant retail prices.
         """
+        # Iterate prefetched items in memory if available to prevent discarding prefetch cache
+        items = self.items.all()
         total = Decimal("0.00")
-        for item in self.items.select_related("variant"):
+        for item in items:
             total += item.line_total
         return total.quantize(Decimal("0.01"))
 
@@ -111,7 +113,7 @@ class Cart(models.Model):
         from apps.orders.coupon_calculation_service import calculate_coupon_discount
         return calculate_coupon_discount(
             self.coupon,
-            self.items.select_related("variant__product"),
+            self.items.all(),
             self.subtotal,
         )
 

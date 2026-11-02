@@ -15,6 +15,7 @@ import secrets
 from typing import Any, Literal, overload
 
 from django.db import transaction
+from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -35,6 +36,21 @@ from apps.cart.serializers import (
 )
 from apps.catalog.models import Product, ProductVariant
 from apps.inventory.models import InventoryItem
+
+
+def _get_optimized_cart(cart_id: Any) -> Cart:
+    """
+    Fetches an authoritative cart with its items and full variant/product/category
+    hierarchy in a single joined prefetch (2 queries total instead of 5+).
+    """
+    return Cart.objects.prefetch_related(
+        Prefetch(
+            "items",
+            queryset=CartItem.objects.select_related(
+                "variant__product__category"
+            ).order_by("created_at"),
+        )
+    ).get(id=cart_id)
 
 
 def _extract_session_key(request: Request) -> str | None:
@@ -66,7 +82,12 @@ def _get_cart(request: Request, must_exist: bool = False) -> Cart | None:
     if getattr(request, "user", None) and request.user.is_authenticated:
         cart = (
             Cart.objects.prefetch_related(
-                "items__variant__product__category",
+                Prefetch(
+                    "items",
+                    queryset=CartItem.objects.select_related(
+                        "variant__product__category"
+                    ).order_by("created_at"),
+                )
             )
             .filter(user=request.user, is_active=True)
             .first()
@@ -87,7 +108,12 @@ def _get_cart(request: Request, must_exist: bool = False) -> Cart | None:
 
     cart = (
         Cart.objects.prefetch_related(
-            "items__variant__product__category",
+            Prefetch(
+                "items",
+                queryset=CartItem.objects.select_related(
+                    "variant__product__category"
+                ).order_by("created_at"),
+            )
         )
         .filter(session_key=session_key, is_active=True)
         .first()
@@ -285,7 +311,7 @@ class CartItemAddView(APIView):
 
         # Validate variant
         variant = (
-            ProductVariant.objects.select_related("product", "inventory")
+            ProductVariant.objects.select_related("product")
             .filter(id=variant_id)
             .first()
         )
@@ -308,10 +334,6 @@ class CartItemAddView(APIView):
                     ]
                 }
             )
-
-        # Check stock availability
-        inventory = getattr(variant, "inventory", None)
-        available_stock = inventory.quantity_available if inventory else 0
 
         with transaction.atomic():
             # Acquire row-level lock on the authoritative inventory item
@@ -349,10 +371,8 @@ class CartItemAddView(APIView):
             cart.save(update_fields=["updated_at"])
             _revalidate_cart_coupon(cart)
 
-        # Fetch refreshed cart with relations
-        cart = Cart.objects.prefetch_related("items__variant__product__category").get(
-            id=cart.id
-        )
+        # Fetch refreshed cart with optimized single-join prefetch
+        cart = _get_optimized_cart(cart.id)
 
         response_data = CartSerializer(cart).data
         response = Response(response_data, status=status.HTTP_201_CREATED)
@@ -419,9 +439,7 @@ class CartItemDetailView(APIView):
             cart.save(update_fields=["updated_at"])
             _revalidate_cart_coupon(cart)
 
-        cart = Cart.objects.prefetch_related("items__variant__product__category").get(
-            id=cart.id
-        )
+        cart = _get_optimized_cart(cart.id)
 
         response = Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
         return _attach_cart_session(response, cart)
@@ -439,9 +457,7 @@ class CartItemDetailView(APIView):
             cart.save(update_fields=["updated_at"])
             _revalidate_cart_coupon(cart)
 
-        cart = Cart.objects.prefetch_related("items__variant__product__category").get(
-            id=cart.id
-        )
+        cart = _get_optimized_cart(cart.id)
 
         response = Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
         return _attach_cart_session(response, cart)
@@ -484,9 +500,7 @@ class CartMergeView(APIView):
                 is_active=True,
                 defaults={"session_key": None},
             )
-            user_cart = Cart.objects.prefetch_related(
-                "items__variant__product__category"
-            ).get(id=user_cart.id)
+            user_cart = _get_optimized_cart(user_cart.id)
             response = Response(
                 CartSerializer(user_cart).data, status=status.HTTP_200_OK
             )
@@ -508,9 +522,7 @@ class CartMergeView(APIView):
 
             # If guest cart not found or identical to user cart -> no-op
             if not guest_cart or guest_cart.id == user_cart.id:
-                user_cart = Cart.objects.prefetch_related(
-                    "items__variant__product__category"
-                ).get(id=user_cart.id)
+                user_cart = _get_optimized_cart(user_cart.id)
                 response = Response(
                     CartSerializer(user_cart).data, status=status.HTTP_200_OK
                 )
@@ -602,9 +614,7 @@ class CartMergeView(APIView):
             user_cart.save(update_fields=["coupon", "updated_at"])
             _revalidate_cart_coupon(user_cart)
 
-        user_cart = Cart.objects.prefetch_related(
-            "items__variant__product__category"
-        ).get(id=user_cart.id)
+        user_cart = _get_optimized_cart(user_cart.id)
 
         response = Response(CartSerializer(user_cart).data, status=status.HTTP_200_OK)
         response.delete_cookie("cart_session")
@@ -691,9 +701,7 @@ class CartCouponView(APIView):
             cart.coupon = coupon
             cart.save(update_fields=["coupon", "updated_at"])
 
-        cart = Cart.objects.prefetch_related(
-            "items__variant__product__category"
-        ).get(id=cart.id)
+        cart = _get_optimized_cart(cart.id)
         serializer = CartSerializer(cart)
         response = Response(serializer.data, status=status.HTTP_200_OK)
         return _attach_cart_session(response, cart)
@@ -704,9 +712,7 @@ class CartCouponView(APIView):
             with transaction.atomic():
                 cart.coupon = None
                 cart.save(update_fields=["coupon", "updated_at"])
-            cart = Cart.objects.prefetch_related(
-                "items__variant__product__category"
-            ).get(id=cart.id)
+            cart = _get_optimized_cart(cart.id)
             serializer = CartSerializer(cart)
             response = Response(serializer.data, status=status.HTTP_200_OK)
             return _attach_cart_session(response, cart)

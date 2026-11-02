@@ -85,8 +85,13 @@ async function getCartHeaders(token?: string): Promise<HeadersInit> {
   let accessToken = token;
   if (!accessToken && typeof window !== 'undefined') {
     try {
-      const { data } = await supabase.auth.getSession();
-      accessToken = data.session?.access_token;
+      const hasSupabaseToken = Object.keys(localStorage).some((key) =>
+        key.includes('auth-token')
+      );
+      if (hasSupabaseToken) {
+        const { data } = await supabase.auth.getSession();
+        accessToken = data.session?.access_token;
+      }
     } catch {
       // Graceful fallback if supabase is uninitialized or in isolated test
     }
