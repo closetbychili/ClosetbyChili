@@ -20,4 +20,4 @@ class InactiveVariantError(exceptions.APIException):
 class CartSessionExpiredError(exceptions.APIException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = "Cart session is invalid or has expired."
-    default_code = "CART_NOT_FOUND"
+    default_code = "CART_SESSION_EXPIRED"

@@ -14,8 +14,73 @@ import type { ProductDetail, ProductListItem } from "@/lib/api/types";
 import type { ProductItem } from "@/lib/homepage-data";
 
 const getCachedProduct = cache(async (slug: string) => {
-  return getProduct(slug, { cache: "no-store" });
+  return getProduct(slug, {
+    next: {
+      revalidate: 180,
+      tags: [`product-${slug}`, "catalog", "products"],
+    },
+  });
 });
+
+async function fetchRelatedProducts(
+  currentSlug: string,
+  categorySlug?: string | null
+): Promise<ProductItem[]> {
+  let items: ProductItem[] = [];
+
+  if (categorySlug) {
+    try {
+      const res = await getProducts(
+        { category: categorySlug, page_size: 8 },
+        {
+          next: {
+            revalidate: 180,
+            tags: [`category-${categorySlug}`, "catalog", "products"],
+          },
+        }
+      );
+      items = (res.results || [])
+        .filter(
+          (p: ProductListItem) =>
+            p.slug !== currentSlug && p.status === "active" && p.is_active
+        )
+        .slice(0, 4)
+        .map((p) => mapProductToUi(p));
+    } catch (err) {
+      console.warn("Could not fetch category related products:", err);
+    }
+  }
+
+  // Only request fallback if category yields fewer than 4 products
+  if (items.length < 4) {
+    try {
+      const fallbackRes = await getProducts(
+        { page_size: 8, ordering: "-created_at" },
+        {
+          next: {
+            revalidate: 180,
+            tags: ["catalog", "products"],
+          },
+        }
+      );
+      const additional = (fallbackRes.results || [])
+        .filter(
+          (p: ProductListItem) =>
+            p.slug !== currentSlug &&
+            p.status === "active" &&
+            p.is_active &&
+            !items.some((existing) => existing.id === p.id || existing.slug === p.slug)
+        )
+        .slice(0, 4 - items.length)
+        .map((p) => mapProductToUi(p));
+      items = [...items, ...additional];
+    } catch (err) {
+      console.warn("Could not fetch fallback related products:", err);
+    }
+  }
+
+  return items;
+}
 
 interface ProductPageProps {
   params: Promise<{
@@ -50,43 +115,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
   let product: ProductDetail | null = null;
-  let relatedProducts: ProductItem[] = [];
 
   try {
     product = await getCachedProduct(slug);
-
-    // Fetch related products from same category or fallback catalog
-    if (product.category?.slug) {
-      const relatedRes = await getProducts(
-        { category: product.category.slug, page_size: 8 },
-        { cache: "no-store" }
-      );
-      relatedProducts = relatedRes.results
-        .filter(
-          (p: ProductListItem) =>
-            p.slug !== slug && p.status === "active" && p.is_active
-        )
-        .slice(0, 4)
-        .map((p) => mapProductToUi(p));
-    }
-
-    if (relatedProducts.length < 4) {
-      const fallbackRes = await getProducts(
-        { page_size: 10 },
-        { cache: "no-store" }
-      );
-      const additional = fallbackRes.results
-        .filter(
-          (p) =>
-            p.slug !== slug &&
-            p.status === "active" &&
-            p.is_active &&
-            !relatedProducts.some((r) => r.href === `/products/${p.slug}`)
-        )
-        .slice(0, 4 - relatedProducts.length)
-        .map((p) => mapProductToUi(p));
-      relatedProducts = [...relatedProducts, ...additional];
-    }
   } catch (error) {
     if (error instanceof ApiClientError && (error.status === 404 || error.code === "NOT_FOUND")) {
       notFound();
@@ -98,6 +129,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   if (!product || product.status !== "active" || !product.is_active) {
     notFound();
   }
+
+  // Fetch related products with ISR revalidation; only requests fallback if category has < 4 items
+  const relatedProducts = await fetchRelatedProducts(slug, product.category?.slug);
 
   const galleryImages = getProductImages(product);
   const firstVariant = product.variants.find((v) => v.is_active) || product.variants[0];

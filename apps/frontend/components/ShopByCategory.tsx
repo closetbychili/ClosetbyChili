@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { getCategories } from "@/lib/api/catalog";
 import { mapCategoryToUi } from "@/lib/adapters/catalog-adapter";
@@ -224,11 +225,12 @@ export default function ShopByCategory({ categories: initialCategories }: ShopBy
                   {/* Arched Image Container */}
                   <div className="relative w-full aspect-[3/4.2] rounded-t-[60px] sm:rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
                     {cat.image ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
+                      <Image
                         src={cat.image}
                         alt={cat.imageAlt || cat.name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 640px) 176px, (max-width: 1024px) 224px, 272px"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         draggable={false}
                       />
                     ) : (

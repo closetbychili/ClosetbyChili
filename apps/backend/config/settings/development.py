@@ -46,3 +46,46 @@ REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [  # type: ignore[name-defined]  # 
     "rest_framework.renderers.JSONRenderer",
     "rest_framework.renderers.BrowsableAPIRenderer",
 ]
+
+# ============================================================
+# Safe Cache & Celery Fallback for Local Development
+# ============================================================
+# If REDIS_URL is not provided or if local Redis is unreachable on localhost:6379,
+# safely fall back to in-memory LocMemCache and eager Celery execution to avoid
+# blocking local developer workflows.
+_redis_available = False
+_dev_redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+try:
+    import socket
+    import urllib.parse
+    parsed = urllib.parse.urlparse(_dev_redis_url)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or 6379
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(0.5)
+    result = sock.connect_ex((host, port))
+    sock.close()
+    if result == 0:
+        _redis_available = True
+except Exception:
+    _redis_available = False
+
+if not _redis_available and not os.environ.get("FORCE_REDIS"):
+    import warnings
+    warnings.warn(
+        f"Redis is unavailable at {_dev_redis_url}. "
+        "Falling back to LocMemCache and eager Celery tasks for local development.",
+        RuntimeWarning,
+    )
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "closet-by-chilli-dev-cache",
+        },
+        "reference_cache": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "closet-reference-dev-cache",
+            "TIMEOUT": 300,
+        },
+    }
+    CELERY_TASK_ALWAYS_EAGER = True

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -23,11 +24,13 @@ export default function Footer() {
           {/* Column 1: Brand & Bio (4 Cols) */}
           <div className="lg:col-span-4 flex flex-col gap-3.5 text-center sm:text-left items-center sm:items-start">
             <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 alt="Closet by Chili Logo"
                 className="h-10 md:h-12 w-auto object-contain"
                 src="/assets/brand/logo.png"
+                width={150}
+                height={48}
+                loading="lazy"
               />
             </div>
             <p className="font-title-editorial text-title-editorial text-tertiary italic">

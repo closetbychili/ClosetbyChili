@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  useMemo,
 } from "react";
 import type { Cart } from "@/lib/api/types";
 import {
@@ -21,6 +22,7 @@ import {
   createEmptyCart,
   applyCartCoupon as apiApplyCartCoupon,
   removeCartCoupon as apiRemoveCartCoupon,
+  isCartSessionExpiredError,
 } from "@/lib/api/cart";
 import { ApiClientError } from "@/lib/api/client";
 import { useAuth } from "./AuthProvider";
@@ -172,6 +174,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsDrawerOpen(true);
       } catch (err) {
         console.error("Failed to add to cart:", err);
+        if (isCartSessionExpiredError(err)) {
+          if (!token) {
+            clearStoredCartSession();
+          }
+          setCart(createEmptyCart());
+        }
         const message =
           err instanceof ApiClientError
             ? err.message
@@ -199,6 +207,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setCart(updated);
       } catch (err) {
         console.error("Failed to update cart quantity:", err);
+        if (isCartSessionExpiredError(err)) {
+          if (!token) {
+            clearStoredCartSession();
+          }
+          setCart(createEmptyCart());
+        }
         const message =
           err instanceof ApiClientError
             ? err.message
@@ -221,6 +235,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setCart(updated);
       } catch (err) {
         console.error("Failed to remove item:", err);
+        if (isCartSessionExpiredError(err)) {
+          if (!token) {
+            clearStoredCartSession();
+          }
+          setCart(createEmptyCart());
+        }
         const message =
           err instanceof ApiClientError
             ? err.message
@@ -242,6 +262,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCart(updated);
     } catch (err) {
       console.error("Failed to clear cart:", err);
+      if (isCartSessionExpiredError(err)) {
+        if (!token) {
+          clearStoredCartSession();
+        }
+        setCart(createEmptyCart());
+      }
       const message =
         err instanceof ApiClientError
           ? err.message
@@ -262,6 +288,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setCart(updated);
       } catch (err) {
         console.error("Failed to apply coupon:", err);
+        if (isCartSessionExpiredError(err)) {
+          if (!token) {
+            clearStoredCartSession();
+          }
+          setCart(createEmptyCart());
+        }
         const message =
           err instanceof ApiClientError
             ? err.message
@@ -283,6 +315,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setCart(updated);
     } catch (err) {
       console.error("Failed to remove coupon:", err);
+      if (isCartSessionExpiredError(err)) {
+        if (!token) {
+          clearStoredCartSession();
+        }
+        setCart(createEmptyCart());
+      }
       const message =
         err instanceof ApiClientError
           ? err.message
@@ -300,30 +338,53 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const total = cart?.total || cart?.subtotal || "0.00";
   const couponCode = cart?.coupon_code || null;
 
+  const contextValue = useMemo<CartContextValue>(
+    () => ({
+      cart,
+      itemCount,
+      subtotal,
+      discount,
+      total,
+      couponCode,
+      isLoading,
+      error,
+      isDrawerOpen,
+      addToCart: handleAddToCart,
+      updateQuantity: handleUpdateQuantity,
+      removeItem: handleRemoveItem,
+      clearCart: handleClearCart,
+      applyCoupon: handleApplyCoupon,
+      removeCoupon: handleRemoveCoupon,
+      openDrawer,
+      closeDrawer,
+      clearError,
+      refreshCart,
+    }),
+    [
+      cart,
+      itemCount,
+      subtotal,
+      discount,
+      total,
+      couponCode,
+      isLoading,
+      error,
+      isDrawerOpen,
+      handleAddToCart,
+      handleUpdateQuantity,
+      handleRemoveItem,
+      handleClearCart,
+      handleApplyCoupon,
+      handleRemoveCoupon,
+      openDrawer,
+      closeDrawer,
+      clearError,
+      refreshCart,
+    ]
+  );
+
   return (
-    <CartContext.Provider
-      value={{
-        cart,
-        itemCount,
-        subtotal,
-        discount,
-        total,
-        couponCode,
-        isLoading,
-        error,
-        isDrawerOpen,
-        addToCart: handleAddToCart,
-        updateQuantity: handleUpdateQuantity,
-        removeItem: handleRemoveItem,
-        clearCart: handleClearCart,
-        applyCoupon: handleApplyCoupon,
-        removeCoupon: handleRemoveCoupon,
-        openDrawer,
-        closeDrawer,
-        clearError,
-        refreshCart,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );

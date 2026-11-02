@@ -69,3 +69,14 @@ MIDDLEWARE = [
     *MIDDLEWARE[1:],
 ]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ============================================================
+# Redis & Cache Production Enforcement
+# ============================================================
+# In production, RedisCache is strictly required. Never silently fall back to LocMemCache.
+_prod_redis_url = os.environ.get("REDIS_URL", "").strip()
+if not _prod_redis_url:
+    raise ValueError(
+        "REDIS_URL environment variable must be set in production. "
+        "LocMemCache is forbidden in production environments to avoid multi-instance inconsistency."
+    )

@@ -32,6 +32,10 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.catalog.cache import (
+    get_or_set_cached_categories,
+    get_or_set_cached_collections,
+)
 from apps.catalog.filters import CategorySlugFilter, CollectionSlugFilter
 from apps.catalog.models import Category, Collection, Product
 from apps.catalog.serializers import (
@@ -73,6 +77,23 @@ class CategoryViewSet(
                 qs = qs.filter(is_visible_on_storefront=False)
         return qs
 
+    def list(self, request, *args, **kwargs):
+        # Pass-through dynamic search or custom ordering directly
+        if request.query_params.get("search") or request.query_params.get("ordering") or request.query_params.get("page"):
+            return super().list(request, *args, **kwargs)
+
+        storefront_param = request.query_params.get("storefront")
+        storefront_val = None
+        if storefront_param is not None:
+            storefront_val = storefront_param.lower() in ("true", "1")
+
+        def _fetch():
+            response = super(CategoryViewSet, self).list(request, *args, **kwargs)
+            return response.data
+
+        data = get_or_set_cached_categories(storefront_val, _fetch)
+        return Response(data)
+
 
 class CollectionViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
@@ -93,6 +114,18 @@ class CollectionViewSet(
 
     def get_queryset(self):
         return Collection.objects.filter(is_active=True)
+
+    def list(self, request, *args, **kwargs):
+        # Pass-through dynamic search or custom ordering directly
+        if request.query_params.get("search") or request.query_params.get("ordering") or request.query_params.get("page"):
+            return super().list(request, *args, **kwargs)
+
+        def _fetch():
+            response = super(CollectionViewSet, self).list(request, *args, **kwargs)
+            return response.data
+
+        data = get_or_set_cached_collections(_fetch)
+        return Response(data)
 
 
 class ProductViewSet(
@@ -140,7 +173,7 @@ class ProductViewSet(
             .select_related("category")
             .prefetch_related(
                 "collections",
-                "variants",
+                "variants__inventory",
                 "product_collections",
                 "images",
             )

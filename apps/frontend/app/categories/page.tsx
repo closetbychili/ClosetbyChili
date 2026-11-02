@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles, ArrowRight, RefreshCw, Layers } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -7,7 +8,7 @@ import { getCategories, ApiClientError } from "@/lib/api";
 import { mapCategoryToUi } from "@/lib/adapters/catalog-adapter";
 import type { CategoryItem } from "@/lib/homepage-data";
 
-export const revalidate = 60; // ISR revalidation every 60 seconds
+export const revalidate = 600; // ISR revalidation every 10 minutes
 
 export const metadata: Metadata = {
   title: "Shop by Category | Closet by Chilli",
@@ -31,7 +32,7 @@ export default async function CategoriesPage() {
   try {
     const res = await getCategories(
       { page_size: 100, storefront: true },
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 600, tags: ["catalog", "categories"] } }
     );
     if (res?.results?.length) {
       categories = res.results.map((c) => mapCategoryToUi(c));
@@ -166,12 +167,12 @@ export default async function CategoriesPage() {
                   {/* Arched Image Container */}
                   <div className="relative w-full aspect-[3/4.2] rounded-t-[80px] lg:rounded-t-[100px] overflow-hidden bg-surface-container shadow-xs transition-all duration-500 group-hover:-translate-y-1.5 group-hover:shadow-md">
                     {cat.image ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
+                      <Image
                         src={cat.image}
                         alt={cat.imageAlt || cat.name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     ) : (
                       /* Graceful Fallback for categories without uploaded card media */

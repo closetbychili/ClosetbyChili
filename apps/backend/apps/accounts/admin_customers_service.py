@@ -20,6 +20,7 @@ import uuid
 
 from django.db.models import (
     Case,
+    CharField,
     Count,
     DecimalField,
     F,
@@ -98,9 +99,9 @@ SORT_MAP = {
     "-created_at": ["-created_at", "-id"],
     "oldest": ["created_at", "id"],
     "created_at": ["created_at", "id"],
-    "name": ["profile__display_name", "-created_at", "-id"],
-    "name_asc": ["profile__display_name", "-created_at", "-id"],
-    "name_desc": ["-profile__display_name", "-created_at", "-id"],
+    "name": ["sort_name", "-created_at", "-id"],
+    "name_asc": ["sort_name", "-created_at", "-id"],
+    "name_desc": ["-sort_name", "-created_at", "-id"],
     "order_count": ["-total_order_count", "-created_at", "-id"],
     "order_count_desc": ["-total_order_count", "-created_at", "-id"],
     "order_count_asc": ["total_order_count", "-created_at", "-id"],
@@ -165,6 +166,7 @@ def get_admin_customers_queryset(
             output_field=DecimalField(max_digits=12, decimal_places=2),
         ),
         latest_order_date=Max("orders__created_at"),
+        sort_name=Coalesce("profile__display_name", "email", output_field=CharField()),
     )
 
     # 3. Search Filter

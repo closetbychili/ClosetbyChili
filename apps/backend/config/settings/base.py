@@ -236,27 +236,51 @@ CORS_EXPOSE_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # ============================================================
+# Redis & Cache Configuration
+# ============================================================
+REDIS_URL = os.environ.get("REDIS_URL", "").strip()
+REDIS_CONNECT_TIMEOUT = float(os.environ.get("REDIS_CONNECT_TIMEOUT", "3.0"))
+REDIS_SOCKET_TIMEOUT = float(os.environ.get("REDIS_SOCKET_TIMEOUT", "3.0"))
+
+_redis_cache_location = REDIS_URL if REDIS_URL else "redis://localhost:6379/0"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": _redis_cache_location,
+        "OPTIONS": {
+            "socket_connect_timeout": REDIS_CONNECT_TIMEOUT,
+            "socket_timeout": REDIS_SOCKET_TIMEOUT,
+            "retry_on_timeout": True,
+        },
+    },
+    "reference_cache": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "closet-reference-cache",
+        "TIMEOUT": 300,  # 5 minutes for reference data (categories/collections)
+    },
+}
+
+# ============================================================
 # Celery
 # ============================================================
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/1")
+CELERY_BROKER_URL = os.environ.get(
+    "CELERY_BROKER_URL",
+    f"{REDIS_URL.rstrip('/')}/1" if REDIS_URL else "redis://localhost:6379/1",
+)
 CELERY_RESULT_BACKEND = os.environ.get(
-    "CELERY_RESULT_BACKEND", "redis://localhost:6379/2"
+    "CELERY_RESULT_BACKEND",
+    f"{REDIS_URL.rstrip('/')}/2" if REDIS_URL else "redis://localhost:6379/2",
 )
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_TASK_ALWAYS_EAGER = False
-
-# ============================================================
-# Cache — Redis
-# ============================================================
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL", "redis://localhost:6379/0"),
-    }
-}
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_TIMEOUT = int(
+    os.environ.get("CELERY_BROKER_CONNECTION_TIMEOUT", "3")
+)
 
 # ============================================================
 # Razorpay Configuration
@@ -297,6 +321,11 @@ RESEND_FROM_EMAIL = os.environ.get(
     "RESEND_FROM_EMAIL", "Closet by Chilli <orders@closetbychilli.com>"
 )
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+REVALIDATION_SECRET = os.environ.get("REVALIDATION_SECRET", "")
+FRONTEND_REVALIDATE_URL = os.environ.get(
+    "FRONTEND_REVALIDATE_URL",
+    f"{FRONTEND_BASE_URL}/api/revalidate" if FRONTEND_BASE_URL else "",
+)
 EMAIL_DELIVERY_FALLBACK_SYNC = os.environ.get(
     "EMAIL_DELIVERY_FALLBACK_SYNC", "False"
 ).lower() in ("true", "1")

@@ -10,6 +10,9 @@ import {
   getCollection,
   getProducts,
   getProduct,
+  isTimeoutError,
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  DEFAULT_UPLOAD_TIMEOUT_MS,
 } from '@/lib/api';
 
 describe('API Client Utilities', () => {
@@ -135,6 +138,72 @@ describe('apiFetch & Error Handling', () => {
       expect(apiErr.code).toBe('NETWORK_ERROR');
       expect(apiErr.message).toContain('Network error connecting to API');
     }
+  });
+
+  it('aborts and throws REQUEST_TIMEOUT when request exceeds configured timeout', async () => {
+    // Mock fetch that hangs until aborted
+    globalThis.fetch = vi.fn().mockImplementation((_url, options) => {
+      return new Promise((_resolve, reject) => {
+        if (options?.signal) {
+          options.signal.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        }
+      });
+    });
+
+    try {
+      await apiFetch('/catalog/products/', { timeoutMs: 50 });
+      expect.unreachable('Should have timed out');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiClientError);
+      const apiErr = err as ApiClientError;
+      expect(apiErr.status).toBe(408);
+      expect(apiErr.code).toBe('REQUEST_TIMEOUT');
+      expect(apiErr.message).toContain('Request timed out after 50ms');
+      expect(isTimeoutError(err)).toBe(true);
+    }
+  });
+
+  it('respects caller-provided AbortSignal without overriding it', async () => {
+    const callerController = new AbortController();
+
+    globalThis.fetch = vi.fn().mockImplementation((_url, options) => {
+      return new Promise((_resolve, reject) => {
+        if (options?.signal) {
+          options.signal.addEventListener('abort', () => {
+            const err = new Error('Aborted by user');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        }
+      });
+    });
+
+    const requestPromise = apiFetch('/catalog/products/', {
+      signal: callerController.signal,
+      timeoutMs: 5000,
+    });
+
+    // Abort caller controller immediately
+    callerController.abort();
+
+    try {
+      await requestPromise;
+      expect.unreachable('Should have aborted');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiClientError);
+      const apiErr = err as ApiClientError;
+      expect(apiErr.code).toBe('REQUEST_ABORTED');
+      expect(isTimeoutError(err)).toBe(false);
+    }
+  });
+
+  it('exports valid default timeout constants', () => {
+    expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(8000);
+    expect(DEFAULT_UPLOAD_TIMEOUT_MS).toBe(60000);
   });
 });
 

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Plus, Check, Loader2 } from "lucide-react";
 import { getProducts, getProduct } from "@/lib/api/catalog";
 import { mapProductToUi } from "@/lib/adapters/catalog-adapter";
@@ -14,6 +16,7 @@ export default function NewArrivals({
   products?: ProductItem[];
 }) {
   const isCustomProvided = initialProducts !== undefined;
+  const router = useRouter();
   const [products, setProducts] = useState<ProductItem[] | undefined>(initialProducts);
   const [loading, setLoading] = useState<boolean>(!isCustomProvided);
 
@@ -27,7 +30,8 @@ export default function NewArrivals({
 
   // Track wishlist state per product
   const [wishlist, setWishlist] = useState<Record<string, boolean>>({});
-  // Track selected size per product
+
+  // Selected size per product
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -36,18 +40,26 @@ export default function NewArrivals({
     }
 
     let isMounted = true;
-    setLoading(true);
 
     getProducts({ collection: "new-arrivals", page_size: 4 })
       .then((res) => {
         if (!isMounted) return;
-        if (res.results && res.results.length > 0) {
-          setProducts(res.results.map((p) => mapProductToUi(p, "New")));
+        const valid = (res.results || []).filter(
+          (p) => p.status === "active" && p.is_active
+        );
+        if (valid.length >= 4) {
+          setProducts(valid.slice(0, 4).map((p) => mapProductToUi(p, "New")));
         } else {
-          return getProducts({ page_size: 4, ordering: "-created_at" }).then((fallbackRes) => {
-            if (isMounted) {
-              setProducts(fallbackRes.results.map((p) => mapProductToUi(p, "New")));
-            }
+          return getProducts({ page_size: 8, ordering: "-created_at" }).then((fallbackRes) => {
+            if (!isMounted) return;
+            const validFallback = (fallbackRes.results || []).filter(
+              (p) =>
+                p.status === "active" &&
+                p.is_active &&
+                !valid.some((v) => v.id === p.id)
+            );
+            const merged = [...valid, ...validFallback].slice(0, 4);
+            setProducts(merged.map((p) => mapProductToUi(p, "New")));
           });
         }
       })
@@ -85,16 +97,23 @@ export default function NewArrivals({
     }));
   };
 
+  const isValidVariantId = (id: string | null | undefined, productId?: string): boolean => {
+    if (!id) return false;
+    if (productId && id === productId) return false;
+    if (/^(na|bs|cat|prod|stitch)-\d+/i.test(id)) return false;
+    return true;
+  };
+
   const resolveVariantId = async (product: ProductItem): Promise<string | null> => {
     // 1. Check in-memory resolved map
-    if (resolvedVariantMap[product.id]) {
+    if (resolvedVariantMap[product.id] && isValidVariantId(resolvedVariantMap[product.id], product.id)) {
       return resolvedVariantMap[product.id];
     }
 
     // 2. Check if product already has defaultVariantId
-    if (product.defaultVariantId) {
+    if (isValidVariantId(product.defaultVariantId, product.id)) {
       setResolvedVariantMap((prev) => ({ ...prev, [product.id]: product.defaultVariantId! }));
-      return product.defaultVariantId;
+      return product.defaultVariantId!;
     }
 
     // 3. Check if product already has variants array
@@ -104,9 +123,9 @@ export default function NewArrivals({
         (selectedSize ? product.variants.find((v) => v.size === selectedSize) : null) ||
         product.variants.find((v) => v.inStock !== false) ||
         product.variants[0];
-      if (match?.id) {
-        setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match.id }));
-        return match.id;
+      if (isValidVariantId(match?.id, product.id)) {
+        setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match!.id }));
+        return match!.id;
       }
     }
 
@@ -122,9 +141,9 @@ export default function NewArrivals({
             (selectedSize ? active.find((v) => v.size === selectedSize) : null) ||
             active.find((v) => v.is_in_stock !== false) ||
             active[0];
-          if (match?.id) {
-            setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match.id }));
-            return match.id;
+          if (isValidVariantId(match?.id, product.id)) {
+            setResolvedVariantMap((prev) => ({ ...prev, [product.id]: match!.id }));
+            return match!.id;
           }
         }
       } catch (err) {
@@ -145,7 +164,7 @@ export default function NewArrivals({
     try {
       const variantId = await resolveVariantId(product);
       if (!variantId) {
-        window.location.href = product.href;
+        router.push(product.href);
         return;
       }
 
@@ -186,7 +205,7 @@ export default function NewArrivals({
         variantId = await resolveVariantId(product);
       }
       if (!variantId) {
-        window.location.href = product.href;
+        router.push(product.href);
         return;
       }
       await addToCart(variantId, 1);
@@ -260,11 +279,10 @@ export default function NewArrivals({
                       className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 p-1 text-neutral-800 hover:text-black transition-transform duration-200 active:scale-125 cursor-pointer"
                     >
                       <svg
-                        className={`w-5 h-5 sm:w-5.5 sm:h-5.5 transition-colors ${
-                          isWishlisted
+                        className={`w-5 h-5 sm:w-5.5 sm:h-5.5 transition-colors ${isWishlisted
                             ? "fill-[#8b000a] text-[#8b000a]"
                             : "fill-none stroke-neutral-800 hover:stroke-black"
-                        }`}
+                          }`}
                         viewBox="0 0 24 24"
                         strokeWidth="1.25"
                         stroke="currentColor"
@@ -278,17 +296,12 @@ export default function NewArrivals({
                     </button>
 
                     {/* Product Image */}
-                    <Link href={product.href} className="block w-full h-full">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                    <Link href={product.href} className="block w-full h-full relative">
+                      <Image
                         src={product.image || "/assets/products/kurti-1.jpg"}
                         alt={product.name}
-                        onError={(e) => {
-                          const target = e.currentTarget as HTMLImageElement;
-                          if (!target.src.includes("/assets/products/kurti-1.jpg")) {
-                            target.src = "/assets/products/kurti-1.jpg";
-                          }
-                        }}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 400px"
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
                     </Link>
@@ -338,9 +351,8 @@ export default function NewArrivals({
                         aria-label={`Add ${product.name} to bag`}
                         disabled={addingId === product.id}
                         onClick={(e) => handleQuickAdd(product, e)}
-                        className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-neutral-800 hover:text-black hover:bg-neutral-100 rounded-full transition-all cursor-pointer active:scale-90 ${
-                          addingId === product.id ? "opacity-70 cursor-wait" : ""
-                        }`}
+                        className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-neutral-800 hover:text-black hover:bg-neutral-100 rounded-full transition-all cursor-pointer active:scale-90 ${addingId === product.id ? "opacity-70 cursor-wait" : ""
+                          }`}
                       >
                         {addingId === product.id ? (
                           <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-neutral-700" />
@@ -359,9 +371,8 @@ export default function NewArrivals({
                           <span
                             key={idx}
                             title={swatch.name}
-                            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[1px] shrink-0 ${
-                              swatch.border ? "border border-neutral-300" : ""
-                            }`}
+                            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[1px] shrink-0 ${swatch.border ? "border border-neutral-300" : ""
+                              }`}
                             style={{ backgroundColor: swatch.color }}
                           />
                         ))}

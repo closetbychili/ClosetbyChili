@@ -675,8 +675,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_variants(self, obj: Product) -> list[dict]:
-        """Return serialized list of active variants."""
-        active_variants = obj.variants.filter(is_active=True)
+        """Return serialized list of active variants using prefetched cache."""
+        active_variants = [v for v in obj.variants.all() if v.is_active]
         return list(ProductVariantSummarySerializer(active_variants, many=True).data)
 
 

@@ -29,6 +29,16 @@ export class ApiClientError extends Error {
   }
 }
 
+export const DEFAULT_REQUEST_TIMEOUT_MS = 8000;
+export const DEFAULT_UPLOAD_TIMEOUT_MS = 60000;
+
+/**
+ * Checks whether an unknown error is an API request timeout.
+ */
+export function isTimeoutError(error: unknown): boolean {
+  return error instanceof ApiClientError && error.code === 'REQUEST_TIMEOUT';
+}
+
 /**
  * Resolves the API base URL from environment variables with local fallback.
  */
@@ -71,7 +81,7 @@ export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { params, headers, ...fetchOptions } = options;
+  const { params, headers, timeoutMs: customTimeout, ...fetchOptions } = options;
   const baseUrl = getApiBaseUrl();
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const queryString = buildQueryString(params);
@@ -84,17 +94,84 @@ export async function apiFetch<T>(
     defaultHeaders['Content-Type'] = 'application/json';
   }
 
+  // Determine effective timeout in ms (0 or negative disables timeout)
+  const isFormData = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
+  const effectiveTimeoutMs =
+    customTimeout !== undefined
+      ? (customTimeout <= 0 ? 0 : customTimeout)
+      : isFormData
+      ? DEFAULT_UPLOAD_TIMEOUT_MS
+      : DEFAULT_REQUEST_TIMEOUT_MS;
+
+  const timeoutController = new AbortController();
+  let timedOut = false;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+
+  if (effectiveTimeoutMs > 0) {
+    timerId = setTimeout(() => {
+      timedOut = true;
+      timeoutController.abort(new Error(`Request timed out after ${effectiveTimeoutMs}ms`));
+    }, effectiveTimeoutMs);
+  }
+
+  const callerSignal = fetchOptions.signal;
+  let combinedSignal: AbortSignal = timeoutController.signal;
+
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      if (timerId) clearTimeout(timerId);
+      throw new ApiClientError(
+        'Request was aborted by caller',
+        0,
+        'REQUEST_ABORTED',
+        { path }
+      );
+    }
+
+    if (typeof AbortSignal.any === 'function') {
+      combinedSignal = AbortSignal.any([callerSignal, timeoutController.signal]);
+    } else {
+      callerSignal.addEventListener(
+        'abort',
+        () => {
+          if (timerId) clearTimeout(timerId);
+          timeoutController.abort(callerSignal.reason);
+        },
+        { once: true }
+      );
+    }
+  }
+
   let response: Response;
 
   try {
     response = await fetch(url, {
       ...fetchOptions,
+      signal: effectiveTimeoutMs > 0 || callerSignal ? combinedSignal : undefined,
       headers: {
         ...defaultHeaders,
         ...headers,
       },
     });
   } catch (error) {
+    if (timedOut) {
+      throw new ApiClientError(
+        `Request timed out after ${effectiveTimeoutMs}ms connecting to API`,
+        408,
+        'REQUEST_TIMEOUT',
+        { timeoutMs: effectiveTimeoutMs, path }
+      );
+    }
+
+    if (callerSignal?.aborted) {
+      throw new ApiClientError(
+        'Request was aborted by caller',
+        0,
+        'REQUEST_ABORTED',
+        { path }
+      );
+    }
+
     const message =
       error instanceof Error ? error.message : 'Network request failed';
     throw new ApiClientError(
@@ -102,6 +179,10 @@ export async function apiFetch<T>(
       0,
       'NETWORK_ERROR'
     );
+  } finally {
+    if (timerId) {
+      clearTimeout(timerId);
+    }
   }
 
   if (!response.ok) {
